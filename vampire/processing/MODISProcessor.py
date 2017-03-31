@@ -8,6 +8,8 @@ import glob
 import gdal
 import json
 import datetime
+import dateutil
+import dateutil.parser
 import subprocess
 #from subprocess import check_call, CalledProcessError
 from pymodis import downmodis
@@ -30,7 +32,8 @@ class MODISProcessor:
 
     # Get MODIS tiles and mosaic into one HDF4Image format file.
     # No changes to projection are performed.
-    def download_data(self, output_dir, product, dates=None, tiles=None, mosaic_dir=None, overwrite=False):
+    def download_data(self, output_dir, product,
+                      dates=None, tiles=None, mosaic_dir=None, overwrite=False):
 
 
     #def getMODISDataFromURL(output_dir, product, tiles, dates, mosaic_dir,
@@ -42,21 +45,27 @@ class MODISProcessor:
         _user = self.vampire.get('MODIS', 'user')
         _password = self.vampire.get('MODIS', 'password')
         _dates = []
-        if dates is None:
-            # need to get list of dates first
-            _modis_connect = downmodis.downModis(destinationFolder=output_dir, user=_user, password=_password,
-                                                 product=product, today=None, delta=_delta, tiles=tiles)
-            _modis_connect.connect()
-            _days_list = _modis_connect.getAllDays()
-            for i in _days_list:
-                _dates.append('{0}-{1}'.format(i.split('.')[0], i.split('.')[1]))
-        else:
-            _dates = dates
+#        if dates is None:
+        # need to get list of dates first
+        _modis_connect = downmodis.downModis(destinationFolder=output_dir, user=_user, password=_password,
+                                             product=product, today=None, delta=_delta, tiles=tiles)
+        _modis_connect.connect()
+        _days_list = _modis_connect.getAllDays()
+        for i in _days_list:
+            if dates is None:
+                _dates.append(i) #('{0}-{1}'.format(i.split('.')[0], i.split('.')[1]))
+            else:
+                # check if in month/year
+                if '{0}-{1}'.format(i.split('.')[0], i.split('.')[1]) in dates:
+                    _dates.append(i)
+#        else:
+#            _dates = dates
+
         for d in _dates:
 #            if logger: logger.debug("downloading %s", d)
-            _month = '{date}-01'.format(date=d)
-            _folder_date = datetime.datetime.strptime(_month, '%Y-%m-%d').strftime('%Y.%m.%d')
-            _new_folder = os.path.join(output_dir, _folder_date)
+            _month = d #'{date}-01'.format(date=d)
+            _folder_date = datetime.datetime.strptime(_month, '%Y.%m.%d').strftime('%Y.%m.%d')
+            _new_folder = output_dir #os.path.join(output_dir, _folder_date)
              # create folder if it doesn't already exist
             if not os.path.exists(_new_folder):
                 os.makedirs(_new_folder)
@@ -74,19 +83,24 @@ class MODISProcessor:
     #                if logger: logger.error("Error in pymodis.modisDown.downloadsAllDay")
             _modis_download.removeEmptyFiles()
             _modis_download.closeFilelist()
+            # want list of files downloaded (or files for this day)
+            _files_list = []
+            for f in _check_files:
+                if os.path.splitext(os.path.join(_new_folder, f))[1] == '.hdf':
+                    _files_list.append(os.path.join(_new_folder, f))
             _files = glob.glob(os.path.join(_new_folder, '{product}*.hdf'.format(product=product[:-4])))
     #            if logger: logger.debug("files: %s", _files)
     #            if logger: logger.debug("dl_files: %s", dl_files)
             if mosaic_dir:
                 # mosaic files
-                mosaic_file = self.mosaic_tiles(_files, mosaic_dir)
+                mosaic_file = self.mosaic_tiles(_files_list, mosaic_dir, product)
                 _m_files.append(mosaic_file)
 
         if mosaic_dir:
             return _m_files
         return _dl_files
 
-    def mosaic_tiles(self, files, output_dir, overwrite=False):
+    def mosaic_tiles(self, files, output_dir, product, overwrite=False):
 #def mosaicTiles(files, output_dir, tools_dir="", overwrite = False, subset=[1,1,0,0,0,0,0,0,0,0,0], ofmt='HDF4Image',
 #                gdal=False, logger = None):
         # use MRTools
@@ -99,26 +113,28 @@ class MODISProcessor:
                                                                         out_pattern=self.vampire.get('MODIS',
                                                                                          'modis_mosaic_output_pattern'),
                                                                         ignore_leap_year=False)
+        _spectral_subset = self.vampire.get('MODIS_PRODUCTS', product)
         if not os.path.exists(os.path.normpath(os.path.join(output_dir, _new_filename))) or overwrite:
             self._mosaic_files(os.path.normpath(_list_filename),
-                         os.path.normpath(os.path.join(output_dir, _new_filename)))
+                               os.path.normpath(os.path.join(output_dir, _new_filename)),
+                               _spectral_subset)
         os.remove(_list_filename)
 #        if logger: logger.debug("finished mosaic")
         return _new_filename
 
-    def extract_NDVI(self, input_dir, output_dir, patterns=None, overwrite=False):
+    def extract_NDVI(self, input_dir, output_dir, patterns=None, product=None, overwrite=False):
 #def extractNDVI(base_path, output_path, tools_path,
 #                patterns = None, suffix = modis_constants['ndvi_subset'], overwrite = False, logger = None):
         if not patterns:
             patterns = (self.vampire.get('MODIS_NDVI', 'ndvi_input_pattern'),
-                        self.vampire.get('MODIS_NDVI'), 'ndvi_output_pattern')
+                        self.vampire.get('MODIS_NDVI', 'ndvi_output_pattern'))
         new_files = self._extract_subset(input_dir, output_dir, patterns,
                                          self.vampire.get('MODIS_NDVI', 'ndvi_spectral_subset'),
                                          self.vampire.get('MODIS_NDVI', 'ndvi_subset_name'),
                                          overwrite)
         return new_files
 
-    def extract_EVI(self, input_dir, output_dir, file_pattern=None, output_pattern=None, overwrite = False):
+    def extract_EVI(self, input_dir, output_dir, file_pattern=None, output_pattern=None, product=None, overwrite = False):
         if file_pattern is None:
             _file_pattern = self.vampire.get('MODIS', 'modis_monthly_pattern')
         else:
@@ -135,7 +151,8 @@ class MODISProcessor:
                                          overwrite)
         return new_files
 
-    def extract_LST(self, input_dir, output_dir, file_pattern=None, output_pattern=None, layer=None, overwrite = False):
+    def extract_LST(self, input_dir, output_dir, file_pattern=None, output_pattern=None, layer=None,
+                    product=None, overwrite = False):
         if file_pattern is None:
             _file_pattern = self.vampire.get('MODIS', 'modis_monthly_pattern')
         else:
@@ -146,13 +163,19 @@ class MODISProcessor:
         else:
             _output_pattern = output_pattern
         patterns = (_file_pattern, _output_pattern)
+
+        if product is None:
+            _product = self.vampire.get('MODIS', 'land_surface_temperature_product')
+        else:
+            _product = product
+
         if layer is None or layer == 'LST_Day':
             # extract day by default
-            _spectral_subset = json.loads(self.vampire.get('MODIS_LST', 'lst_day_spectral_subset'))
-            _subset_name = self.vampire.get('MODIS_LST', 'lst_day_subset_name')
+            _spectral_subset = json.loads(self.vampire.get('MODIS_PRODUCTS', '{0}.LST_Day'.format(_product)))
+            _subset_name = self.vampire.get('MODIS_PRODUCTS', '{0}.LST_Day_Name'.format(_product))
         elif layer == 'LST_Night':
-            _spectral_subset = json.loads(self.vampire.get('MODIS_LST', 'lst_night_spectral_subset'))
-            _subset_name = self.vampire.get('MODIS_LST', 'lst_night_subset_name')
+            _spectral_subset = json.loads(self.vampire.get('MODIS_PRODUCTS', '{0}.LST_Night'.format(_product)))
+            _subset_name = self.vampire.get('MODIS_PRODUCTS', '{0}.LST_Night_Name'.format(_product))
         else:
             raise
 
@@ -180,12 +203,15 @@ class MODISProcessor:
             d_fl, ext = os.path.splitext(os.path.basename(os.path.normpath(fl)))
             if (ext == '.tif'):
                 d_t = d_fl.rpartition('.')
-                n_fl = d_t[0] + d_t[1] + 'LST_Night_CMG' + ext
-                if (n_fl) in nightFiles:
-                    avg_fl = os.path.join(output_dir, d_t[0] + d_t[1] + 'avg' + ext)
-                    dp = os.path.join(day_dir, d_fl+ext)
-                    np = os.path.join(night_dir, n_fl)
-                    calculate_statistics.calc_average_of_day_night(dp, np, avg_file=avg_fl)
+                # create regex pattern
+                _pattern = re.compile('^{0}{1}LST_Night\w*.tif$'.format(d_t[0], d_t[1]))
+                for n_fl in nightFiles:
+                    if _pattern.match(n_fl):
+                        avg_fl = os.path.join(output_dir, d_t[0] + d_t[1] + 'avg' + ext)
+                        dp = os.path.join(day_dir, d_fl+ext)
+                        np = os.path.join(night_dir, n_fl)
+                        calculate_statistics.calc_average_of_day_night(dp, np, avg_file=avg_fl)
+                        break
         return None
 
     def calc_longterm_stats(self, input_dir, output_dir, product,
@@ -219,23 +245,34 @@ class MODISProcessor:
         else:
             _input_pattern = input_pattern
 
+        if product is not None:
+            _interval = self.vampire.get('MODIS_PRODUCTS', '{0}.interval'.format(product))
+        else:
+            # use default - monthly
+            _interval = interval
+
         _all_files = vampire.directory_utils.get_matching_files(input_dir, input_pattern)
         _file_list = {}
         _yrs = []
+        _doy = []
         for f in _all_files:
             _fname = os.path.basename(f)
             _result = re.match(_input_pattern, _fname)
-            _f_date = datetime.date.date(_result.group('year'), _result.group('month'), _result.group('day'))
-            _yrs.append(_result.group('year'))
-            _base_name = '{0}-{1}'.format(_result.group('base_name'), _result.group('version'))
-            if start_date is not None and _f_date < start_date:
+            _f_date = datetime.date(int(_result.group('year')), int(_result.group('month')), int(_result.group('day')))
+            # TODO: base date should be from start of long-term average data, not necessarily 2000
+            _base_date = datetime.date(2000, int(_result.group('month')), int(_result.group('day')))
+#            _base_name = '{0}-{1}'.format(_result.group('base_name'), _result.group('version'))
+            if start_date is not None and _f_date < (dateutil.parser.parse(start_date)).date():
                 break
             else:
-                if end_date is not None and _f_date > end_date:
+                if end_date is not None and _f_date > (dateutil.parser.parse(end_date)).date():
                     break
                 else:
-                    if interval.lower() == 'monthly':
-                        _file_list.setdefault(_result.group('month'), []).append(f)
+                    _yrs.append(_result.group('year'))
+                    _doy.append(_f_date.timetuple().tm_yday)
+#                    if interval.lower() == 'monthly':
+                    _file_list.setdefault(_f_date.timetuple().tm_yday, []).append(f)
+#                        _file_list.setdefault(_result.group('month'), []).append(f)
 
         _years = set(_yrs)
         _syr = min(_years) #1981
@@ -243,23 +280,34 @@ class MODISProcessor:
         _num_yrs = str(int(_eyr) - int(_syr))
         _months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
         _output_pattern = _output_pattern.replace('{yr_range}', '{0}-{1}'.format(_syr, _eyr))
-        _output_pattern = _output_pattern.replace('{num_yrs}', '{0}'.format(_num_yrs))
-        _output_pattern = _output_pattern.replace('{subset}', '{0}'.format(interval.lower()))
+        _output_pattern = _output_pattern.replace('{num_yrs}', '{0}yrs'.format(_num_yrs))
+        _output_pattern = _output_pattern.replace('{subset}', '{0}'.format(_interval.lower()))
         if function_list is None:
             _function_list = ['AVG']
         else:
             _function_list = function_list
-        if interval == 'monthly':
-            for m in _months:
-                # for each month, calculate long term average
-                if m in _file_list:
-                    fl = _file_list[m]
-                    newfl = vampire.directory_utils.unzip_file_list(fl)
-                    for func in function_list:
-                        _fn_output_pattern = _output_pattern.replace('{statistic}', func.lower())
-                        newfilename = vampire.filename_utils.generate_output_filename(fl, _input_pattern, _fn_output_pattern)
-#                    newfilename = '{0}.{1}-{2}.{3}.monthly.{4}yrs'.format(_base_name, _syr, _eyr, m, _numyrs)
-                        self._calculate_stats(newfl, newfilename, output_dir, [func])
+        for d in _file_list:
+            fl = _file_list[d]
+            newfl = vampire.directory_utils.unzip_file_list(fl)
+            if len(fl) != 0:
+                for func in function_list:
+                    _fn_output_pattern = _output_pattern.replace('{statistic}', func.lower())
+                    newfilename = vampire.filename_utils.generate_output_filename(os.path.basename(fl[0]),
+                                                                                  _input_pattern, _fn_output_pattern)
+                    self._calculate_stats(newfl, newfilename, output_dir, [func])
+
+
+#         if interval == 'monthly':
+#             for m in _months:
+#                 # for each month, calculate long term average
+#                 if m in _file_list:
+#                     fl = _file_list[m]
+#                     newfl = vampire.directory_utils.unzip_file_list(fl)
+#                     for func in function_list:
+#                         _fn_output_pattern = _output_pattern.replace('{statistic}', func.lower())
+#                         newfilename = vampire.filename_utils.generate_output_filename(fl, _input_pattern, _fn_output_pattern)
+# #                    newfilename = '{0}.{1}-{2}.{3}.monthly.{4}yrs'.format(_base_name, _syr, _eyr, m, _numyrs)
+#                         self._calculate_stats(newfl, newfilename, output_dir, [func])
 
         return None
 
@@ -270,8 +318,8 @@ class MODISProcessor:
             return -1
 
         # check output directory exists and create it if not
-        if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
         new_files = []
         for _ifl in _all_files:
             # generate parameter file
@@ -336,7 +384,7 @@ class MODISProcessor:
                     pfile.close()
         return None
 
-    def _mosaic_files(self, file_list, output_filename):
+    def _mosaic_files(self, file_list, output_filename, subset):
         # call mrtmosaic using input filename
         try:
             mrt_path = os.path.normpath(self.vampire.get('directories', 'mrt_dir'))
@@ -347,11 +395,11 @@ class MODISProcessor:
             if platform == 'Windows':
                 subprocess.check_call([os.path.join(mrt_path,'mrtmosaic.exe'),
                                        '-i', file_list, '-o', output_filename,
-                                       '-s', "1 1"])
+                                       '-s', subset])
             elif platform == 'Linux':
                 subprocess.check_call([os.path.join(mrt_path,'mrtmosaic'),
                                        '-i', file_list, '-o', output_filename,
-                                       '-s', "1 1"])
+                                       '-s', subset])
         except subprocess.CalledProcessError as e:
             print("Error in mrtmosaic")
             print(e.output)
