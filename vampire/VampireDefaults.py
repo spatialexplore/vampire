@@ -13,7 +13,7 @@ class VampireDefaults:
         # load default values from .ini file
         self.config = ExtParser.ExtParser()
         cur_dir = os.path.join(os.getcwd(), 'vampire.ini')
-        ini_files = ['..\\..\\vampire.ini',
+        ini_files = ['vampire.ini',
                      os.path.join(os.getcwd(), '..\\vampire.ini'),
                      cur_dir]
         dataset = self.config.read(ini_files)
