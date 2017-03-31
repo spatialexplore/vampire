@@ -3,7 +3,7 @@ import calendar
 import re
 
 def _get_month_from_day_of_year(doy, year):
-    date = datetime.datetime(year, 1, 1) + datetime.timedelta(doy)
+    date = datetime.datetime(year, 1, 1) + datetime.timedelta(doy-1)
     month = '%s'%date.strftime('%m')
     return month
 
@@ -29,11 +29,14 @@ def generate_output_filename(input_filename, in_pattern, out_pattern, ignore_lea
             if k in _m.groupdict():
                 ddict[k] = _m.groupdict()[k]
             else:
-                # check if need to convert day of year into month, day
+                # check if need to convert day of year into month, day or vice versa
                 if k == 'month' and 'dayofyear' in _m.groupdict():
                     ddict[k] = str(_get_month_from_day_of_year(int(_m.groupdict()['dayofyear']), int(_m.groupdict()['year']))).zfill(2)
                 elif k == 'day' and 'dayofyear' in _m.groupdict():
                     ddict[k] = str(_get_day_from_day_of_year(int(_m.groupdict()['dayofyear']), int(_m.groupdict()['year']), ignore_leap_year)).zfill(2)
+                elif k == 'dayofyear' and 'month' in _m.groupdict() and 'day' in _m.groupdict():
+                    dt = datetime.datetime(int(_m.groupdict()['year']), int(_m.groupdict()['month']), int(_m.groupdict()['day']))
+                    ddict[k] = str(dt.timetuple().tm_yday).zfill(3)
                 else:
                     ddict[k] = "" # empty string as default
         new_filename = out_pattern.format(**ddict)
