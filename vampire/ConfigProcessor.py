@@ -106,12 +106,16 @@ class ConfigProcessor():
                 _output_pattern = process['output_pattern']
             else:
                 _output_pattern = None
+            if 'product' in process:
+                _product = process['product']
+            else:
+                _product = None
             if process['layer'] == 'NDVI':
-                mp.extract_NDVI(_input_dir, _output_dir, _file_pattern, _output_pattern)
+                mp.extract_NDVI(_input_dir, _output_dir, _file_pattern, _output_pattern, _product)
             elif process['layer'] == 'EVI':
-                mp.extract_EVI(_input_dir, _output_dir, _file_pattern, _output_pattern)
+                mp.extract_EVI(_input_dir, _output_dir, _file_pattern, _output_pattern, _product)
             elif process['layer'] == 'LST_Day' or process['layer'] == 'LST_Night':
-                mp.extract_LST(_input_dir, _output_dir, _file_pattern, _output_pattern, process['layer'])
+                mp.extract_LST(_input_dir, _output_dir, _file_pattern, _output_pattern, process['layer'], _product)
         elif process['type'] == 'calc_average':
             if 'layer' in process:
                 if process['layer'] == 'day_night_temp':
@@ -147,6 +151,10 @@ class ConfigProcessor():
                         _input_pattern = process['file_pattern']
                     except Exception, e:
                         raise ConfigFileError("No input file pattern 'file_pattern' set.")
+                    try:
+                        _country = process['country']
+                    except Exception, e:
+                        raise ConfigFileError("No country provided.")
                     if 'output_pattern' in process:
                         _output_pattern = process['output_pattern']
                     else:
@@ -163,8 +171,10 @@ class ConfigProcessor():
                         _function_list = process['functions']
                     else:
                         _function_list = None
-                    mp.calc_longterm_stats(_input_dir, _output_dir, _product, _input_pattern, _output_pattern,
-                                           _start_date, _end_date, _function_list)
+                    mp.calc_longterm_stats(input_dir=_input_dir, output_dir=_output_dir, product=_product,
+                                           country=_country,
+                                           input_pattern=_input_pattern, output_pattern=_output_pattern,
+                                           start_date=_start_date, end_date=_end_date, function_list=_function_list)
 
         return None
 
