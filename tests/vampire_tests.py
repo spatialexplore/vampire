@@ -28,17 +28,17 @@ def test_basic():
 def test_chirps_download():
     vp = vampire.VampireDefaults.VampireDefaults()
     filename = "S:\\WFP2\\projects\\vampire_test_output\\test_chirps_download.yml"
-    cf = vampire.ConfigFactory.ConfigFactory('')
-    content = cf.generate_chirps_download('monthly',
-                                          vp.get('directories', 'default_download'),
-                                          datetime.datetime(2000, 1,1),
-                                          datetime.datetime(2014, 1,1))
+    cf = vampire.CHIRPSConfigFactory.CHIRPSConfigFactory('')
+    content = cf.generate_download_section('monthly',
+                                           vp.get('directories', 'default_download'),
+                                           datetime.datetime(2000, 1,1),
+                                           datetime.datetime(2014, 1,1))
     write_file(filename, content)
 
 def test_chirps_rainfall_long_term_average():
     test_output_dir = 'S:\\WFP2\\projects\\vampire_test_output\\chirps_lta'
     vp = vampire.VampireDefaults.VampireDefaults()
-    cf = vampire.ConfigFactory.ConfigFactory('')
+    cf = vampire.CHIRPSConfigFactory.CHIRPSConfigFactory('')
     data_dir = vp.get('CHIRPS', 'data_dir')
     lta_dir = vp.get('CHIRPS', 'data_dir')
 
@@ -142,7 +142,7 @@ def test_chirps_rainfall_long_term_average():
 def test_generate_chirps_rainfall_anomaly():
     test_output_dir = 'S:\\WFP2\\projects\\vampire_test_output\\chirps_ra'
     vp = vampire.VampireDefaults.VampireDefaults()
-    cf = vampire.ConfigFactory.ConfigFactory('')
+    cf = vampire.CHIRPSConfigFactory.CHIRPSConfigFactory('')
     data_dir = vp.get('CHIRPS', 'data_dir')
 
     # test lta for different intervals, for global, home country and regional country, downloading
@@ -187,7 +187,7 @@ def test_generate_chirps_rainfall_anomaly():
 def test_generate_days_since_last_rain():
     test_output_dir = 'S:\\WFP2\\projects\\vampire_test_output\\chirps_dslr'
     vp = vampire.VampireDefaults.VampireDefaults()
-    cf = vampire.ConfigFactory.ConfigFactory('')
+    cf = vampire.CHIRPSConfigFactory.CHIRPSConfigFactory('')
     data_dir = vp.get('CHIRPS', 'data_dir')
     filename = os.path.join(test_output_dir,
                             'test_chirps_days_since_last_rain.yml')
@@ -211,50 +211,96 @@ def test_generate_days_since_last_rain():
 def test_generate_vci():
     test_output_dir = 'S:\\WFP2\\projects\\vampire_test_output\\modis_vci'
     vp = vampire.VampireDefaults.VampireDefaults()
-    cf = vampire.ConfigFactory.ConfigFactory('')
+    start_date = datetime.datetime(2016,11,1)
+    cf = vampire.MODISConfigFactory.MODISConfigFactory('', country='Indonesia', start_date=start_date, end_date=start_date)
     data_dir = vp.get('MODIS', 'data_dir')
     filename = os.path.join(test_output_dir,
                             'test_modis_vci.yml')
     content = cf.generate_header_directory()
     content += cf.generate_header_run()
-    start_date = datetime.datetime(2016,11,1)
-    content += cf.generate_vci_config(country='Indonesia', start_date=start_date, end_date=start_date,
-                                      evi_cur_file=None)
+    content += cf.generate_vci_config()
     write_file(filename, content)
     return None
+
 
 def test_generate_tci():
     test_output_dir = 'S:\\WFP2\\projects\\vampire_test_output\\modis_tci'
     vp = vampire.VampireDefaults.VampireDefaults()
-    cf = vampire.ConfigFactory.ConfigFactory('')
+    start_date = datetime.datetime(2016,11,1)
+    cf = vampire.MODISConfigFactory.MODISConfigFactory('', country='Indonesia', start_date=start_date, end_date=start_date)
     data_dir = vp.get('MODIS', 'data_dir')
     filename = os.path.join(test_output_dir,
                             'test_modis_tci.yml')
     content = cf.generate_header_directory()
     content += cf.generate_header_run()
-    start_date = datetime.datetime(2016,11,1)
-    content += cf.generate_tci_config(country='Indonesia', start_date=start_date, end_date=start_date,
-                                      lst_cur_file=None)
+    content += cf.generate_tci_config(lst_cur_file=None)
+    write_file(filename, content)
+    return None
+
+def test_generate_lst_1km():
+    test_output_dir = 'S:\\WFP2\\projects\\vampire_test_output\\modis_lst_1km'
+    vp = vampire.VampireDefaults.VampireDefaults()
+    start_date = datetime.datetime(2016, 01, 01)
+    end_date = datetime.datetime(2017, 02, 01)
+    cf = vampire.MODISConfigFactory.MODISConfigFactory('', country='Sri Lanka', start_date=start_date, end_date=end_date)
+    data_dir = vp.get('MODIS', 'data_dir')
+    lta_dir = vp.get('MODIS', 'data_dir')
+    filename = os.path.join(test_output_dir,
+                            'test_modis_temperature_1km.yml')
+    content = cf.generate_header_directory()
+    content += cf.generate_header_run()
+    content += cf.generate_tci_config()
     write_file(filename, content)
     return None
 
 def test_generate_modis_lta():
     test_output_dir = 'S:\\WFP2\\projects\\vampire_test_output\\modis_lta'
     vp = vampire.VampireDefaults.VampireDefaults()
-    cf = vampire.ConfigFactory.ConfigFactory('')
     data_dir = vp.get('MODIS', 'data_dir')
     lta_dir = vp.get('MODIS', 'data_dir')
     start_date = datetime.date(1981, 01, 01)
     # test lta for global, home country and regional country, downloading
     country = ['Global', 'Indonesia', 'Sri Lanka']
     for c in country:
+        cf = vampire.MODISConfigFactory.MODISConfigFactory('', country=c, start_date=start_date)
         filename = os.path.join(test_output_dir,
                                 'test_modis_temperature_long_term_average_A_{test}.yml'.format(test=c))
 
         ccode = vp.get_country_code(c)
         content = cf.generate_header_directory()
         content += cf.generate_header_run()
-        content += cf.generate_temperature_long_term_average(country=c,
-                                                             start_date=start_date,
-                                                            )
+        content += cf.generate_temperature_long_term_average()
         write_file(filename, content)
+    return None
+
+def test_generate_vci_plj():
+    test_output_dir = 'S:\\WFP2\\projects\\vampire_test_output\\modis_vci'
+    vp = vampire.VampireDefaults.VampireDefaults()
+    data_dir = '/srv/Vampire/data/Download'
+    filename = os.path.join(test_output_dir,
+                            'test_modis_vci_plj.yml')
+    start_date = datetime.datetime(2015,11,1)
+    cf = vampire.MODISConfigFactory.MODISConfigFactory('', country='Indonesia', start_date=start_date)
+    content = cf.generate_header_directory()
+    content += cf.generate_header_run()
+    content += cf.generate_vci_config(download_dir=data_dir)
+    write_file(filename, content)
+    return None
+
+def test_generate_vhi():
+    test_output_dir = 'S:\\WFP2\\projects\\vampire_test_output\\modis_vhi'
+    vp = vampire.VampireDefaults.VampireDefaults()
+    start_date = datetime.datetime(2015,11,1)
+    cf = vampire.MODISConfigFactory.MODISConfigFactory('', country='Indonesia', start_date=start_date,
+                                                       end_date=start_date)
+#    cf = vampire.ConfigFactory.ConfigFactory('')
+    data_dir = '/srv/Vampire/data/Download'
+    filename = os.path.join(test_output_dir,
+                            'test_modis_vhi_idn.yml')
+    content = cf.generate_header_directory()
+    content += cf.generate_header_run()
+    content += cf.generate_vci_config()
+    content += cf.generate_tci_config()
+    content += cf.generate_vhi_config(interval='monthly')
+    write_file(filename, content)
+    return None
