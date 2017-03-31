@@ -3,6 +3,7 @@ import vampire.directory_utils
 import vampire.filename_utils
 import vampire.processing.raster_utils as raster_utils
 
+import os
 import platform
 platform = platform.system()
 if platform == "Linux":
@@ -22,6 +23,9 @@ class RasterProcessor:
                    output_pattern=None, overwrite=False, nodata=True, logger=None):
         _patterns = (file_pattern, output_pattern)
         _gdal_path = self.vampire.get('directories', 'gdal_dir')
+        if not os.path.isdir(output_dir):
+            # need to create output dir
+            os.makedirs(output_dir)
         raster_utils.crop_files(base_path=input_dir, output_path=output_dir, bounds=boundary_file,
                                 tools_path=_gdal_path,
                                 patterns=_patterns, overwrite=overwrite, nodata=nodata, logger=logger)
