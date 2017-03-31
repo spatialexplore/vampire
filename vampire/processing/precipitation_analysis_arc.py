@@ -21,6 +21,15 @@ def calc_rainfall_anomaly(cur_filename, lta_filename, dst_filename):
     dst.save(dst_filename)
     return None
 
+def standardized_precipitation_index(cur_filename, lta_filename, ltsd_filename, dst_filename):
+    _cur_raster = arcpy.sa.Raster(cur_filename)
+    _lta_raster = arcpy.sa.Raster(lta_filename)
+    _ltsd_raster = arcpy.sa.Raster(ltsd_filename)
+    dst_f = arcpy.sa.Divide(arcpy.sa.Minus(_cur_raster, _lta_raster), _ltsd_raster)
+    dst = arcpy.sa.Float(dst_f)
+    dst.save(dst_filename)
+    return None
+
 # calculate a drought index based on rainfall anomaly for the areas provided in the shapefile.
 # where rainfall anomaly is < rainfall_anomaly_threshold, it is also checked against precipitation
 # to ensure there is also < precipitation_threshold of rainfall during the interval.
@@ -173,3 +182,4 @@ def _calc_num_days_since(rasters, dslw_fn, dsld_fn, max_days):
     outFinal2.save(dslw_fn)
     outFinal4.save(dsld_fn)
     return 0
+
