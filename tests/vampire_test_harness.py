@@ -40,8 +40,9 @@ if __name__ == '__main__':
         if options.config_file:
             config_f = options.config_file
             print 'config file=', config_f
+            vp = vampire.VampireDefaults.VampireDefaults()
             cp = vampire.ConfigProcessor.ConfigProcessor()
-            cp.process_config(config_f)
+            cp.process_config(config_f, vp.logger)
         if options.verbose: print time.asctime()
         if options.verbose: print 'TOTAL TIME IN MINUTES:',
         if options.verbose: print (time.time() - start_time) / 60.0
