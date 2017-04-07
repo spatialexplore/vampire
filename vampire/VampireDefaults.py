@@ -6,10 +6,17 @@ import ast
 import re
 import json
 import ExtParser
+import logging
 
 class VampireDefaults:
 
     def __init__(self):
+        # set up logging
+        self.logger = logging.getLogger('Vampire')
+        logging.basicConfig(filename='vampire.log', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                            level=logging.DEBUG)
+
+
         # load default values from .ini file
         self.config = ExtParser.ExtParser()
         cur_dir = os.path.join(os.getcwd(), 'vampire.ini')
