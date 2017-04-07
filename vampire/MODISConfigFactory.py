@@ -13,8 +13,11 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
         self.end_date = end_date
         self.year = self.start_date.strftime("%Y")
         self.month = self.start_date.strftime("%m")
+        self.day = self.start_date.strftime("%d")
         _base_date = datetime.datetime.strptime("2000.{0}.01".format(self.month), "%Y.%m.%d")
-        self.day_of_year = _base_date.timetuple().tm_yday
+        self.base_day_of_year = _base_date.timetuple().tm_yday
+        self.day_of_year = self.start_date.timetuple().tm_yday
+        print 'day of year: {0}'.format(self.day_of_year)
         if calendar.isleap(int(self.year)) and self.day_of_year > 60:
             self.day_of_year = self.day_of_year - 1
         return
@@ -36,7 +39,8 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
         if self.start_date is not None:
             # use 1st of start_date month to make sure end month is also included
             _first_date = self.start_date.replace(self.start_date.year, self.start_date.month, 1)
-            _dates = dateutil.rrule.rrule(dateutil.rrule.MONTHLY, dtstart = _first_date).between(_first_date, self.end_date, inc=True)
+            _dates = dateutil.rrule.rrule(dateutil.rrule.MONTHLY, dtstart=_first_date).between(
+                _first_date, self.end_date, inc=True)
             _file_string += """
       dates: ["""
             for d in _dates:
@@ -77,7 +81,8 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
                        output_pattern=output_pattern)
         return file_string
 
-    def generate_lst_lta_section(self, product, input_dir, output_dir, input_pattern, output_pattern, functions):
+    def generate_lst_lta_section(self, product, input_dir, output_dir, input_pattern, output_pattern, functions,
+                                 interval):
         file_string = """
     # calculate long-term statistics
     - process: MODIS
@@ -101,6 +106,10 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
             file_string += """
       functions: {fn}""".format(fn=functions)
 
+        if interval is not None:
+            file_string += """
+      interval: {interval}""".format(interval=interval)
+
         return file_string
 
     def generate_tci_section(self, cur_file,
@@ -114,7 +123,8 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
                              max_pattern,
                              output_file,
                              output_dir,
-                             output_pattern):
+                             output_pattern,
+                             interval):
         file_string = """
     # Compute temperature condition index
     - process: Analysis
@@ -148,11 +158,16 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
       output_dir: {output_dir}
       output_file_pattern: '{output_pattern}'""".format(output_dir=output_dir, output_pattern=output_pattern)
 
+        if interval is not None:
+            file_string += """
+      interval: {interval}""".format(interval=interval)
+
         return file_string
 
     def generate_vci_section(self, cur_file, cur_dir, cur_pattern, evi_max_file, evi_max_dir, evi_max_pattern,
                              evi_min_file, evi_min_dir, evi_min_pattern, output_file, output_dir, output_pattern):
         file_string = """
+    # Compute vegetation condition index
     - process: Analysis
       type: VCI"""
         if cur_file is not None:
@@ -190,6 +205,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
                              vci_file, vci_dir, vci_pattern,
                              output_file, output_dir, output_pattern):
         file_string = """
+    # Compute vegetation health index
     - process: Analysis
       type: VHI"""
         if vci_file is not None:
@@ -198,7 +214,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
         else:
             file_string += """
       VCI_dir: {vci_dir}
-      VCI_pattern: {vci_pattern}""".format(vci_dir=vci_dir, vci_pattern=vci_pattern)
+      VCI_pattern: '{vci_pattern}'""".format(vci_dir=vci_dir, vci_pattern=vci_pattern)
 
         if tci_file is not None:
             file_string += """
@@ -206,7 +222,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
         else:
             file_string += """
       TCI_dir: {tci_dir}
-      TCI_pattern: {tci_pattern}""".format(tci_dir=tci_dir, tci_pattern=tci_pattern)
+      TCI_pattern: '{tci_pattern}'""".format(tci_dir=tci_dir, tci_pattern=tci_pattern)
 
         if output_file is not None:
             file_string += """
@@ -214,7 +230,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
         else:
             file_string += """
       output_dir: {output_dir}
-      output_pattern: {output_pattern}""".format(output_dir=output_dir, output_pattern=output_pattern)
+      output_pattern: '{output_pattern}'""".format(output_dir=output_dir, output_pattern=output_pattern)
 
         return file_string
 #         output_file: {product_dir}\\05_Analysis\\03_Early_Warning\Vegetation_Health_Index\{country_l}_cli_MOD11C3.{year}.{month}.1_km_monthly_EVI_LST_VHI.tif
@@ -232,14 +248,18 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
         else:
             _download_dir = download_dir
 
+        output_dir = _download_dir
+
         # get mosaic directory if needed
         if mosaic_dir is None:
             if self.country != 'Global':
                 _mosaic_dir = self.vampire.get('MODIS_PRODUCTS', '{0}.mosaic_dir'.format(product))
+                output_dir = _mosaic_dir
             else:
                 _mosaic_dir = None
         else:
             _mosaic_dir = mosaic_dir
+            output_dir = _mosaic_dir
 
         # set tiles if needed
         if tiles is not None:
@@ -253,11 +273,11 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
 
         # TODO: need to fix this to set a reasonable end date
         if self.start_date is not None and self.end_date is None:
-            self.start_date = None
+            self.end_date = datetime.datetime.today()
 
         file_string = self.generate_download_section(product=product, tiles=_tiles,
                                                      data_dir=_download_dir, mosaic_dir=_mosaic_dir)
-        return file_string
+        return file_string, output_dir
 
 
     def generate_extract_lst(self, product, data_dir, day_dir, night_dir):
@@ -279,7 +299,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
 
         # need to extract both day and night layers then average them
         # pattern for files to extract from
-        if self.vampire.get('MODIS_PRODUCTS', '{0}.mosaic_dir'.format(product) is None):
+        if self.vampire.get('MODIS_PRODUCTS', '{0}.mosaic_dir'.format(product)) is None:
             # no mosaic, so data uses day of year
             _modis_pattern = self.vampire.get('MODIS_LST', 'lst_pattern')
         else:
@@ -290,6 +310,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
             # replace generic year and month in pattern with the specific ones needed so the correct file is found.
             _modis_pattern = _modis_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.year))
             _modis_pattern = _modis_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.month))
+            _modis_pattern = _modis_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.day))
         _lst_output_pattern = self.vampire.get('MODIS_LST', 'lst_output_pattern')
         file_string = self.generate_extract_section(input_dir=_data_dir, output_dir=_day_dir,
                                                     product=product, layer='LST_Day',
@@ -319,14 +340,15 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
             _output_dir = output_dir
 
         # pattern for files to extract from
-        _modis_pattern = self.vampire.get('MODIS_EVI', 'evi_pattern')
+        _modis_pattern = self.vampire.get('MODIS', 'modis_monthly_pattern')
         if self.start_date == self.end_date and self.start_date is not None:
             # have a specific date - replace generic pattern with specific values
             # replace generic year and month in pattern with the specific ones needed so the correct file is found.
             _modis_pattern = _modis_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.year))
             _modis_pattern = _modis_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.month))
+            _modis_pattern = _modis_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.day))
         _evi_output_pattern = self.vampire.get('MODIS_EVI', 'evi_output_pattern')
-        _evi_layer = self.vampire.get('MODIS_PRODUCTS', '{0}.EVI_Name'.format(_product))
+        _evi_layer = 'EVI' #self.vampire.get('MODIS_PRODUCTS', '{0}.EVI_Name'.format(_product))
         file_string = self.generate_extract_section(input_dir=_data_dir,
                                                     output_dir=_output_dir,
                                                     product=_product,
@@ -515,6 +537,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
                 # replace generic year and month in pattern with the specific ones needed so the correct file is found.
                 _input_pattern = _input_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.year))
                 _input_pattern = _input_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.month))
+                _input_pattern = _input_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.day))
         else:
             _input_pattern = input_pattern
         file_string = self.generate_crop_section(boundary_file=_boundary_file,
@@ -559,7 +582,8 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
                             lst_extract_dir=None,       # directory for extracted average LST
                             crop=True,                  # crop LST to region if True
                             lst_country_dir=None,       # directory to save cropped file
-                            boundary_file=None):
+                            boundary_file=None,
+                            interval=None):
         file_string = """
     ## Processing chain begin - Compute Temperature Condition Index"""
 
@@ -568,10 +592,12 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
         else:
             _product = product
 
+        _o_dir = download_dir
         if download:
-            file_string += self.generate_download(product=_product, download_dir=download_dir)
+            _str, _o_dir = self.generate_download(product=_product, download_dir=download_dir)
+            file_string += _str
         if extract:
-            file_string += self.generate_extract_lst(product=_product, data_dir=download_dir,
+            file_string += self.generate_extract_lst(product=_product, data_dir=_o_dir,
                                                      day_dir=lst_extract_day_dir,
                                                      night_dir=lst_extract_night_dir)
             file_string += self.generate_average_lst(day_dir=lst_extract_day_dir, night_dir=lst_extract_night_dir,
@@ -584,13 +610,64 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
         _lst_max_dir = lst_max_dir
         _lst_min_dir = lst_min_dir
 
-        if lst_cur_pattern is None:
-            _lst_cur_pattern = self.vampire.get('MODIS_LST', 'lst_regional_pattern')
-            # replace generic year in pattern with the specific one needed so the correct file is found.
-            _lst_cur_pattern = _lst_cur_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.year))
-            _lst_cur_pattern = _lst_cur_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.month))
+        if interval is not None:
+            if interval != self.vampire.get('MODIS_PRODUCTS', '{0}.interval'.format(_product)):
+                # need to average over interval
+                if interval != '16Days':
+                    print "Sorry, interval conversion other than from 8-16 days is not currently supported"
+                    raise
+                else:
+                    # find the names of the files needed
+                    if lst_cur_pattern is None:
+                        _lst_cur_pattern = self.vampire.get('MODIS_LST', 'lst_regional_pattern')
+                        # replace generic year in pattern with the specific ones needed so the correct files are found.
+                        print self.day_of_year
+                        print self.base_day_of_year
+                        print self.start_date
+                        if (int(self.day_of_year)-1) % 16 == 0:
+                            # this is a 16-day date, use this and the previous 8-day data
+                            _prev_date = datetime.datetime(int(self.year), 1, 1) + datetime.timedelta(self.day_of_year - 9)
+                            _lst_tmp_pattern = _lst_cur_pattern
+                            _lst_cur_pattern = _lst_cur_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.
+                                                                        format(self.year))
+                            _lst_tmp_pattern = _lst_tmp_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.
+                                                                        format(_prev_date.year))
+                            _lst_cur_pattern = _lst_cur_pattern.replace('(?P<month>\d{2})',
+                                                                        '(?P<month>{0:0>2})'.
+                                                                        format(self.month))
+                            _lst_tmp_pattern = _lst_tmp_pattern.replace('(?P<month>\d{2})',
+                                                                        '(?P<month>{0:0>2})'.
+                                                                        format(_prev_date.month))
+                            _lst_cur_pattern = _lst_cur_pattern.replace('(?P<day>\d{2})',
+                                                                        '(?P<day>{0:0>2})'.
+                                                                        format(self.day))
+                            _lst_tmp_pattern = _lst_tmp_pattern.replace('(?P<day>\d{2})',
+                                                                        '(?P<day>{0:0>2})'.
+                                                                        format(_prev_date.day))
+                            _lst_cur_pattern = '{0}|{1}'.format(_lst_cur_pattern, _lst_tmp_pattern)
+                        else:
+                            # day is not a 16-day date....
+                            raise ValueError("This date isn't a 16-day date")
+                    else:
+                        _lst_cur_pattern = lst_cur_pattern
+            else:
+                if lst_cur_pattern is None:
+                    _lst_cur_pattern = self.vampire.get('MODIS_LST', 'lst_regional_pattern')
+                    # replace generic year in pattern with the specific one needed so the correct file is found.
+                    _lst_cur_pattern = _lst_cur_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.year))
+                    _lst_cur_pattern = _lst_cur_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.month))
+                    _lst_cur_pattern = _lst_cur_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.day))
+                else:
+                    _lst_cur_pattern = lst_cur_pattern
         else:
-            _lst_cur_pattern = lst_cur_pattern
+            if lst_cur_pattern is None:
+                _lst_cur_pattern = self.vampire.get('MODIS_LST', 'lst_regional_pattern')
+                # replace generic year in pattern with the specific one needed so the correct file is found.
+                _lst_cur_pattern = _lst_cur_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.year))
+                _lst_cur_pattern = _lst_cur_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.month))
+                _lst_cur_pattern = _lst_cur_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.day))
+            else:
+                _lst_cur_pattern = lst_cur_pattern
 
         if self.country == 'Global':
             _prefix = self.vampire.get('MODIS', 'global_prefix')
@@ -610,16 +687,30 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
 
         if lst_max_file is None:
             if lst_max_dir is None:
-                _lst_max_dir = os.path.join(_prefix,
-                                            self.vampire.get('MODIS_LST_Long_Term_Average', 'lta_dir_suffix'))
+                if interval is not None and interval == '16Days':
+                    _split = self.vampire.get('MODIS_LST_Long_Term_Average',
+                                              'lta_dir_suffix').rfind('StatisticsBy') + 12
+                    _lst_max_dir = os.path.join(_prefix, '{0}{1}'.format(self.vampire.get('MODIS_LST_Long_Term_Average',
+                                              'lta_dir_suffix')[:_split], interval)
+                                            )
+                else:
+                    _lst_max_dir = os.path.join(_prefix,
+                                                self.vampire.get('MODIS_LST_Long_Term_Average', 'lta_dir_suffix'))
             _lst_max_file = None
         else:
             _lst_max_file = lst_max_file
 
         if lst_min_file is None:
             if lst_min_dir is None:
-                _lst_min_dir = os.path.join(_prefix,
-                                            self.vampire.get('MODIS_LST_Long_Term_Average', 'lta_dir_suffix'))
+                if interval is not None and interval == '16Days':
+                    _split = self.vampire.get('MODIS_LST_Long_Term_Average',
+                                              'lta_dir_suffix').rfind('StatisticsBy') + 12
+                    _lst_min_dir = os.path.join(_prefix, '{0}{1}'.format(self.vampire.get('MODIS_LST_Long_Term_Average',
+                                              'lta_dir_suffix')[:_split], interval)
+                                            )
+                else:
+                    _lst_min_dir = os.path.join(_prefix,
+                                                self.vampire.get('MODIS_LST_Long_Term_Average', 'lta_dir_suffix'))
             _lst_min_file = None
         else:
             _lst_min_file = lst_min_file
@@ -657,7 +748,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
                                                  max_file=_lst_max_file, max_dir=_lst_max_dir,
                                                  max_pattern=_lst_max_pattern,
                                                  output_file=_output_file, output_dir=_output_dir,
-                                                 output_pattern=_output_pattern)
+                                                 output_pattern=_output_pattern, interval=interval)
         file_string += """
     ## Processing chain end - Compute Temperature Condition Index
 """
@@ -989,7 +1080,8 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
                                                lst_average_dir=None,    # directory for average of LST day & night
                                                crop=True,               # crop EVI to region if True
                                                crop_dir=None,           # directory to save cropped files
-                                               boundary_file=None):     # shapefile for cropping boundary
+                                               boundary_file=None,      # shapefile for cropping boundary
+                                               interval=None):
         # set up functions
         if functions is None:
             _functions = ['MIN', 'MAX']
@@ -1004,7 +1096,8 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
     ## Processing chain begin - Compute Land Surface Temperature Long-term Average"""
 
         if download:
-            file_string += self.generate_download(_product, download_dir)
+            _str, _o_dir = self.generate_download(_product, download_dir)
+            file_string += _str
         if extract:
             file_string += self.generate_extract_lst(_product, download_dir, lst_extract_day_dir, lst_extract_night_dir)
         if average:
@@ -1051,7 +1144,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
         file_string += self.generate_lst_lta_section(product=_product, input_dir=_data_dir, output_dir=_lta_dir,
                                                      input_pattern=_lta_input_pattern,
                                                      output_pattern=_lta_output_pattern,
-                                                     functions=_functions)
+                                                     functions=_functions, interval=interval)
         file_string += """
     ## Processing chain end - Compute Temperature Long-Term Statistics
 """
@@ -1100,12 +1193,13 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
             _product = self.vampire.get('MODIS', 'vegetation_product')
         else:
             _product = product
-
+        _o_dir = download_dir
         if download:
-            file_string += self.generate_download(product=_product, download_dir=download_dir,
+            _str, _o_dir = self.generate_download(product=_product, download_dir=download_dir,
                                                   mosaic_dir=mosaic_dir, tiles=tiles)
+            file_string += _str
         if extract:
-            file_string += self.generate_extract_evi(_product, download_dir, evi_extract_dir)
+            file_string += self.generate_extract_evi(_product, _o_dir, evi_extract_dir)
 
         if crop:
             file_string += self.generate_crop_evi(_product, evi_extract_dir, evi_country_dir)
@@ -1129,6 +1223,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
             # replace generic year in pattern with the specific one needed so the correct file is found.
             _evi_cur_pattern = _evi_cur_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.year))
             _evi_cur_pattern = _evi_cur_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.month))
+            _evi_cur_pattern = _evi_cur_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.day))
         _evi_max_file = evi_max_file
         _evi_min_file = evi_min_file
         _evi_max_dir = evi_max_dir
@@ -1172,8 +1267,6 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
                 _evi_min_dir = os.path.join(_prefix, self.vampire.get('MODIS_EVI_Long_Term_Average', 'lta_dir_suffix'))
             _evi_min_file = None
 
-        file_string = """
-    ## Processing chain begin - Compute Vegetation Condition Index"""
         file_string += self.generate_vci_section(cur_file=_cur_file, cur_dir=_evi_dir, cur_pattern=_evi_cur_pattern,
                                                  evi_max_file=_evi_max_file, evi_max_dir=_evi_max_dir,
                                                  evi_max_pattern=_evi_max_pattern, evi_min_file=_evi_min_file,
@@ -1186,7 +1279,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
 """
         return file_string
 
-    def generate_vhi_config(self, interval,
+    def generate_vhi_config(self,
                             tci_file=None,
                             tci_dir=None,
                             tci_pattern=None,
@@ -1211,6 +1304,9 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
             _tci_file = None
             if tci_pattern is None:
                 _tci_pattern = self.vampire.get('MODIS_TCI', 'tci_pattern')
+                _tci_pattern = _tci_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.year))
+                _tci_pattern = _tci_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(self.month))
+                _tci_pattern = _tci_pattern.replace('(?P<day>\d{2})', '(?P<day>{0})'.format(self.day))
             else:
                 _tci_pattern = tci_pattern
         else:
@@ -1226,6 +1322,9 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
             _vci_file = None
             if vci_pattern is None:
                 _vci_pattern = self.vampire.get('MODIS_VCI', 'vci_pattern')
+                _vci_pattern = _vci_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.year))
+                _vci_pattern = _vci_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(self.month))
+                _vci_pattern = _vci_pattern.replace('(?P<day>\d{2})', '(?P<day>{0})'.format(self.day))
             else:
                 _vci_pattern = vci_pattern
         else:
