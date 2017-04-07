@@ -1,6 +1,6 @@
 
 import os
-import re
+import regex
 import datetime
 import dateutil
 import functools
@@ -13,10 +13,12 @@ if platform == "Linux":
     import precipitation_analysis_os as precipitation_analysis
     import vegetation_analysis_os as vegetation_analysis
     import temperature_analysis_os as temperature_analysis
+    import calculate_statistics_os as calculate_statistics
 elif platform == "Windows":
     import precipitation_analysis_arc as precipitation_analysis
     import vegetation_analysis_arc as vegetation_analysis
     import temperature_analysis_arc as temperature_analysis
+    import calculate_statistics_arc as calculate_statistics
 
 
 class ClimateAnalysis():
@@ -37,6 +39,7 @@ class ClimateAnalysis():
                               cur_pattern=None, lta_pattern=None, dst_pattern=None,
                               dst_dir=None
                              ):
+        self.vampire.logger.info('entering calc_rainfall_anomaly')
         if cur_filename is None:
             # get filename from pattern and directory
             files_list = directory_utils.get_matching_files(cur_dir, cur_pattern)
@@ -59,12 +62,14 @@ class ClimateAnalysis():
         precipitation_analysis.calc_rainfall_anomaly(cur_filename=cur_filename,
                                                      lta_filename=lta_filename,
                                                      dst_filename=dst_filename)
+        self.vampire.logger.info('leaving calc_rainfall_anomaly')
         return None
 
     def calc_vci(self, cur_filename=None, cur_dir=None, cur_pattern=None,
                  evi_max_filename=None, evi_max_dir=None, evi_max_pattern=None,
                  evi_min_filename=None, evi_min_dir=None, evi_min_pattern=None,
                  dst_filename=None, dst_dir=None, dst_pattern=None):
+        self.vampire.logger.info('entering calc_vci')
         if cur_filename is None:
             # get filename from pattern and directory
             files_list = directory_utils.get_matching_files(cur_dir, cur_pattern)
@@ -101,22 +106,45 @@ class ClimateAnalysis():
             _dst_filename = dst_filename
 
         vegetation_analysis.calc_VCI(_cur_filename, _evi_max_filename, _evi_min_filename, _dst_filename)
-
+        self.vampire.logger.info('leaving calc_vci')
         return None
 
     def calc_tci(self, cur_filename=None, cur_dir=None, cur_pattern=None,
                  lst_max_filename=None, lst_max_dir=None, lst_max_pattern=None,
                  lst_min_filename=None, lst_min_dir=None, lst_min_pattern=None,
                  dst_filename=None, dst_dir=None, dst_pattern=None):
+        self.vampire.logger.info('entering calc_tci')
+        _temp_file = None
+        if dst_dir is None:
+            _dst_dir = self.vampire.get('MODIS_VCI', 'vci_product_dir')
+        else:
+            _dst_dir = dst_dir
         if cur_filename is None:
             # get filename from pattern and directory
             files_list = directory_utils.get_matching_files(cur_dir, cur_pattern)
             try:
-                _cur_filename = files_list[0]
+                if files_list and len(files_list) > 1:
+                    # more than one match - average files
+                    print 'Found more than one matching temperature file in directory - averaging '
+                    print files_list
+                    _temp_file = '{0}'.format(os.path.join(_dst_dir,
+                                                           os.path.basename(files_list[len(files_list)-1])))
+                    calculate_statistics.calc_average(files_list, _temp_file)
+                    _cur_filename = _temp_file
+                else:
+                    _cur_filename = files_list[0]
             except IndexError, e:
                 raise ValueError('Cannot find matching temperature file in directory')
         else:
-            _cur_filename = cur_filename
+            if not isinstance(cur_filename, basestring) and isinstance(cur_filename, list):
+                # cur_filename is a list - need to average
+                print 'More than one current file provided - averaging '
+                print cur_filename
+                _temp_file = '{0}'.format(os.path.join(_dst_dir, os.path.basename(cur_filename[len(cur_filename)-1])))
+                calculate_statistics.calc_average(cur_filename, _temp_file)
+                _cur_filename = _temp_file
+            else:
+                _cur_filename = cur_filename
 
         _lst_max_filename = lst_max_filename
         if _lst_max_filename is None:
@@ -138,21 +166,32 @@ class ClimateAnalysis():
 
         if dst_filename is None:
             # get new filename from directory and pattern
+            if cur_pattern is None:
+                _cur_pattern = self.vampire.get('MODIS_LST', 'lst_regional_pattern')
+            else:
+                _cur_pattern = cur_pattern
             _dst_filename = os.path.join(dst_dir, filename_utils.generate_output_filename(
-                os.path.split(_cur_filename)[1], cur_pattern, dst_pattern))
+                os.path.split(_cur_filename)[1], _cur_pattern, dst_pattern))
         else:
             _dst_filename = dst_filename
+        if not os.path.isdir(dst_dir):
+            # make directory if not existing
+            os.makedirs(dst_dir)
 
         temperature_analysis.calc_TCI(cur_filename=_cur_filename,
                                       lta_max_filename=_lst_max_filename,
                                       lta_min_filename=_lst_min_filename,
                                       dst_filename=_dst_filename
                                       )
+        if _temp_file is not None:
+            os.remove(os.path.join(_dst_dir, _temp_file))
+        self.vampire.logger.info('leaving calc_tci')
         return None
 
     def calc_vhi(self, vci_filename=None, vci_dir=None, vci_pattern=None,
                  tci_filename=None, tci_dir=None, tci_pattern=None,
                  dst_filename=None, dst_dir=None, dst_pattern=None):
+        self.vampire.logger.info('entering calc_vhi')
         if vci_filename is None:
             # get filename from pattern and directory
             files_list = directory_utils.get_matching_files(vci_dir, vci_pattern)
@@ -177,21 +216,28 @@ class ClimateAnalysis():
                 os.path.split(_vci_filename)[1], vci_pattern, dst_pattern))
         else:
             _dst_filename = dst_filename
+        if not os.path.isdir(dst_dir):
+            # destination directory does not exist, create it first
+            os.makedirs(dst_dir)
         vegetation_analysis.calc_VHI(vci_filename=_vci_filename,
                                      tci_filename=_tci_filename,
                                      dst_filename=_dst_filename
                                      )
+        self.vampire.logger.info('leaving calc_vhi')
         return None
 
     def calc_drought_impact(self, vhi_filename, poverty_filename):
+        self.vampire.logger.info('entering calc_drought_impact')
 
+        self.vampire.logger.info('leaving calc_drought_impact')
         return None
 
     def calc_days_since_last_rainfall(self, data_dir, data_pattern, dst_dir, start_date, threshold, max_days):
+        self.vampire.logger.info('entering calc_days_since_last_rainfall')
         # get list of files from start_date back max_days
         files_list = directory_utils.get_matching_files(data_dir, data_pattern)
         raster_list = []
-        _r_in = re.compile(data_pattern)
+        _r_in = regex.compile(data_pattern)
         for f in files_list:
             _m = _r_in.match(os.path.basename(f))
             max_date = start_date - datetime.timedelta(days=max_days)
@@ -205,11 +251,11 @@ class ClimateAnalysis():
                 end = m.end(subgroup)
                 return m.group()[:start] + replacement + m.group()[end:]
 
-        _ref_file = re.sub(data_pattern, functools.partial(replace_closure, 'year', '{0}'.format(start_date.year)),
+        _ref_file = regex.sub(data_pattern, functools.partial(replace_closure, 'year', '{0}'.format(start_date.year)),
                            os.path.basename(files_list[0]))
-        _ref_file = re.sub(data_pattern, functools.partial(replace_closure, 'month', '{0}'.format(start_date.month)),
+        _ref_file = regex.sub(data_pattern, functools.partial(replace_closure, 'month', '{0}'.format(start_date.month)),
                            _ref_file)
-        _ref_file = re.sub(data_pattern, functools.partial(replace_closure, 'day', '{0}'.format(start_date.day)),
+        _ref_file = regex.sub(data_pattern, functools.partial(replace_closure, 'day', '{0}'.format(start_date.day)),
                            _ref_file)
         dslw_file = os.path.join(dst_dir,
                                  filename_utils.generate_output_filename(_ref_file, data_pattern,
@@ -238,4 +284,5 @@ class ClimateAnalysis():
                                                     rainfall_accum_filename=ra_file,
                                                     temp_dir=self.vampire.get('directories', 'temp_dir'),
                                                     threshold=threshold, max_days=max_days)
+        self.vampire.logger.info('leaving calc_days_since_last_rainfall')
         return None
