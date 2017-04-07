@@ -171,8 +171,12 @@ class ConfigProcessor():
                         _function_list = process['functions']
                     else:
                         _function_list = None
+                    if 'interval' in process:
+                        _interval = process['interval']
+                    else:
+                        _interval = None
                     mp.calc_longterm_stats(input_dir=_input_dir, output_dir=_output_dir, product=_product,
-                                           country=_country,
+                                           country=_country, interval=_interval,
                                            input_pattern=_input_pattern, output_pattern=_output_pattern,
                                            start_date=_start_date, end_date=_end_date, function_list=_function_list)
 
@@ -400,27 +404,62 @@ class ConfigProcessor():
                     else:
                         _output_dir = None
                     _output_pattern = process['output_file_pattern']
+
             ca.calc_tci(cur_filename=_cur_file, cur_dir=_cur_dir, cur_pattern=_cur_pattern,
                         lst_max_filename=_lst_max_file, lst_max_dir=_lst_max_dir, lst_max_pattern=_lst_max_pattern,
                         lst_min_filename=_lst_min_file, lst_min_dir=_lst_min_dir, lst_min_pattern=_lst_min_pattern,
-                        dst_filename=_output_file, dst_dir=_output_dir, dst_pattern=_output_pattern)
+                        dst_filename=_output_file, dst_dir=_output_dir, dst_pattern=_output_pattern,
+                        )
 
         elif process['type'] == 'VHI':
             if logger: logger.debug("Compute Vegetation Health Index")
-            try:
-                vci_file = process['VCI_file']
-            except Exception, e:
-                raise ConfigFileError("No VCI file 'VCI_file' specified.", e)
-            try:
-                tci_file = process['TCI_file']
-            except Exception, e:
-                raise ConfigFileError("No TCI file 'TCI_file' specified.", e)
-            try:
-                out_file = process['output_file']
-            except Exception, e:
-                raise ConfigFileError("No output file 'output_file' specified.", e)
+            _vci_file = None
+            _vci_dir = None
+            _vci_pattern = None
+            _tci_file = None
+            _tci_dir = None
+            _tci_pattern = None
+            _out_file = None
+            _output_dir = None
+            _output_pattern = None
 
-            ca.calc_vhi(vci_filename=vci_file, tci_filename=tci_file, dst_filename=out_file)
+            if 'VCI_file' in process:
+                _vci_file = process['VCI_file']
+            else:
+                if not 'VCI_pattern' in process:
+                    raise ConfigFileError("No VCI file 'VCI_file' or pattern 'VCI_pattern' specified.", None)
+                else:
+                    if 'VCI_dir' in process:
+                        _vci_dir = process['VCI_dir']
+                    else:
+                        _vci_dir = None
+                    _vci_pattern = process['VCI_pattern']
+            if 'TCI_file' in process:
+                _tci_file = process['TCI_file']
+            else:
+                if not 'TCI_pattern' in process:
+                    raise ConfigFileError("No TCI file 'TCI_file' or pattern 'TCI_pattern' specified.", None)
+                else:
+                    if 'TCI_dir' in process:
+                        _tci_dir = process['TCI_dir']
+                    else:
+                        _tci_dir = None
+                    _tci_pattern = process['TCI_pattern']
+            if 'output_file' in process:
+                _out_file = process['output_file']
+            else:
+                if not 'output_pattern' in process:
+                    raise ConfigFileError("No output file 'output_file' or pattern 'output_pattern' specified.", None)
+                else:
+                    if 'output_dir' in process:
+                        _output_dir = process['output_dir']
+                    else:
+                        _output_dir = None
+                    _output_pattern = process['output_pattern']
+
+            ca.calc_vhi(vci_filename=_vci_file, vci_dir=_vci_dir, vci_pattern=_vci_pattern,
+                        tci_filename=_tci_file, tci_dir=_tci_dir, tci_pattern=_tci_pattern,
+                        dst_filename=_out_file, dst_dir=_output_dir, dst_pattern=_output_pattern)
 
         return None
 
@@ -461,6 +500,27 @@ class ConfigProcessor():
             rp.crop_files(input_dir=_input_dir, output_dir=_output_dir, boundary_file=_boundary_file,
                           file_pattern=_pattern, output_pattern=_out_pattern, overwrite=_overwrite,
                           nodata=_no_data, logger=logger)
+        # elif process['type'] == 'average_files':
+        #     if logger: logger.debug("Compute average of raster files")
+        #
+        #     if 'file_pattern' in process:
+        #         _pattern = process['file_pattern']
+        #     else:
+        #         _pattern = None
+        #     if 'output_pattern' in process:
+        #         _out_pattern = process['output_pattern']
+        #     else:
+        #         _out_pattern = None
+        #     try:
+        #         _input_dir = process['input_dir']
+        #     except Exception, e:
+        #         raise ConfigFileError("No input directory 'input_dir' set.", e)
+        #     try:
+        #         _output_dir = process['output_dir']
+        #     except Exception, e:
+        #         raise ConfigFileError("No output directory 'output_dir' set.", e)
+        #     rp.average_files(input_dir=_input_dir, input_pattern=_pattern,
+        #                      output_dir=_output_dir, output_pattern=_out_pattern)
         return None
     #
 
