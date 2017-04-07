@@ -1,17 +1,21 @@
 import os
 import gzip
-import re
+import regex
 
-def get_matching_files(base_dir, pattern):
+def get_matching_files(base_dir, pattern, logger=None):
     file_list = []
     if os.path.exists(base_dir):
         _all_files = os.listdir(base_dir)
+        if not _all_files and logger is not None:
+            logger.debug('No files in %s', base_dir)
         for f in _all_files:
             pth = os.path.join(base_dir, f)
             if not os.path.isdir(pth):
                 # check file against filter pattern
-                if re.match(pattern, f):
+                if regex.match(pattern, f):
                     file_list.append(pth)
+        if not file_list and logger is not None:
+            logger.debug('No files in %s match %s', base_dir, pattern)
     return file_list
 
 def unzip_file_list(file_list):
