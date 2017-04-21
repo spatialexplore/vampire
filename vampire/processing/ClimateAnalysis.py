@@ -8,17 +8,29 @@ import vampire.VampireDefaults as VampireDefaults
 import vampire.directory_utils as directory_utils
 import vampire.filename_utils as filename_utils
 import platform
-platform = platform.system()
-if platform == "Linux":
-    import precipitation_analysis_os as precipitation_analysis
-    import vegetation_analysis_os as vegetation_analysis
-    import temperature_analysis_os as temperature_analysis
-    import calculate_statistics_os as calculate_statistics
-elif platform == "Windows":
+try:
     import precipitation_analysis_arc as precipitation_analysis
     import vegetation_analysis_arc as vegetation_analysis
     import temperature_analysis_arc as temperature_analysis
     import calculate_statistics_arc as calculate_statistics
+except ImportError:
+    import precipitation_analysis_os as precipitation_analysis
+    import vegetation_analysis_os as vegetation_analysis
+    import temperature_analysis_os as temperature_analysis
+    import calculate_statistics_os as calculate_statistics
+
+
+# platform = platform.system()
+# if platform == "Linux":
+#     import precipitation_analysis_os as precipitation_analysis
+#     import vegetation_analysis_os as vegetation_analysis
+#     import temperature_analysis_os as temperature_analysis
+#     import calculate_statistics_os as calculate_statistics
+# elif platform == "Windows":
+#     import precipitation_analysis_arc as precipitation_analysis
+#     import vegetation_analysis_arc as vegetation_analysis
+#     import temperature_analysis_arc as temperature_analysis
+#     import calculate_statistics_arc as calculate_statistics
 
 
 class ClimateAnalysis():

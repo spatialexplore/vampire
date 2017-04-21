@@ -8,13 +8,21 @@ import re
 import datetime
 
 import platform
-platform = platform.system()
-if platform == "Linux":
-    import calculate_statistics_os as calculate_statistics
-    import precipitation_analysis_os as precip_analysis
-elif platform == "Windows":
+try:
     import calculate_statistics_arc as calculate_statistics
     import precipitation_analysis_arc as precip_analysis
+except ImportError:
+    import calculate_statistics_os as calculate_statistics
+    import precipitation_analysis_os as precip_analysis
+
+
+# platform = platform.system()
+# if platform == "Linux":
+#     import calculate_statistics_os as calculate_statistics
+#     import precipitation_analysis_os as precip_analysis
+# elif platform == "Windows":
+#     import calculate_statistics_arc as calculate_statistics
+#     import precipitation_analysis_arc as precip_analysis
 
 class CHIRPSProcessor:
     def __init__(self):

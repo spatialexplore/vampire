@@ -14,14 +14,24 @@ import subprocess
 #from subprocess import check_call, CalledProcessError
 from pymodis import downmodis
 
-import platform
-platform = platform.system()
-if platform == "Linux":
-    import calculate_statistics_os as calculate_statistics
-    import vegetation_analysis_os as vegetation_analysis
-elif platform == "Windows":
+try:
     import calculate_statistics_arc as calculate_statistics
+except ImportError:
+    import calculate_statistics_os as calculate_statistics
+
+try:
     import vegetation_analysis_arc as vegetation_analysis
+except ImportError:
+    import vegetation_analysis_os as vegetation_analysis
+
+#import platform
+#platform = platform.system()
+#if platform == "Linux":
+#    import calculate_statistics_os as calculate_statistics
+#    import vegetation_analysis_os as vegetation_analysis
+##elif platform == "Windows":
+##    import calculate_statistics_arc as calculate_statistics
+##    import vegetation_analysis_arc as vegetation_analysis
 
 class MODISProcessor:
     def __init__(self):
