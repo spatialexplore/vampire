@@ -63,9 +63,12 @@ class CHIRPSProcessor:
         _ftp_dir = self.vampire.get('CHIRPS', 'ftp_dir_{0}'.format(interval.lower()))
         files_list = []
         all_files = []
+        if not os.path.exists(output_dir):
+            # output directory does not exist, create it first
+            os.makedirs(output_dir)
         with ftputil.FTPHost(self.vampire.get('CHIRPS', 'ftp_address'),
-            self.vampire.get('CHIRPS', 'ftp_user'),
-            self.vampire.get('CHIRPS', 'ftp_password')) as ftp_host:
+                             self.vampire.get('CHIRPS', 'ftp_user'),
+                             self.vampire.get('CHIRPS', 'ftp_password')) as ftp_host:
             ftp_host.chdir(_ftp_dir)
             if interval.lower() == 'daily':
                 # daily files are in directory by year so create new list of files
