@@ -31,12 +31,12 @@ def generate_config_file(output_file, params):
                                                    start_date=params['start_date'], end_date=params['start_date'])
         pfile.write(cf.generate_header_directory())
         if 'product' in params:
-            if params['product'].lower() == "rainfall anomaly":
+            if params['product'].lower() == "rainfall_anomaly":
                 print "Not currently supported"
-                # pfile.write(self.generate_header_chirps())
-                # pfile.write(self.generate_header_run())
-                # pfile.write(self.generate_rainfall_anomaly_config(params['country'], params['interval'],
-                #                                                params['start_date'], params['output']))
+                pfile.write(cf.generate_header_chirps())
+                pfile.write(cf.generate_header_run())
+                pfile.write(cf.generate_rainfall_anomaly_config(params['country'], params['interval'],
+                                                                params['start_date']))
             elif params['product'].lower() == "vhi":
                 pfile.write(mf.generate_header_run())
                 pfile.write(mf.generate_vci_config())
@@ -87,7 +87,11 @@ if __name__ == '__main__':
             params['interval'] = _interval
         _start_date = None
         if options.start_date:
-            _start_date = datetime.datetime.strptime(options.start_date, "%Y-%m")
+            try:
+                _start_date = datetime.datetime.strptime(options.start_date, "%Y-%m")
+            except ValueError:
+                # can't parse string, try with day as well
+                _start_date = datetime.datetime.strptime(options.start_date, "%Y-%m-%d")
             print 'start_date=', _start_date
             params['start_date'] = _start_date
         generate_config_file(_output, params)
