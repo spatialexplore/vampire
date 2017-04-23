@@ -27,7 +27,8 @@ CHIRPS:
     - process: CHIRPS
       type: download
       interval: {interval}
-      output_dir: {output_dir}""".format(interval=interval, output_dir=data_dir)
+      output_dir: {output_dir}
+      """.format(interval=interval, output_dir=data_dir)
         # if start and end dates are specified, only download between these dates
         if start_date is not None:
             year = start_date.strftime("%Y")
@@ -56,6 +57,21 @@ CHIRPS:
              file_pattern=file_pattern)
         return file_string
 
+    def generate_download(self, country, interval, download_dir, start_date, end_date):
+        # set up download directory
+        if download_dir is None:
+            # data_dir not set, use default CHIRPS data directory structure
+            _download_dir = os.path.join(self.vampire.get('CHIRPS', 'data_dir'), interval.capitalize())
+        else:
+            _download_dir = download_dir
+
+        # TODO: need to fix this to set a reasonable end date
+        if start_date is not None and end_date is None:
+            end_date = datetime.datetime.today()
+
+        file_string = self.generate_download_section(interval=interval, data_dir=_download_dir,
+                                                     start_date=start_date, end_date=end_date)
+        return file_string
 
     # Generate config file to calculate long term averages of CHIRPS data for a country or region
     # Takes: country name, interval (MONTHLY, SEASONAL, DEKAD)
@@ -88,13 +104,13 @@ CHIRPS:
                 # file pattern is for global lta files
                 _file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'global_lta_monthly_pattern')
                 _crop_pattern = '{country}_{pattern}'.format(
-                    country=_country_code,
+                    country=_country_code.lower(),
                     pattern=self.vampire.get('CHIRPS_Longterm_Average', 'global_lta_output_monthly_pattern'))
             else:
                 # file pattern is for global CHIRPS files
                 _file_pattern = self.vampire.get('CHIRPS', 'global_monthly_pattern')
                 _crop_pattern = "{country}{crop_output_pattern}".format(
-                    country=_country_code,
+                    country=_country_code.lower(),
                     crop_output_pattern=self.vampire.get('CHIRPS', 'crop_regional_output_monthly_pattern'))
         elif interval == 'seasonal':
             _interval_name = 'season'
@@ -102,25 +118,25 @@ CHIRPS:
                 # file pattern is for global lta
                 _file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'global_lta_seasonal_pattern')
                 _crop_pattern = '{country}_{pattern}'.format(
-                    country=_country_code,
+                    country=_country_code.lower(),
                     pattern=self.vampire.get('CHIRPS_Longterm_Average', 'global_lta_output_seasonal_pattern'))
             else:
                 # file pattern is for global CHIRPS files
                 _file_pattern = self.vampire.get('CHIRPS', 'global_seasonal_pattern')
                 _crop_pattern = "{country}{crop_output_pattern}".format(
-                    country=_country_code,
+                    country=_country_code.lower(),
                     crop_output_pattern=self.vampire.get('CHIRPS', 'crop_regional_output_seasonal_pattern'))
         elif interval == 'dekad':
             if crop_only:
                 # file pattern is for global lta
                 _file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'global_lta_dekad_pattern')
                 _crop_pattern = '{country}_{pattern}'.format(
-                    country=_country_code,
+                    country=_country_code.lower(),
                     pattern=self.vampire.get('CHIRPS_Longterm_Average', 'global_lta_output_dekad_pattern'))
             else:
                 _file_pattern = self.vampire.get('CHIRPS', 'global_dekad_pattern')
                 _crop_pattern = "{country}{crop_output_pattern}".format(
-                    country=_country_code,
+                    country=_country_code.lower(),
                     crop_output_pattern=self.vampire.get('CHIRPS', 'crop_regional_output_dekad_pattern'))
         else:
             # interval not recognised
@@ -131,10 +147,9 @@ CHIRPS:
             _input_dir = data_dir
         else:
             # data_dir not set, use default CHIRPS data directory structure
-            _input_dir = "{chirps_data_dir}\\{interval}\\{country}".format(
+            _input_dir = "{chirps_data_dir}\\{interval}".format(
                 chirps_data_dir=self.vampire.get('CHIRPS', 'data_dir'),
-                interval=interval.capitalize(),
-                country=_country_code)
+                interval=interval.capitalize())
             if crop_only:
                 # already have lta files, so use default directory structure to find them
                 _input_dir = "{chirps_data_dir}\\{interval}\\{country}\\Statistics_By{interval_name}".format(
@@ -175,22 +190,23 @@ CHIRPS:
                     interval_name=_interval_name.capitalize())
 
         file_string = """
-        ## Processing chain begin - Compute CHIRPS Long Term Averages\n
+    ## Processing chain begin - Compute CHIRPS Long Term Averages
         """
         # Add download section if necessary
         if download:
-            file_string += self.generate_download_section(interval=interval, data_dir=_input_dir,
-                                                          start_date=start_date, end_date=end_date)
+            file_string += self.generate_download(country=country, interval=interval, download_dir=_input_dir,
+                                                  start_date=start_date, end_date=end_date)
 
         # Add crop to boundary if necessary - if already have global LTA OR downloading and country isn't global
         _boundary_file = None
         if crop_only or (country != 'Global' and download):
-            _boundary_file = self.vampire.get_country(country)['chirps_boundary_file']
+            _boundary_file = os.path.join(os.path.join(self.vampire.get('CHIRPS', 'regional_boundary_prefix'),
+                                                       self.vampire.get('CHIRPS', 'regional_boundary_suffix')),
+                                          '{0}{1}'.format(_country_code.lower(),
+                                                          self.vampire.get('CHIRPS', 'regional_boundary_file')))
             _country_dir = "{input_dir}\\{country}".format(input_dir=_input_dir, country=_country_code)
             if crop_only:
                 _country_dir = _output_dir
-            file_string += """
-        # Crop global CHIRPS data to {country}""".format(country=country)
             file_string += self.generate_crop_section(country=country, input_dir=_input_dir,
                                                       output_dir=_country_dir, file_pattern=_file_pattern,
                                                       output_pattern=_crop_pattern, boundary_file=_boundary_file)
@@ -323,9 +339,13 @@ CHIRPS:
             self.vampire.get('CHIRPS_Longterm_Average', 'lta_date_range').split('-')[0]
         )
         _boundary_file = None
-        if country != 'Global':
-            _boundary_file = self.vampire.get_country(country)['chirps_boundary_file']
         _country_code = self.vampire.get_country_code(country)
+        if country != 'Global':
+            _boundary_file = os.path.join(os.path.join(self.vampire.get('CHIRPS', 'regional_boundary_prefix'),
+                                                       self.vampire.get('CHIRPS', 'regional_boundary_suffix')),
+                                          '{0}{1}'.format(_country_code.lower(),
+                                                          self.vampire.get('CHIRPS', 'regional_boundary_file')))
+            #self.vampire.get_country(country)['chirps_boundary_file']
 
         # if lta_file is specified, lta_dir is not used.
         # if lta_dir is specified, it is used with the default pattern to find the long-term average rainfall file
@@ -357,8 +377,6 @@ CHIRPS:
                                                           start_date=start_date, end_date=start_date)
         if crop:
             # add commands to crop global data to region
-            file_string += """
-        # Crop global CHIRPS data to {country}""".format(country=country)
             file_string += self.generate_crop_section(country=country, input_dir=_dl_output,
                                                       output_dir=os.path.join(_dl_output, _country_code.upper()),
                                                       file_pattern=_file_pattern, output_pattern=_crop_output_pattern,
