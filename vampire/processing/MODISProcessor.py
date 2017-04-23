@@ -24,8 +24,8 @@ try:
 except ImportError:
     import vegetation_analysis_os as vegetation_analysis
 
-#import platform
-#platform = platform.system()
+import platform
+platform = platform.system()
 #if platform == "Linux":
 #    import calculate_statistics_os as calculate_statistics
 #    import vegetation_analysis_os as vegetation_analysis
@@ -218,6 +218,9 @@ class MODISProcessor:
             dayFiles = list(os.listdir(day_dir))
         print "Day files: ", dayFiles
         print "Night files: ", nightFiles
+
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
 
         for fl in dayFiles:
             # find matching night file
@@ -439,6 +442,9 @@ class MODISProcessor:
         self.vampire.logger.info('entering _write_mosaic_list')
         if files:
             try:
+                if not os.path.exists(os.path.dirname(filename)):
+                    # directory doesn't exist, create it first
+                    os.makedirs(os.path.dirname(filename))
                 pfile = open(filename, 'w')
             except IOError as e:
                 if e.errno == errno.EACCES:
