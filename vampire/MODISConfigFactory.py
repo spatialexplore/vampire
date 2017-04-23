@@ -138,21 +138,21 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
       current_file_pattern: '{current_pattern}'""".format(current_dir=cur_dir, current_pattern=cur_pattern)
         if max_file is not None:
             file_string += """
-      LST_max_file: {lst_max}""".format(max_file)
+      LST_max_file: {lst_max}""".format(lst_max=max_file)
         else:
             file_string += """
       LST_max_dir: {lst_max_dir}
       LST_max_pattern: '{lst_max_pattern}'""".format(lst_max_dir=max_dir, lst_max_pattern=max_pattern)
         if min_file is not None:
             file_string += """
-      LST_min_file: {lst_min}""".format(min_file)
+      LST_min_file: {lst_min}""".format(lst_min=min_file)
         else:
             file_string += """
       LST_min_dir: {lst_min_dir}
       LST_min_pattern: '{lst_min_pattern}'""".format(lst_min_dir=min_dir, lst_min_pattern=min_pattern)
         if output_file is not None:
             file_string += """
-      output_file: {output_file}""".format(output_file)
+      output_file: {output_file}""".format(output_file=output_file)
         else:
             file_string += """
       output_dir: {output_dir}
@@ -179,21 +179,21 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
       current_file_pattern: '{current_pattern}'""".format(current_dir=cur_dir, current_pattern=cur_pattern)
         if evi_max_file is not None:
             file_string += """
-      EVI_max_file: {evi_max}""".format(evi_max_file)
+      EVI_max_file: {evi_max}""".format(evi_max=evi_max_file)
         else:
             file_string += """
       EVI_max_dir: {evi_max_dir}
       EVI_max_pattern: '{evi_max_pattern}'""".format(evi_max_dir=evi_max_dir, evi_max_pattern=evi_max_pattern)
         if evi_min_file is not None:
             file_string += """
-      EVI_min_file: {evi_min}""".format(evi_min_file)
+      EVI_min_file: {evi_min}""".format(evi_min=evi_min_file)
         else:
             file_string += """
       EVI_min_dir: {evi_min_dir}
       EVI_min_pattern: '{evi_min_pattern}'""".format(evi_min_dir=evi_min_dir, evi_min_pattern=evi_min_pattern)
         if output_file is not None:
             file_string += """
-      output_file: {output_file}""".format(output_file)
+      output_file: {output_file}""".format(output_file=output_file)
         else:
             file_string += """
       output_dir: {output_dir}
