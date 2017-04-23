@@ -1,6 +1,7 @@
 import gdal, osr
 import numpy as np
 import rasterio
+import rasterio.warp
 #from rasterio.warp import reproject, RESAMPLING
 import urllib2
 import raster_utils
@@ -37,15 +38,21 @@ def calc_VCI(cur_filename, evi_max_filename, evi_min_filename, dst_filename):
     # calculate Vegetation Condition Index
     # VCI = 100 x (EVI - EVI_min)/(EVI_max - EVI_min)
     with rasterio.open(cur_filename) as _cur_r:
-        _cur_band = _cur_r.read(1, masked=True)
         _profile = _cur_r.profile.copy()
         print _cur_r.nodatavals
+        _min_width = _cur_r.width
+        _min_height = _cur_r.height
         with rasterio.open(evi_max_filename) as _evi_max_r:
 #            evi_max_a = evi_max_r.read(1, masked=True)
-            _evi_max_w = _evi_max_r.read(1, window=((0, _cur_band.shape[0]), (0, _cur_band.shape[1])), masked=True)
+            if _evi_max_r.width < _min_width:
+                _min_width = _evi_max_r.width
+            if _evi_max_r.height < _min_height:
+                _min_height = _evi_max_r.height
+            _evi_max_w = _evi_max_r.read(1, window=((0, _min_height), (0, _min_width)), masked=True)
             with rasterio.open(evi_min_filename) as _evi_min_r:
 #                evi_min_a = evi_min_r.read(1, masked=True)
-                _evi_min_w = _evi_min_r.read(1, window=((0, _cur_band.shape[0]), (0, _cur_band.shape[1])), masked=True)
+                _evi_min_w = _evi_min_r.read(1, window=((0, _min_height), (0, _min_width)), masked=True)
+                _cur_band = _cur_r.read(1, window=((0, _min_height), (0, _min_width)), masked=True)
                 _dst_f = np.zeros(_cur_band.shape)
                 _newd_f = np.ma.masked_where(np.ma.getmask(_cur_band),
                                             _dst_f)
@@ -59,7 +66,7 @@ def calc_VCI(cur_filename, evi_max_filename, evi_min_filename, dst_filename):
                 _res = _newd_f.filled(fill_value=_cur_r.nodata)
                 _res2 = np.ma.masked_where(_res == _cur_r.nodata, _res)
 
-                _profile.update(dtype=rasterio.float64)
+                _profile.update(width=_min_width, height=_min_height, dtype=rasterio.float64)
                 with rasterio.open(dst_filename, 'w', **_profile) as _dst:
                     _dst.write(_res2.astype(rasterio.float64), 1)
     return None
@@ -92,11 +99,14 @@ def calc_VHI(vci_filename, tci_filename, dst_filename):
                         dst_transform=_newaff,
                         src_crs=_vci_r.crs,
                         dst_crs=_vci_r.crs,
-                        resampling=rasterio.warp.RESAMPLING.bilinear)
+                        resampling=rasterio.warp.Resampling.bilinear)
                 except Exception, e:
                     print "Error in reproject "
-                vci_a = np.ma.masked_where(np.ma.getmask(_tci_a), _newarr)
-#                rasterUtils.resampleRaster(vci_filename, tmp_filename, gdal_path, tci_a.shape[0], tci_a.shape[1])
+                _vci_a = np.ma.masked_where(np.ma.getmask(_tci_a), _newarr)
+                _profile.update(dtype=rasterio.float64, nodata=-9999)
+                with rasterio.open("C:\PRIMA\\data\\Temp\\reprojectd.tif", 'w', **_profile) as _dst:
+                    _dst.write(_vci_a.astype(rasterio.float64), 1)
+    #                rasterUtils.resampleRaster(vci_filename, tmp_filename, gdal_path, tci_a.shape[0], tci_a.shape[1])
             elif _tci_a.shape[0] > _vci_a.shape[0] or _tci_a.shape[1] > _tci_a.shape[1]:
                 # resample tci
                 _newarr = np.empty(shape=(_vci_a.shape[0], _vci_a.shape[1]))
@@ -111,7 +121,7 @@ def calc_VHI(vci_filename, tci_filename, dst_filename):
                         dst_transform=_newaff,
                         src_crs=_tci_a.crs,
                         dst_crs=_tci_a.crs,
-                        resample=rasterio.warp.RESAMPLING.bilinear)
+                        resample=rasterio.warp.Resampling.bilinear)
                 except Exception, e:
                     print "Error in reproject "
                 _tci_a = np.ma.masked_where(np.ma.getmask(_vci_a), _newarr)
