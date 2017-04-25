@@ -298,3 +298,52 @@ class ClimateAnalysis():
                                                     threshold=threshold, max_days=max_days)
         self.vampire.logger.info('leaving calc_days_since_last_rainfall')
         return None
+
+    def calc_standardized_precipitation_index(self,
+                                              dst_filename=None,
+                                              cur_filename=None,
+                                              lta_filename=None,
+                                              ltsd_filename=None,
+                                              cur_dir=None,
+                                              lta_dir=None,
+                                              ltsd_dir=None,
+                                              cur_pattern=None,
+                                              lta_pattern=None,
+                                              ltsd_pattern=None,
+                                              dst_pattern=None,
+                                              dst_dir=None):
+
+        self.vampire.logger.info('entering calc_standardized_precipitation_index')
+        if cur_filename is None:
+            # get filename from pattern and directory
+            files_list = directory_utils.get_matching_files(cur_dir, cur_pattern)
+            try:
+                cur_filename = files_list[0]
+            except IndexError, e:
+                raise ValueError('Cannot find matching rainfall file in directory')
+        if lta_filename is None:
+            # get filename from pattern and diretory
+            files_list = directory_utils.get_matching_files(lta_dir, lta_pattern)
+            try:
+                lta_filename = files_list[0]
+            except IndexError, e:
+                raise ValueError('Cannot find matching long-term average file.')
+
+        if ltsd_filename is None:
+            # get filename from pattern and diretory
+            files_list = directory_utils.get_matching_files(ltsd_dir, ltsd_pattern)
+            try:
+                ltsd_filename = files_list[0]
+            except IndexError, e:
+                raise ValueError('Cannot find matching long-term standard deviation file.')
+
+        if dst_filename is None:
+            # get new filename from directory and pattern
+            dst_filename = os.path.join(dst_dir, filename_utils.generate_output_filename(
+                os.path.split(cur_filename)[1], cur_pattern, dst_pattern))
+        precipitation_analysis.calc_standardized_precipitation_index(cur_filename=cur_filename,
+                                                                     lta_filename=lta_filename,
+                                                                     ltsd_filename=ltsd_filename,
+                                                                     dst_filename=dst_filename)
+        self.vampire.logger.info('leaving calc_standardized_precipitation_index')
+        return None
