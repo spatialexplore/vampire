@@ -27,8 +27,7 @@ CHIRPS:
     - process: CHIRPS
       type: download
       interval: {interval}
-      output_dir: {output_dir}
-      """.format(interval=interval, output_dir=data_dir)
+      output_dir: {output_dir}""".format(interval=interval, output_dir=data_dir)
         # if start and end dates are specified, only download between these dates
         if start_date is not None:
             year = start_date.strftime("%Y")
@@ -161,24 +160,27 @@ CHIRPS:
         # use specified directory for output of lta files, if provided
         _output_dir = lta_dir
         if country == 'Global':
+            _lta_pattern = self.vampire.get('CHIRPS', 'global_{0}_pattern'.format(interval))
             # if Global, don't add 'Global' to directory path
             # _input_dir = "{chirps_data_dir}\\{interval}".\
             #     format(chirps_data_dir=self.config.get('CHIRPS', 'data_dir'),
             #            interval=params['interval'].capitalize())
             if _output_dir is None:
                 # use default directory structure for output of lta files
-                _output_dir = "{chirps_global_product_dir}\\{interval}\\Statistics_By_{interval_name}".format(
+                _output_dir = "{chirps_global_product_dir}\\{interval}\\Statistics_By{interval_name}".format(
                     chirps_global_product_dir=self.vampire.get('CHIRPS', 'global_product_dir'),
                     interval=interval.capitalize(),
                     interval_name=_interval_name.capitalize())
         elif _country_code == self.vampire.get_home_country():
+            _lta_pattern = self.vampire.get('CHIRPS', 'regional_{0}_pattern'.format(interval.lower()))
             # use default directory structure for output of lta files
             if _output_dir is None:
-                _output_dir = "{chirps_home_product_dir}\\{interval}\\Statistics_By_{interval_name}".format(
+                _output_dir = "{chirps_home_product_dir}\\{interval}\\Statistics_By{interval_name}".format(
                     chirps_home_product_dir=self.vampire.get('CHIRPS', 'home_country_product_dir'),
                     interval=interval.capitalize(),
                     interval_name=_interval_name.capitalize())
         else:
+            _lta_pattern = self.vampire.get('CHIRPS', 'regional_{0}_pattern'.format(interval.lower()))
             if _output_dir is None:
                 # use default directory structure for output of lta files
                 _output_dir = "{chirps_regional_product_dir_prefix}\\{country}\\{chirps_regional_product_dir_suffix}" \
@@ -209,13 +211,14 @@ CHIRPS:
                 _country_dir = _output_dir
             file_string += self.generate_crop_section(country=country, input_dir=_input_dir,
                                                       output_dir=_country_dir, file_pattern=_file_pattern,
-                                                      output_pattern=_crop_pattern, boundary_file=_boundary_file)
+                                                      output_pattern=_crop_pattern, boundary_file=_boundary_file,
+                                                      no_data=True)
             _input_dir = _country_dir
 
         if not crop_only:
             # Add long-term average calculation
             file_string += self.generate_rainfall_lta_section(interval=interval, input_dir=_input_dir,
-                                                              output_dir=_output_dir, file_pattern=_file_pattern)
+                                                              output_dir=_output_dir, file_pattern=_lta_pattern)
 
         return file_string
 
@@ -239,6 +242,7 @@ CHIRPS:
                                          crop=True):        # crop existing data?
         year = start_date.strftime("%Y")
         month = start_date.strftime("%m")
+        day = start_date.strftime("%d")
         if country == 'Global':
             crop = False
 
@@ -316,10 +320,15 @@ CHIRPS:
                 _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'regional_lta_dekad_pattern')
             # replace generic month and dekad in pattern with the specific one needed so the correct file is found.
             _cur_file_pattern = _cur_file_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(month))
-            _lta_file_pattern = _cur_file_pattern.replace('(?P<dekad>\d{1})', '(?P<dekad>{0})'.format(dekad))
-            _lta_file_pattern = _lta_file_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(season))
-            _lta_file_pattern = _lta_file_pattern.replace('(?P<dekad>\d{1})', '(?P<dekad>{0})'.format(season))
-
+            if int(day) <=10:
+                _dekad = 1
+            elif int(day) <=20:
+                _dekad = 2
+            else:
+                _dekad = 3
+            _cur_file_pattern = _cur_file_pattern.replace('(?P<dekad>\d{1})', '(?P<dekad>{0})'.format(_dekad))
+            _lta_file_pattern = _lta_file_pattern.replace('(?P<month>\d{02})', '(?P<month>{0})'.format(month))
+            _lta_file_pattern = _lta_file_pattern.replace('(?P<dekad>\d{1})', '(?P<dekad>{0})'.format(_dekad))
         else:
             raise ValueError, 'Unrecognised interval {0}. Unable to generate rainfall anomaly config.'.format(
                 interval)
@@ -363,8 +372,7 @@ CHIRPS:
                                             interval=interval.capitalize(), interval_name=_interval_name.capitalize()))
             else:
                 _lta_dir = os.path.join(self.vampire.get('CHIRPS', 'regional_product_dir_prefix'),
-                                        '{country}\\{suffix}\\{interval}\\Statistics_By{interval_name}'.format(
-                                            country=_country_code.upper(),
+                                        '{suffix}\\{interval}\\Statistics_By{interval_name}'.format(
                                             suffix=self.vampire.get('CHIRPS', 'regional_product_dir_suffix'),
                                             interval=interval.capitalize(),
                                             interval_name=_interval_name.capitalize()))
@@ -380,7 +388,7 @@ CHIRPS:
             file_string += self.generate_crop_section(country=country, input_dir=_dl_output,
                                                       output_dir=os.path.join(_dl_output, _country_code.upper()),
                                                       file_pattern=_file_pattern, output_pattern=_crop_output_pattern,
-                                                      boundary_file=_boundary_file
+                                                      boundary_file=_boundary_file, no_data=True
                                                      )
 
         file_string += """

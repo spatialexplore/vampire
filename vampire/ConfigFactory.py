@@ -74,7 +74,8 @@ run:
 #             """
 #         return file_string
 
-    def generate_crop_section(self, country, input_dir, output_dir, file_pattern, output_pattern, boundary_file):
+    def generate_crop_section(self, country, input_dir, output_dir, file_pattern, output_pattern, boundary_file,
+                              no_data=False):
         file_string = """
     # Crop data to {country}
     - process: Raster
@@ -83,14 +84,20 @@ run:
       output_dir: {output_dir}
       file_pattern: '{file_pattern}'
       output_pattern: '{output_pattern}'
-      boundary_file: {boundary_file}
-                """.format(country=country,
+      boundary_file: {boundary_file}""".format(country=country,
                            input_dir=input_dir,
                            output_dir=output_dir,
                            file_pattern=file_pattern,
                            output_pattern=output_pattern,
                            boundary_file=boundary_file
                            )
+        if no_data:
+            file_string += """
+      no_data:
+      """
+        else:
+            file_string +="""
+      """
         return file_string
 
 

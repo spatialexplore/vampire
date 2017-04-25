@@ -32,7 +32,6 @@ def generate_config_file(output_file, params):
         pfile.write(cf.generate_header_directory())
         if 'product' in params:
             if params['product'].lower() == "rainfall_anomaly":
-                print "Not currently supported"
                 pfile.write(cf.generate_header_chirps())
                 pfile.write(cf.generate_header_run())
                 pfile.write(cf.generate_rainfall_anomaly_config(params['country'], params['interval'],
