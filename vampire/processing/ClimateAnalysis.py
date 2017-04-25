@@ -71,6 +71,8 @@ class ClimateAnalysis():
             # get new filename from directory and pattern
             dst_filename = os.path.join(dst_dir, filename_utils.generate_output_filename(
                 os.path.split(cur_filename)[1], cur_pattern, dst_pattern))
+        if not os.path.exists(dst_dir):
+            os.makedirs(dst_dir)
         precipitation_analysis.calc_rainfall_anomaly(cur_filename=cur_filename,
                                                      lta_filename=lta_filename,
                                                      dst_filename=dst_filename)
