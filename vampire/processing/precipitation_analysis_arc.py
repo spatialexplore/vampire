@@ -21,7 +21,7 @@ def calc_rainfall_anomaly(cur_filename, lta_filename, dst_filename):
     dst.save(dst_filename)
     return None
 
-def standardized_precipitation_index(cur_filename, lta_filename, ltsd_filename, dst_filename):
+def calc_standardized_precipitation_index(cur_filename, lta_filename, ltsd_filename, dst_filename):
     _cur_raster = arcpy.sa.Raster(cur_filename)
     _lta_raster = arcpy.sa.Raster(lta_filename)
     _ltsd_raster = arcpy.sa.Raster(ltsd_filename)
