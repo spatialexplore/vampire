@@ -340,6 +340,8 @@ class ClimateAnalysis():
                 raise ValueError('Cannot find matching long-term standard deviation file.')
 
         if dst_filename is None:
+            if not os.path.exists(dst_dir):
+                os.makedirs(dst_dir)
             # get new filename from directory and pattern
             dst_filename = os.path.join(dst_dir, filename_utils.generate_output_filename(
                 os.path.split(cur_filename)[1], cur_pattern, dst_pattern))
