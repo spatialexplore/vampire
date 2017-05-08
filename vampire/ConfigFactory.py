@@ -100,8 +100,22 @@ run:
       """
         return file_string
 
+    def generate_match_projection_section(self, master_dir, slave_dir, output_dir,
+                                          master_pattern, slave_pattern, output_pattern):
+        file_string = """
+    - process: Raster
+      type: match_projection
+      master_dir: {master_dir}
+      master_pattern: '{master_pattern}'
+      slave_dir: {slave_dir}
+      slave_pattern: '{slave_pattern}'
+      output_dir: {output_dir}
+      output_pattern:  '{output_pattern}'
+    """.format(master_dir=master_dir, master_pattern=master_pattern, slave_dir=slave_dir,
+                   slave_pattern=slave_pattern, output_dir=output_dir, output_pattern=output_pattern)
+        return file_string
 
-    # def _generate_modis_download(self, country, product, tiles, data_dir, mosaic_dir, start_date, end_date):
+        # def _generate_modis_download(self, country, product, tiles, data_dir, mosaic_dir, start_date, end_date):
     #     _file_string = """
     # # download MODIS for {country_name} and mosaic if necessary
     # - process: MODIS
