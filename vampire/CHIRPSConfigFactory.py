@@ -512,3 +512,226 @@ CHIRPS:
     ## Processing chain end - Compute Days Since Last Rain
         """
         return file_string
+
+    # Generate standardized precipitation index for the given country, interval and month/season/dekad, downloading and
+    # cropping data if necessary.
+    # If the long-term average file is not specified, the default long-term average file pattern will be used instead.
+    # If the long-term standard deviation file is not specified, the default file pattern will be used to find it.
+    # If the current file is not specified, the default file pattern will be used instead.
+    # If the output filename is not specified, the default file pattern will be used instead.
+    def generate_standardized_precipitation_index_config(self, country,     # country or region to process (or 'Global')
+                                         interval,          # interval to process (monthly, seasonal, dekad)
+                                         start_date,        # year and month to process
+                                         season=None,       # season if needed
+                                         dekad=None,        # dekad if needed
+                                         cur_dir=None,      # directory containing the rainfall file to process
+                                         cur_file=None,     # filename for the rainfall file (if not present, default dir and pattern will be used)
+                                         lta_dir=None,      # directory containing long-term average files
+                                         lta_file=None,     # long-term average file (if not present, lta_dir and default pattern will be used)
+                                         ltsd_dir=None,      # directory containing long-term average files
+                                         ltsd_file=None,     # long-term average file (if not present, lta_dir and default pattern will be used)
+                                         output_dir=None,   # directory for output rainfall anomaly
+                                         output_file=None,  # name of output file (default pattern will be used to generate this if not present)
+                                         download=True,     # download data?
+                                         crop=True):        # crop existing data?
+        year = start_date.strftime("%Y")
+        month = start_date.strftime("%m")
+        day = start_date.strftime("%d")
+        if country == 'Global':
+            crop = False
+
+        # if output_file is specified, it will override the location of the output file.
+        # if output_dir is specified, the rainfall anomaly result will be stored here.
+        # the filename will be generated from the default pattern.
+        if output_dir is not None:
+            _out_dir = output_dir
+        else:
+            _out_dir = self.vampire.get('CHIRPS_SPI', 'output_dir')
+
+        # if cur_file is specified, cur_dir is not used.
+        # if cur_dir is specified, it is used with the default pattern to find the current rainfall file
+        # if not specified, cur_dir is determined from the default values.
+        if cur_dir is not None:
+            _cur_dir = cur_dir
+        else:
+            if country == 'Global':
+                _cur_dir = os.path.join(self.vampire.get('CHIRPS', 'data_dir'), interval.capitalize())
+            else:
+                _cur_dir = os.path.join(self.vampire.get('CHIRPS', 'data_dir'), '{interval}\\{ccode}'.format(
+                    interval=interval, ccode=self.vampire.get_country_code(country).upper()
+                ))
+        if interval == 'monthly':
+            _interval_name = 'month'
+            _file_pattern = self.vampire.get('CHIRPS', 'global_monthly_pattern')
+            if country == 'Global':
+                _output_file_pattern = self.vampire.get('CHIRPS_SPI', 'spi_global_output_monthly_pattern')
+                _crop_output_pattern = ''
+                _cur_file_pattern = self.vampire.get('CHIRPS', 'global_monthly_pattern')
+                _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'global_lta_monthly_pattern')
+                _ltsd_file_pattern = self.vampire.get('CHIRPS_Longterm_Std', 'global_ltsd_monthly_pattern')
+            else:
+                _crop_output_pattern = '{0}{1}'.format(
+                    self.vampire.get_country_code(country).lower(),
+                    self.vampire.get('CHIRPS', 'crop_regional_output_monthly_pattern'))
+                _output_file_pattern = self.vampire.get('CHIRPS_SPI', 'ra_regional_output_monthly_pattern')
+                _cur_file_pattern = self.vampire.get('CHIRPS', 'regional_monthly_pattern')
+                _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'regional_lta_monthly_pattern')
+                _ltsd_file_pattern = self.vampire.get('CHIRPS_Longterm_Standard_Deviation', 'global_ltsd_monthly_pattern')
+            # replace generic month in pattern with the specific one needed so the correct file is found.
+            _cur_file_pattern = _cur_file_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(month))
+            _lta_file_pattern = _lta_file_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(month))
+            _ltsd_file_pattern = _ltsd_file_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(month))
+        elif interval == 'seasonal':
+            _interval_name = "season"
+            _file_pattern = self.vampire.get('CHIRPS', 'global_seasonal_pattern')
+            if country == 'Global':
+                _crop_output_pattern = ''
+                _output_file_pattern = self.vampire.get('CHIRPS_SPI', 'ra_global_output_seasonal_pattern')
+                _cur_file_pattern = self.vampire.get('CHIRPS', 'global_seasonal_pattern')
+                _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'global_lta_seasonal_pattern')
+                _ltsd_file_pattern = self.vampire.get('CHIRPS_Longterm_Standard_Deviation', 'global_ltsd_seasonal_pattern')
+            else:
+                _crop_output_pattern = '{0}{1}'.format(
+                    self.vampire.get_country_code(country).lower(),
+                    self.vampire.get('CHIRPS', 'crop_regional_output_seasonal_pattern'))
+                _output_file_pattern = self.vampire.get('CHIRPS_SPI', 'spi_regional_output_seasonal_pattern')
+                _cur_file_pattern = self.vampire.get('CHIRPS', 'regional_seasonal_pattern')
+                _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'regional_lta_seasonal_pattern')
+                _ltsd_file_pattern = self.vampire.get('CHIRPS_Longterm_Standard_Deviation', 'regional_lta_seasonal_pattern')
+            # replace generic season in pattern with the specific one needed so the correct file is found.
+            _lta_file_pattern = _lta_file_pattern.replace('(?P<season>\d{6})', '(?P<season>{0})'.format(season))
+            _ltsd_file_pattern = _ltsd_file_pattern.replace('(?P<season>\d{6})', '(?P<season>{0})'.format(season))
+            _cur_file_pattern = _cur_file_pattern.replace('(?P<season>\d{6})', '(?P<season>{0})'.format(season))
+
+        elif interval == 'dekad':
+            _file_pattern = self.vampire.get('CHIRPS', 'global_dekad_pattern')
+            _interval_name = interval
+            if country == 'Global':
+                _crop_output_pattern = ''
+                _output_file_pattern = self.vampire.get('CHIRPS_SPI', 'spi_global_output_dekad_pattern')
+                _cur_file_pattern = self.vampire.get('CHIRPS', 'global_dekad_pattern')
+                _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'global_lta_dekad_pattern')
+                _ltsd_file_pattern = self.vampire.get('CHIRPS_Longterm_Standard_Deviation', 'global_ltsd_dekad_pattern')
+            else:
+                _crop_output_pattern = '{0}{1}'.format(
+                    self.vampire.get_country_code(country).lower(),
+                    self.vampire.get('CHIRPS', 'crop_regional_output_dekad_pattern'))
+                _output_file_pattern = self.vampire.get('CHIRPS_SPI', 'spi_regional_output_dekad_pattern')
+                _cur_file_pattern = self.vampire.get('CHIRPS', 'regional_dekad_pattern')
+                _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'regional_lta_dekad_pattern')
+                _ltsd_file_pattern = self.vampire.get('CHIRPS_Longterm_Standard_Deviation', 'regional_ltsd_dekad_pattern')
+            # replace generic month and dekad in pattern with the specific one needed so the correct file is found.
+            _cur_file_pattern = _cur_file_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(month))
+            if int(day) <=10:
+                _dekad = 1
+            elif int(day) <=20:
+                _dekad = 2
+            else:
+                _dekad = 3
+            _cur_file_pattern = _cur_file_pattern.replace('(?P<dekad>\d{1})', '(?P<dekad>{0})'.format(_dekad))
+            _lta_file_pattern = _lta_file_pattern.replace('(?P<month>\d{02})', '(?P<month>{0})'.format(month))
+            _lta_file_pattern = _lta_file_pattern.replace('(?P<dekad>\d{1})', '(?P<dekad>{0})'.format(_dekad))
+            _ltsd_file_pattern = _ltsd_file_pattern.replace('(?P<month>\d{02})', '(?P<month>{0})'.format(month))
+            _ltsd_file_pattern = _ltsd_file_pattern.replace('(?P<dekad>\d{1})', '(?P<dekad>{0})'.format(_dekad))
+        else:
+            raise ValueError, 'Unrecognised interval {0}. Unable to generate standardized precipitation index config.'.format(
+                interval)
+            # _interval_name = interval
+            # _crop_output_pattern = "'{0}".format(country.lower()) + "_cli_{product}.{year}.{month}{extension}'"
+            # _file_pattern = ''
+            # _cur_file_pattern = ''
+
+        # replace generic year in pattern with the specific one needed so the correct file is found.
+        _cur_file_pattern = _cur_file_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(year))
+
+        # directory for downloaded CHIRPS files
+        _dl_output = "{0}\\{1}".format(self.vampire.get('CHIRPS','data_dir'),
+                                       interval.capitalize())
+
+        _num_yrs = int(self.vampire.get('CHIRPS_Longterm_Average', 'lta_date_range').split('-')[1]) - int(
+            self.vampire.get('CHIRPS_Longterm_Average', 'lta_date_range').split('-')[0]
+        )
+        _boundary_file = None
+        _country_code = self.vampire.get_country_code(country)
+        if country != 'Global':
+            _boundary_file = os.path.join(os.path.join(self.vampire.get('CHIRPS', 'regional_boundary_prefix'),
+                                                       self.vampire.get('CHIRPS', 'regional_boundary_suffix')),
+                                          '{0}{1}'.format(_country_code.lower(),
+                                                          self.vampire.get('CHIRPS', 'regional_boundary_file')))
+            #self.vampire.get_country(country)['chirps_boundary_file']
+
+        # if lta_file is specified, lta_dir is not used.
+        # if lta_dir is specified, it is used with the default pattern to find the long-term average rainfall file
+        # if not specified, lta_dir is determined from the default values.
+        if lta_dir is not None:
+            _lta_dir = lta_dir
+        else:
+            if country == 'Global':
+                _lta_dir = os.path.join(self.vampire.get('CHIRPS', 'global_product_dir'),
+                                        '{interval}\\Statistics_By{interval_name}'.format(
+                    interval=interval.capitalize(), interval_name=_interval_name.capitalize()))
+            elif country == self.vampire.get_home_country():
+                _lta_dir = os.path.join(self.vampire.get('CHIRPS', 'home_country_product_dir'),
+                                        '{interval}\\Statistics_By{interval_name}'.format(
+                                            interval=interval.capitalize(), interval_name=_interval_name.capitalize()))
+            else:
+                _lta_dir = os.path.join(self.vampire.get('CHIRPS', 'regional_product_dir_prefix'),
+                                        '{suffix}\\{interval}\\Statistics_By{interval_name}'.format(
+                                            suffix=self.vampire.get('CHIRPS', 'regional_product_dir_suffix'),
+                                            interval=interval.capitalize(),
+                                            interval_name=_interval_name.capitalize()))
+
+        file_string = """
+    ## Processing chain begin - Compute Standardized Precipitation Index\n"""
+        if download:
+            # add commands to download data
+            file_string += self.generate_download_section(interval=interval, data_dir=_dl_output,
+                                                          start_date=start_date, end_date=start_date)
+        if crop:
+            # add commands to crop global data to region
+            file_string += self.generate_crop_section(country=country, input_dir=_dl_output,
+                                                      output_dir=os.path.join(_dl_output, _country_code.upper()),
+                                                      file_pattern=_file_pattern, output_pattern=_crop_output_pattern,
+                                                      boundary_file=_boundary_file, no_data=True
+                                                     )
+
+        file_string += """
+    # compute SPI
+    - process: Analysis
+      type: SPI"""
+        if cur_file is not None:
+            file_string += """
+      current_file: {cur_file}""".format(cur_file=cur_file)
+        else:
+            file_string += """
+      current_dir: {cur_dir}
+      current_file_pattern: '{cur_pattern}'""".format(cur_dir=_cur_dir, cur_pattern=_cur_file_pattern)
+
+        if lta_file is not None:
+            file_string += """
+      longterm_avg_file: {lta_file}""".format(lta_file=lta_file)
+        else:
+            file_string += """
+      longterm_avg_dir: {lta_dir}
+      longterm_avg_file_pattern: '{lta_pattern}'""".format(lta_dir=_lta_dir, lta_pattern=_lta_file_pattern)
+
+        if ltsd_file is not None:
+            file_string += """
+      longterm_sd_file: {ltsd_file}""".format(ltsd_file=ltsd_file)
+        else:
+            file_string += """
+      longterm_sd_dir: {ltsd_dir}
+      longterm_sd_file_pattern: '{ltsd_pattern}'""".format(ltsd_dir=_lta_dir, ltsd_pattern=_ltsd_file_pattern)
+
+        if output_file is not None:
+            file_string += """
+      output_file: {output_file}""".format(output_file=output_file)
+        else:
+            file_string += """
+      output_dir: {out_dir}
+      output_file_pattern: '{out_pattern}'""".format(out_dir=_out_dir, out_pattern=_output_file_pattern)
+
+        file_string += """
+    ## Processing chain end - Compute Standardized Precipitation Index
+        """
+        return file_string
