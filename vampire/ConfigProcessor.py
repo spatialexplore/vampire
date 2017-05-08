@@ -426,6 +426,7 @@ class ConfigProcessor():
             _output_file = None
             _output_dir = None
             _output_pattern = None
+            _interval = None
 
             if logger: logger.debug("Compute Temperature Condition Index")
             if 'current_file' in process:
@@ -474,11 +475,13 @@ class ConfigProcessor():
                     else:
                         _output_dir = None
                     _output_pattern = process['output_file_pattern']
+            if 'interval' in process:
+                _interval = process['interval']
 
             ca.calc_tci(cur_filename=_cur_file, cur_dir=_cur_dir, cur_pattern=_cur_pattern,
                         lst_max_filename=_lst_max_file, lst_max_dir=_lst_max_dir, lst_max_pattern=_lst_max_pattern,
                         lst_min_filename=_lst_min_file, lst_min_dir=_lst_min_dir, lst_min_pattern=_lst_min_pattern,
-                        dst_filename=_output_file, dst_dir=_output_dir, dst_pattern=_output_pattern,
+                        dst_filename=_output_file, dst_dir=_output_dir, dst_pattern=_output_pattern, interval=_interval
                         )
 
         elif process['type'] == 'VHI':
@@ -570,6 +573,47 @@ class ConfigProcessor():
             rp.crop_files(input_dir=_input_dir, output_dir=_output_dir, boundary_file=_boundary_file,
                           file_pattern=_pattern, output_pattern=_out_pattern, overwrite=_overwrite,
                           nodata=_no_data, logger=logger)
+        elif process['type'] == 'match_projection':
+            if logger: logger.debug("Reproject file to same extent and resolution as master")
+            _master_filename = None
+            _slave_filename = None
+            _master_dir = None
+            _master_pattern = None
+            _slave_dir = None
+            _slave_pattern = None
+            _output_file = None
+            _output_dir = None
+            _output_pattern = None
+
+            if 'master_file' in process:
+                _master_filename = process['master_file']
+            else:
+                if not 'master_dir' in process:
+                    raise ConfigFileError("No master file 'master_file' or pattern 'master_pattern'/directory 'master_dir' specified.", None)
+                else:
+                    _master_dir = process['master_dir']
+                    _master_pattern = process['master_pattern']
+            if 'slave_file' in process:
+                _slave_filename = process['slave_file']
+            else:
+                if not 'slave_dir' in process:
+                    raise ConfigFileError("No slave file 'slave_file' or pattern 'slave_pattern'/directory 'slave_dir' specified.", None)
+                else:
+                    _slave_dir = process['slave_dir']
+                    _slave_pattern = process['slave_pattern']
+
+            if 'output_file' in process:
+                _output_file = process['output_file']
+            else:
+                if not 'output_pattern' in process:
+                    raise ConfigFileError("No output filename 'output_file' or output pattern 'output_pattern' specified.", None)
+                else:
+                    _output_pattern = process['output_pattern']
+                    _output_dir = process['output_dir']
+
+            rp.match_projection(master_file=_master_filename, master_dir=_master_dir, master_pattern=_master_pattern,
+                                slave_file=_slave_filename, slave_dir=_slave_dir, slave_pattern=_slave_pattern,
+                                output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern)
         # elif process['type'] == 'average_files':
         #     if logger: logger.debug("Compute average of raster files")
         #
