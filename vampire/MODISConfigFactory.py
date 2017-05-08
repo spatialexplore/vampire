@@ -9,6 +9,21 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
     def __init__(self, name, country, start_date, end_date=None):
         ConfigFactory.ConfigFactory.__init__(self, name)
         self.country = country
+        self.set_dates(start_date, end_date)
+        # self.start_date = start_date
+        # self.end_date = end_date
+        # self.year = self.start_date.strftime("%Y")
+        # self.month = self.start_date.strftime("%m")
+        # self.day = self.start_date.strftime("%d")
+        # _base_date = datetime.datetime.strptime("2000.{0}.01".format(self.month), "%Y.%m.%d")
+        # self.base_day_of_year = _base_date.timetuple().tm_yday
+        # self.day_of_year = self.start_date.timetuple().tm_yday
+        # print 'day of year: {0}'.format(self.day_of_year)
+        # if calendar.isleap(int(self.year)) and self.day_of_year > 60:
+        #     self.day_of_year = self.day_of_year - 1
+        return
+
+    def set_dates(self, start_date, end_date=None):
         self.start_date = start_date
         self.end_date = end_date
         self.year = self.start_date.strftime("%Y")
@@ -18,9 +33,10 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
         self.base_day_of_year = _base_date.timetuple().tm_yday
         self.day_of_year = self.start_date.timetuple().tm_yday
         print 'day of year: {0}'.format(self.day_of_year)
-        if calendar.isleap(int(self.year)) and self.day_of_year > 60:
-            self.day_of_year = self.day_of_year - 1
-        return
+        print 'base day of year: {0}'.format(self.base_day_of_year)
+#        if calendar.isleap(int(self.year)) and self.day_of_year > 60:
+#            self.day_of_year = self.day_of_year - 1
+
 
     def generate_download_section(self, product, tiles, data_dir, mosaic_dir):
         _file_string = """
@@ -624,9 +640,31 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
                         print self.day_of_year
                         print self.base_day_of_year
                         print self.start_date
-                        if (int(self.day_of_year)-1) % 16 == 0:
+                        _date_test = self.day_of_year
+                        if not calendar.isleap(int(self.year)):
+                            _date_test = _date_test+1
+                        if (_date_test-1) % 16 == 0:
                             # this is a 16-day date, use this and the previous 8-day data
                             _prev_date = datetime.datetime(int(self.year), 1, 1) + datetime.timedelta(self.day_of_year - 9)
+                            # need to download and process previous 8-day data too.
+                            _curr_date = self.start_date
+                            _curr_end = self.end_date
+                            self.set_dates(_prev_date, _prev_date)
+                            if download:
+                                _str, _o_dir = self.generate_download(product=_product, download_dir=download_dir)
+                                file_string += _str
+                            if extract:
+                                file_string += self.generate_extract_lst(product=_product, data_dir=_o_dir,
+                                                                         day_dir=lst_extract_day_dir,
+                                                                         night_dir=lst_extract_night_dir)
+                                file_string += self.generate_average_lst(day_dir=lst_extract_day_dir,
+                                                                         night_dir=lst_extract_night_dir,
+                                                                         output_dir=lst_extract_dir)
+                            if crop:
+                                file_string += self.generate_crop_lst(product=_product, boundary_file=boundary_file,
+                                                                      input_dir=lst_extract_dir,
+                                                                      output_dir=lst_country_dir)
+                            self.set_dates(_curr_date, _curr_end)
                             _lst_tmp_pattern = _lst_cur_pattern
                             _lst_cur_pattern = _lst_cur_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.
                                                                         format(self.year))
@@ -1288,7 +1326,8 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
                             vci_pattern=None,
                             output_file=None,
                             output_dir=None,
-                            output_pattern=None):
+                            output_pattern=None,
+                            reproject='TCI'):
         file_string = """
     ## Processing chain begin - Compute Vegetation Health Index"""
 
@@ -1344,6 +1383,29 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
             _output_file = None
         else:
             _output_file = output_file
+
+        if reproject is not None:
+            if reproject == 'TCI':
+                _tci_resample_pattern = self.vampire.get('MODIS_TCI', 'tci_output_pattern')
+                _tci_resample_pattern = _tci_resample_pattern.replace('.TCI', '.TCI_resample')
+                file_string += self.generate_match_projection_section(master_dir=_vci_dir,
+                                                                      slave_dir=_tci_dir,
+                                                                      output_dir=_tci_dir,
+                                                                      master_pattern=_vci_pattern,
+                                                                      slave_pattern=_tci_pattern,
+                                                                      output_pattern=_tci_resample_pattern)
+                _tci_pattern = _tci_pattern.replace('.TCI', '.TCI_resample')
+            elif reproject == 'VCI':
+                _vci_resample_pattern = self.vampire.get('MODIS_VCI', 'vci_output_pattern')
+                _vci_resample_pattern = _vci_resample_pattern.replace('.VCI', '.VCI_resample')
+                file_string += self.generate_match_projection_section(master_dir=_tci_dir,
+                                                                      slave_dir=_vci_dir,
+                                                                      output_dir=_vci_dir,
+                                                                      master_pattern=_tci_pattern,
+                                                                      slave_pattern=_vci_pattern,
+                                                                      output_pattern=_vci_resample_pattern)
+                _vci_pattern = _vci_pattern.replace('.VCI', '.VCI_resample')
+
 
         file_string += self.generate_vhi_section(tci_file=_tci_file, tci_dir=_tci_dir, tci_pattern=_tci_pattern,
                                                  vci_file=_vci_file, vci_dir=_vci_dir, vci_pattern=_vci_pattern,
