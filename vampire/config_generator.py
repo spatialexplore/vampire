@@ -39,7 +39,7 @@ def generate_config_file(output_file, params):
             elif params['product'].lower() == "vhi":
                 pfile.write(mf.generate_header_run())
                 pfile.write(mf.generate_vci_config())
-                pfile.write(mf.generate_tci_config())
+                pfile.write(mf.generate_tci_config(interval='16Days'))
                 pfile.write(mf.generate_vhi_config())
             elif params['product'].lower() == "rainfall_longterm_average":
                 pfile.write(cf.generate_header_chirps())
