@@ -170,7 +170,12 @@ class CHIRPSProcessor:
         for f in _all_files:
             _fname = os.path.basename(f)
             _result = re.match(_pattern, _fname)
-            _base_name = '{0}-{1}'.format(_result.group('base_name'), _result.group('version'))
+            if _result.groups('country') is not None:
+                _base_name = '{0}_{1}-{2}'.format(_result.group('country'),
+                                                  _result.group('base_name'),
+                                                  _result.group('version'))
+            else:
+                _base_name = '{0}-{1}'.format(_result.group('base_name'), _result.group('version'))
             _yrs.append(_result.group('year'))
             if interval == 'monthly':
                 _files_list.setdefault(_result.group('month'), []).append(f)
