@@ -2,6 +2,8 @@ import os
 import subprocess
 import vampire.directory_utils as directory_utils
 import vampire.filename_utils as filename_utils
+import gdal
+import rasterio
 
 def clip_raster_to_shp(shpfile, in_raster, out_raster, gdal_path, nodata=True, logger=None):
     # call gdalwarp to clip to shapefile
@@ -11,9 +13,9 @@ def clip_raster_to_shp(shpfile, in_raster, out_raster, gdal_path, nodata=True, l
         if logger: logger.debug("%s",out_raster)
         gdal_exe = os.path.join(gdal_path, 'gdalwarp')
         if nodata:
-            retcode = subprocess.call([gdal_exe, '-t_srs', 'EPSG:4326', '-dstnodata', '-9999', '-crop_to_cutline', '-cutline', shpfile, in_raster, out_raster])
+            retcode = subprocess.call([gdal_exe, '-t_srs', 'EPSG:4326', '-dstnodata', '-9999', '--config', 'GDALWARP_IGNORE_BAD_CUTLINE', 'YES', '-crop_to_cutline', '-cutline', shpfile, in_raster, out_raster])
         else:
-            retcode = subprocess.call([gdal_exe, '-overwrite', '-t_srs', 'EPSG:4326', '-crop_to_cutline', '-cutline', shpfile, in_raster, out_raster])
+            retcode = subprocess.call([gdal_exe, '-overwrite', '-t_srs', 'EPSG:4326', '--config', 'GDALWARP_IGNORE_BAD_CUTLINE', 'YES', '-crop_to_cutline', '-cutline', shpfile, in_raster, out_raster])
 #            print "gdalwarp -overwrite', '-t_srs', 'EPSG:4326', '-crop_to_cutline', '-cutline' {0}, {1}, {2}".format(shpfile, in_raster, out_raster)
         if logger: logger.debug("gdalwarp return code is %s", retcode)
     except subprocess.CalledProcessError as e:
@@ -53,3 +55,146 @@ def crop_files(base_path, output_path, bounds, tools_path, patterns = None, over
                                gdal_path=tools_path, nodata=nodata)
             _fileslist.append(_new_filename)
     return _fileslist
+
+def reproject_image_to_master ( master, slave, output, res=None ):
+    """This function reprojects an image (``slave``) to
+    match the extent, resolution and projection of another
+    (``master``) using GDAL. The newly reprojected image
+    is a GDAL VRT file for efficiency. A different spatial
+    resolution can be chosen by specifyign the optional
+    ``res`` parameter. The function returns the new file's
+    name.
+    Parameters
+    -------------
+    master: str 
+        A filename (with full path if required) with the 
+        master image (that that will be taken as a reference)
+    slave: str 
+        A filename (with path if needed) with the image
+        that will be reprojected
+    res: float, optional
+        The desired output spatial resolution, if different 
+        to the one in ``master``.
+    Returns
+    ----------
+    The reprojected filename
+    TODO Have a way of controlling output filename
+    """
+    slave_ds = gdal.Open( slave )
+    if slave_ds is None:
+        raise IOError, "GDAL could not open slave file %s " \
+            % slave
+    slave_proj = slave_ds.GetProjection()
+    slave_geotrans = slave_ds.GetGeoTransform()
+    data_type = slave_ds.GetRasterBand(1).DataType
+    n_bands = slave_ds.RasterCount
+
+    master_ds = gdal.Open( master )
+    if master_ds is None:
+        raise IOError, "GDAL could not open master file %s " \
+            % master
+    master_proj = master_ds.GetProjection()
+    master_geotrans = master_ds.GetGeoTransform()
+    w = master_ds.RasterXSize
+    h = master_ds.RasterYSize
+    if res is not None:
+        master_geotrans[1] = float( res )
+        master_geotrans[-1] = - float ( res )
+
+    if output is None:
+        dst_filename = slave.replace( ".tif", "_crop.tif" )
+    else:
+        dst_filename = output
+    dst_ds = gdal.GetDriverByName('GTiff').Create(dst_filename,
+                                                w, h, n_bands, data_type)
+    dst_ds.SetGeoTransform( master_geotrans )
+    dst_ds.SetProjection( master_proj)
+
+    gdal.ReprojectImage( slave_ds, dst_ds, slave_proj,
+                         master_proj, gdal.GRA_NearestNeighbour)
+
+    dst_ds.GetRasterBand(1).SetNoDataValue(0.0) #slave_ds.GetRasterBand(1).GetNoDataValue())
+    dst_ds = None  # Flush to disk
+    # with rasterio.open(dst_filename) as dst_r:
+    #     profile = dst_r.profile.copy()
+    #     _dst_a = dst_r.read(1, masked=True)
+    #     _dst_a.filled(fill_value=-9999)
+    #     profile.update(nodata=-9999)
+    #     with rasterio.open(dst_filename, 'w', **profile) as dst:
+    #         dst.write(_dst_a.astype(rasterio.float32), 1)
+
+    return dst_filename
+
+
+def reproject_cut ( slave, box=None, t_srs=None, s_srs=None, res=None ):
+    """This function reprojects an image (``slave``) to
+    match the extent, resolution and projection of another
+    (``master``) using GDAL. The newly reprojected image
+    is a GDAL VRT file for efficiency. A different spatial
+    resolution can be chosen by specifyign the optional
+    ``res`` parameter. The function returns the new file's
+    name.
+    Parameters
+    -------------
+    master: str 
+        A filename (with full path if required) with the 
+        master image (that that will be taken as a reference)
+    slave: str 
+        A filename (with path if needed) with the image
+        that will be reprojected
+    res: float, optional
+        The desired output spatial resolution, if different 
+        to the one in ``master``.
+    Returns
+    ----------
+    The reprojected filename
+    TODO Have a way of controlling output filename
+    """
+
+    slave_ds = gdal.Open( slave )
+    if slave_ds is None:
+        raise IOError, "GDAL could not open slave file %s " \
+            % slave
+    if s_srs is None:
+        proj = slave_ds.GetProjection()
+    else:
+        proj = s_srs
+
+    slave_geotrans = slave_ds.GetGeoTransform()
+    if box is None:
+        ulx = slave_geotrans[0]
+        uly = slave_geotrans[3]
+        lrx = slave_geotrans[0] + slave_ds.RasterXSize * slave_geotrans[1]
+        lry = slave_geotrans[3] + slave_ds.RasterySize * slave_geotrans[-1]
+    else:
+        ulx, uly, lrx, lry = box
+    if res is None:
+        res = slave_geotrans[1]
+
+    data_type = slave_ds.GetRasterBand(1).DataType
+    n_bands = slave_ds.RasterCount
+
+    if t_srs is None:
+        master_proj = proj
+    else:
+        master_proj = t_srs
+
+    master_geotrans = [ ulx, res, slave_geotrans[2],
+                        uly, slave_geotrans[4], -res ]
+
+    w = int(np.round((lrx - ulx) / res))
+    h = int(np.round((uly - lry) / res))
+
+    dst_filename = slave.replace( ".TIF", "_crop.tif" )
+    if dst_filename == slave:
+        dst_filename = slave.replace( ".tif", "_crop.tif" )
+    dst_ds = gdal.GetDriverByName('GTiff').Create(dst_filename,
+                                                  w, h, n_bands, data_type)
+    dst_ds.SetGeoTransform( master_geotrans )
+    dst_ds.SetProjection( proj )
+
+    gdal.ReprojectImage( slave_ds, dst_ds, proj,
+                         master_proj, gdal.GRA_NearestNeighbour)
+    dst_ds = None  # Flush to disk
+    return dst_filename
+
