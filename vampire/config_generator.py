@@ -47,6 +47,11 @@ def generate_config_file(output_file, params):
                 pfile.write(cf.generate_rainfall_long_term_average_config(params['country'],
                                                                             params['interval']
                                                                             ))
+            elif params['product'].lower() == "spi":
+                pfile.write(cf.generate_header_chirps())
+                pfile.write(cf.generate_header_run())
+                pfile.write(cf.generate_standardized_precipitation_index_config(params['country'], params['interval'],
+                                                                params['start_date']))
         pfile.close()
     return 0
 
