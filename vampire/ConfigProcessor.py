@@ -247,6 +247,76 @@ class ConfigProcessor():
                                      cur_dir=cur_dir, lta_dir=lta_dir,
                                      cur_pattern=cur_pattern, lta_pattern=lta_pattern,
                                      dst_filename=out_file, dst_pattern=output_pattern, dst_dir=output_dir )
+        elif process['type'] == 'SPI':
+            if logger: logger.debug("Compute standardized precipitation index")
+            cur_file = None
+            lta_file = None
+            ltsd_file = None
+            out_file = None
+            cur_pattern = None
+            lta_pattern = None
+            ltsd_pattern = None
+            output_pattern = None
+            cur_dir = None
+            lta_dir = None
+            ltsd_dir = None
+            output_dir = None
+            if 'current_file' in process:
+                cur_file = process['current_file']
+            else:
+                if not 'current_file_pattern' in process:
+                    raise ConfigFileError("No current file 'current_file' or pattern 'current_file_pattern' specified.", None)
+                else:
+                    if 'current_dir' in process:
+                        cur_dir = process['current_dir']
+                    else:
+                        cur_dir = None
+
+                    cur_pattern = process['current_file_pattern']
+
+            if 'longterm_avg_file' in process:
+                lta_file = process['longterm_avg_file']
+            else:
+                if not 'longterm_avg_file_pattern' in process:
+                    raise ConfigFileError("No long term average file 'longterm_avg_file' or pattern 'longterm_avg_file_pattern' specified.", None)
+                else:
+                    if 'longterm_avg_dir' in process:
+                        lta_dir = process['longterm_avg_dir']
+                    else:
+                        lta_dir = None
+                    lta_pattern = process['longterm_avg_file_pattern']
+
+            if 'longterm_sd_file' in process:
+                ltsd_file = process['longterm_sd_file']
+            else:
+                if not 'longterm_sd_file_pattern' in process:
+                    raise ConfigFileError("No long term standard deviation file 'longterm_sd_file' or pattern 'longterm_sd_file_pattern' specified.", None)
+                else:
+                    if 'longterm_sd_dir' in process:
+                        ltsd_dir = process['longterm_sd_dir']
+                    else:
+                        ltsd_dir = None
+                    ltsd_pattern = process['longterm_sd_file_pattern']
+
+            if 'output_file' in process:
+                out_file = process['output_file']
+            else:
+                if not 'output_file_pattern':
+                    raise  ConfigFileError("No output file 'output_file' or output pattern 'output_file_pattern' specified.", None)
+                else:
+                    if 'output_dir' in process:
+                        output_dir = process['output_dir']
+                    else:
+                        output_dir = None
+                    output_pattern = process['output_file_pattern']
+
+            ca.calc_standardized_precipitation_index(cur_filename=cur_file, lta_filename=lta_file,
+                                                     ltsd_filename=ltsd_file,
+                                                     cur_dir=cur_dir, lta_dir=lta_dir, ltsd_dir=ltsd_dir,
+                                                     cur_pattern=cur_pattern, lta_pattern=lta_pattern,
+                                                     ltsd_pattern=ltsd_pattern,
+                                                     dst_filename=out_file, dst_pattern=output_pattern,
+                                                     dst_dir=output_dir )
 
         elif process['type'] == 'days_since_last_rain':
             if logger: logger.debug("Compute Days Since Last Rain")
@@ -527,7 +597,6 @@ class ConfigProcessor():
     def process_config(self, config, logger=None):
 
         global options, args
-
         try:
             if config:
                 # parse config file

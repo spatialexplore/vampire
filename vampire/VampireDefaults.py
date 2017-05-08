@@ -75,3 +75,4 @@ class VampireDefaults:
 
     def print_defaults(self):
         print self.config._sections
+

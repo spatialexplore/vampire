@@ -22,7 +22,7 @@ def calc_rainfall_anomaly(cur_filename, lta_filename, dst_filename):
                 dst.write(res2.astype(rasterio.int32), 1)
     return None
 
-def standardized_precipitation_index(cur_filename, lta_filename, ltsd_filename, dst_filename):
+def calc_standardized_precipitation_index(cur_filename, lta_filename, ltsd_filename, dst_filename):
     with rasterio.open(cur_filename) as cur_r:
         _cur_band = cur_r.read(1, masked=True)
         _profile = cur_r.profile.copy()
