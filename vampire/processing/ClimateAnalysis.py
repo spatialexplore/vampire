@@ -126,7 +126,7 @@ class ClimateAnalysis():
     def calc_tci(self, cur_filename=None, cur_dir=None, cur_pattern=None,
                  lst_max_filename=None, lst_max_dir=None, lst_max_pattern=None,
                  lst_min_filename=None, lst_min_dir=None, lst_min_pattern=None,
-                 dst_filename=None, dst_dir=None, dst_pattern=None):
+                 dst_filename=None, dst_dir=None, dst_pattern=None, interval=None):
         self.vampire.logger.info('entering calc_tci')
         _temp_file = None
         if dst_dir is None:
@@ -141,8 +141,8 @@ class ClimateAnalysis():
                     # more than one match - average files
                     print 'Found more than one matching temperature file in directory - averaging '
                     print files_list
-                    _temp_file = '{0}'.format(os.path.join(_dst_dir,
-                                                           os.path.basename(files_list[len(files_list)-1])))
+                    _fn, _ext = os.path.splitext(os.path.basename(files_list[len(files_list)-1]))
+                    _temp_file = os.path.join(_dst_dir, os.path.basename(files_list[len(files_list)-1]))
                     calculate_statistics.calc_average(files_list, _temp_file)
                     _cur_filename = _temp_file
                 else:
@@ -230,7 +230,7 @@ class ClimateAnalysis():
                 os.path.split(_vci_filename)[1], vci_pattern, dst_pattern))
         else:
             _dst_filename = dst_filename
-        if not os.path.isdir(dst_dir):
+        if dst_dir is not None and not os.path.isdir(dst_dir):
             # destination directory does not exist, create it first
             os.makedirs(dst_dir)
         vegetation_analysis.calc_VHI(vci_filename=_vci_filename,
@@ -340,6 +340,8 @@ class ClimateAnalysis():
                 raise ValueError('Cannot find matching long-term standard deviation file.')
 
         if dst_filename is None:
+            if not os.path.exists(dst_dir):
+                os.makedirs(dst_dir)
             # get new filename from directory and pattern
             dst_filename = os.path.join(dst_dir, filename_utils.generate_output_filename(
                 os.path.split(cur_filename)[1], cur_pattern, dst_pattern))
