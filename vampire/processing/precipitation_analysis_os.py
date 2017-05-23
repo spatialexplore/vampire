@@ -11,6 +11,9 @@ def calc_rainfall_anomaly(cur_filename, lta_filename, dst_filename):
         print cur_r.nodatavals
         with rasterio.open(lta_filename) as lta_r:
             lta_a = lta_r.read(1, masked=True)
+            _div_f = _cur_band / lta_a
+            _div_f = _div_f * 100
+            _res = _div_f.filled(fill_value=cur_r.nodata)
             dst_f = np.zeros(_cur_band.shape)
             newd_f = np.ma.masked_where(np.ma.mask_or(np.ma.getmask(_cur_band), np.ma.getmask(lta_r)), dst_f)
             newd_f += np.divide(_cur_band, lta_a) * 100.0
@@ -19,7 +22,7 @@ def calc_rainfall_anomaly(cur_filename, lta_filename, dst_filename):
             res2 = np.ma.masked_where(res==cur_r.nodata, res)
             _profile.update(dtype=rasterio.int32)
             with rasterio.open(path=dst_filename, mode='w', **_profile) as dst:
-                dst.write(res2.astype(rasterio.int32), 1)
+                dst.write(_res.astype(rasterio.int32), 1)
     return None
 
 def calc_standardized_precipitation_index(cur_filename, lta_filename, ltsd_filename, dst_filename):
@@ -31,15 +34,18 @@ def calc_standardized_precipitation_index(cur_filename, lta_filename, ltsd_filen
             lta_a = lta_r.read(1, masked=True)
             with rasterio.open(ltsd_filename) as ltsd_r:
                 ltsd_a = ltsd_r.read(1, masked=True)
-                dst_f = np.zeros(_cur_band.shape)
-                newd_f = np.ma.masked_where(np.ma.mask_or(np.ma.getmask(_cur_band), np.ma.getmask(lta_r)), dst_f)
-                newd_f += np.divide(np.subtract(_cur_band, lta_a), ltsd_a)
-                newd_f.astype(float)
-                res = newd_f.filled(fill_value=cur_r.nodata)
-                res2 = np.ma.masked_where(res==cur_r.nodata, res)
+                _sub_f = _cur_band - lta_a
+                _dst_f = _sub_f / ltsd_a
+                _res = _dst_f.filled(fill_value=cur_r.nodata)
+                # dst_f = np.zeros(_cur_band.shape)
+                # newd_f = np.ma.masked_where(np.ma.mask_or(np.ma.getmask(_cur_band), np.ma.getmask(lta_r)), dst_f)
+                # newd_f += np.divide(np.subtract(_cur_band, lta_a), ltsd_a)
+                # newd_f.astype(float)
+                # res = newd_f.filled(fill_value=cur_r.nodata)
+                # res2 = np.ma.masked_where(res==cur_r.nodata, res)
                 _profile.update(dtype=rasterio.float32)
                 with rasterio.open(path=dst_filename, mode='w', **_profile) as dst:
-                    dst.write(res2.astype(rasterio.float32), 1)
+                    dst.write(_res.astype(rasterio.float32), 1)
     return None
 
 # Find the last day with precipitation greater than threshold in the list of rasters
