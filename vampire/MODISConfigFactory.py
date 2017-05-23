@@ -128,6 +128,37 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
 
         return file_string
 
+    def generate_evi_lta_section(self, product, input_dir, output_dir, input_pattern, output_pattern, functions,
+                                 interval):
+        file_string = """
+    # calculate long-term statistics
+    - process: MODIS
+      type: calc_average
+      layer: long_term_statistics
+      input_dir: {input_dir}
+      output_dir: {output_dir}
+      product: {product}
+      file_pattern: '{input_pattern}'
+      output_pattern: '{output_pattern}'""".format(input_dir=input_dir, output_dir=output_dir, product=product,
+                                                   input_pattern=input_pattern, output_pattern=output_pattern)
+
+        if self.start_date is not None:
+            file_string += """
+      start_date: {s_date}""".format(s_date=self.start_date)
+        if self.end_date is not None:
+            file_string += """
+      end_date: {e_date}""".format(e_date=self.end_date)
+
+        if functions is not None:
+            file_string += """
+      functions: {fn}""".format(fn=functions)
+
+        if interval is not None:
+            file_string += """
+      interval: {interval}""".format(interval=interval)
+
+        return file_string
+
     def generate_tci_section(self, cur_file,
                              cur_dir,
                              cur_pattern,
@@ -270,6 +301,8 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
         if mosaic_dir is None:
             if self.country != 'Global':
                 _mosaic_dir = self.vampire.get('MODIS_PRODUCTS', '{0}.mosaic_dir'.format(product))
+                if _mosaic_dir == '':
+                    _mosaic_dir = None
                 output_dir = _mosaic_dir
             else:
                 _mosaic_dir = None
@@ -631,7 +664,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
                 # need to average over interval
                 if interval != '16Days':
                     print "Sorry, interval conversion other than from 8-16 days is not currently supported"
-                    raise
+                    raise ValueError
                 else:
                     # find the names of the files needed
                     if lst_cur_pattern is None:
@@ -1316,6 +1349,87 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
     ## Processing chain end - Compute Vegetation Condition Index
 """
         return file_string
+
+    # Generate temperature long-term averages
+    def generate_evi_long_term_average(self,
+                                       product=None,            # MODIS product to use
+                                       data_dir=None,           # directory for data files
+                                       lta_dir=None,            # directory for long-term average output
+                                       functions=None,
+                                       download=True,           # download MODIS data if True
+                                       download_dir=None,       # directory for downloaded data
+                                       extract=True,            # extract LST if True
+                                       extract_dir=None,        # directory for extracted EVI
+                                       crop=True,               # crop EVI to region if True
+                                       crop_dir=None,           # directory to save cropped files
+                                       boundary_file=None,      # shapefile for cropping boundary
+                                       interval=None):
+        # set up functions
+        if functions is None:
+            _functions = ['MIN', 'MAX']
+        else:
+            _functions = functions
+        if product is None:
+            _product = self.vampire.get('MODIS', 'vegetation_product')
+        else:
+            _product = product
+
+        file_string = """
+    ## Processing chain begin - Compute EVI Long-term Average"""
+
+        if download:
+            _str, _o_dir = self.generate_download(_product, download_dir)
+            file_string += _str
+        if extract:
+            file_string += self.generate_extract_evi(_product, download_dir, extract_dir)
+        if self.country == 'Global':
+            crop = False
+        if crop:
+            file_string += self.generate_crop_lst(product=_product, boundary_file=boundary_file,
+                                                  input_dir=extract_dir, output_dir=crop_dir)
+
+        if self.country == 'Global':
+            _prefix = self.vampire.get('MODIS', 'global_prefix')
+        elif self.vampire.get_country_code(self.country).upper() == self.vampire.get('vampire', 'home_country'):
+            _prefix = self.vampire.get('MODIS', 'home_country_prefix')
+        else:
+            _prefix = os.path.join(self.vampire.get('MODIS', 'regional_prefix'),
+                                    self.vampire.get_country_code(self.country).upper())
+        # set up input directory
+        if data_dir is None:
+            if crop_dir is not None:
+                _data_dir = crop_dir
+            else:
+                _data_dir = os.path.join(_prefix, self.vampire.get('MODIS_EVI', 'evi_dir_suffix'))
+        else:
+            _data_dir = data_dir
+
+        # set up output directory
+        if lta_dir is None:
+            _lta_dir = os.path.join(_prefix, self.vampire.get('MODIS_EVI_Long_Term_Average', 'lta_dir_suffix'))
+        else:
+            _lta_dir = lta_dir
+
+        _lta_input_pattern = None
+        _lta_output_pattern = None
+
+        if self.country == 'Global':
+            _lta_input_pattern = self.vampire.get('MODIS_EVI', 'evi_pattern')
+            _lta_output_pattern = self.vampire.get('MODIS_EVI_Long_Term_Average', 'lta_output_pattern')
+        else:
+            _lta_input_pattern = self.vampire.get('MODIS_EVI', 'evi_regional_pattern')
+            _lta_output_pattern = self.vampire.get('MODIS_EVI_Long_Term_Average', 'lta_output_pattern')
+
+        file_string += self.generate_evi_lta_section(product=_product, input_dir=_data_dir, output_dir=_lta_dir,
+                                                     input_pattern=_lta_input_pattern,
+                                                     output_pattern=_lta_output_pattern,
+                                                     functions=_functions, interval=interval)
+        file_string += """
+    ## Processing chain end - Compute EVI Long-Term Statistics
+"""
+        return file_string
+
+
 
     def generate_vhi_config(self,
                             tci_file=None,
