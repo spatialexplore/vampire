@@ -27,8 +27,11 @@ def generate_config_file(output_file, params):
 
     with pfile:
         cf = CHIRPSConfigFactory.CHIRPSConfigFactory(name='cf')
+        _end_date = params['start_date']
+        if 'end_date' in params:
+            _end_date = params['end_date']
         mf = MODISConfigFactory.MODISConfigFactory(name='mf', country=params['country'],
-                                                   start_date=params['start_date'], end_date=params['start_date'])
+                                                   start_date=params['start_date'], end_date=_end_date)
         pfile.write(cf.generate_header_directory())
         if 'product' in params:
             if params['product'].lower() == "rainfall_anomaly":
@@ -36,10 +39,21 @@ def generate_config_file(output_file, params):
                 pfile.write(cf.generate_header_run())
                 pfile.write(cf.generate_rainfall_anomaly_config(params['country'], params['interval'],
                                                                 params['start_date']))
+            elif params['product'].lower() == "evi_longterm_average":
+                pfile.write(mf.generate_header_run())
+                if 'interval' in params:
+                    _interval = params['interval']
+                else:
+                    _interval = '16Days'
+                pfile.write(mf.generate_evi_long_term_average(interval=_interval))
             elif params['product'].lower() == "vhi":
                 pfile.write(mf.generate_header_run())
                 pfile.write(mf.generate_vci_config())
-                pfile.write(mf.generate_tci_config(interval='16Days'))
+                if 'interval' in params:
+                    _interval = params['interval']
+                else:
+                    _interval = '16Days'
+                pfile.write(mf.generate_tci_config(interval=_interval))
                 pfile.write(mf.generate_vhi_config())
             elif params['product'].lower() == "rainfall_longterm_average":
                 pfile.write(cf.generate_header_chirps())
@@ -64,7 +78,8 @@ if __name__ == '__main__':
         parser.add_option('-p', '--product', dest='product', action='store', help='product')
         parser.add_option('-o', '--output', dest='output', action='store', help='output filename')
         parser.add_option('-i', '--interval', dest='interval', action='store', help='interval')
-        parser.add_option('-d', '--start_date', dest='start_date', action='store', help='start year-month')
+        parser.add_option('-d', '--start_date', dest='start_date', action='store', help='start year-month-day')
+        parser.add_option('-e', '--end_date', dest='end_date', action='store', help='end date year-month-day')
         (options, args) = parser.parse_args()
         #if len(args) < 1:
         #    parser.error ('missing argument')
@@ -98,6 +113,15 @@ if __name__ == '__main__':
                 _start_date = datetime.datetime.strptime(options.start_date, "%Y-%m-%d")
             print 'start_date=', _start_date
             params['start_date'] = _start_date
+        _start_date = None
+        if options.end_date:
+            try:
+                _end_date = datetime.datetime.strptime(options.end_date, "%Y-%m")
+            except ValueError:
+                # can't parse string, try with day as well
+                _end_date = datetime.datetime.strptime(options.end_date, "%Y-%m-%d")
+            print 'end_date=', _end_date
+            params['end_date'] = _end_date
         generate_config_file(_output, params)
         if options.verbose: print time.asctime()
         if options.verbose: print 'TOTAL TIME IN MINUTES:',
