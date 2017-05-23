@@ -127,32 +127,32 @@ class CHIRPSProcessor:
                         f_date = datetime.datetime(int(f_year), int(f_month), 1)
                     else:
                         raise ValueError, "Interval not recognised."
-                if dates:
-                    if '{0}-{1}'.format(f_year, f_month) in dates:
+                    if dates:
+                        if '{0}-{1}'.format(f_year, f_month) in dates:
+                            download = True
+                    elif (start_date is None) and (end_date is None):
                         download = True
-                elif (start_date is None) and (end_date is None):
-                    download = True
-                elif start_date is None:
-                    # have end_date, check date is before
-                    if f_date is not None:
-                        if f_date <= end_date:
-                            download = True
-                elif end_date is None:
-                    # have start_date, check date is after
-                    if f_date is not None:
-                        if f_date >= start_date:
-                            download = True
-                else:
-                    # have both start and end date
-                    if f_date is not None:
-                        if f_date >= start_date and f_date <= end_date:
-                            download = True
-                if download:
-                    if ftp_host.path.isfile(f):
-                        local_f = os.path.join(output_dir, os.path.basename(f))
-                        if not os.path.isfile(local_f) or overwrite:
-                            ftp_host.download(f, local_f)  # remote, local
-                            files_list.append(os.path.basename(f))
+                    elif start_date is None:
+                        # have end_date, check date is before
+                        if f_date is not None:
+                            if f_date <= end_date:
+                                download = True
+                    elif end_date is None:
+                        # have start_date, check date is after
+                        if f_date is not None:
+                            if f_date >= start_date:
+                                download = True
+                    else:
+                        # have both start and end date
+                        if f_date is not None:
+                            if f_date >= start_date and f_date <= end_date:
+                                download = True
+                    if download:
+                        if ftp_host.path.isfile(f):
+                            local_f = os.path.join(output_dir, os.path.basename(f))
+                            if not os.path.isfile(local_f) or overwrite:
+                                ftp_host.download(f, local_f)  # remote, local
+                                files_list.append(os.path.basename(f))
         return files_list
 
     # Compute statistics for all files within a directory. Computes average unless other functions are provided.
