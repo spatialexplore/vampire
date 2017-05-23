@@ -573,10 +573,10 @@ CHIRPS:
                 _crop_output_pattern = '{0}{1}'.format(
                     self.vampire.get_country_code(country).lower(),
                     self.vampire.get('CHIRPS', 'crop_regional_output_monthly_pattern'))
-                _output_file_pattern = self.vampire.get('CHIRPS_SPI', 'ra_regional_output_monthly_pattern')
+                _output_file_pattern = self.vampire.get('CHIRPS_SPI', 'spi_regional_output_monthly_pattern')
                 _cur_file_pattern = self.vampire.get('CHIRPS', 'regional_monthly_pattern')
                 _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'regional_lta_monthly_pattern')
-                _ltsd_file_pattern = self.vampire.get('CHIRPS_Longterm_Standard_Deviation', 'global_ltsd_monthly_pattern')
+                _ltsd_file_pattern = self.vampire.get('CHIRPS_Longterm_Standard_Deviation', 'regional_ltsd_monthly_pattern')
             # replace generic month in pattern with the specific one needed so the correct file is found.
             _cur_file_pattern = _cur_file_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(month))
             _lta_file_pattern = _lta_file_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(month))
