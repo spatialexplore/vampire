@@ -143,9 +143,16 @@ class MODISProcessor:
         if not patterns:
             patterns = (self.vampire.get('MODIS_NDVI', 'ndvi_input_pattern'),
                         self.vampire.get('MODIS_NDVI', 'ndvi_output_pattern'))
+        if product is None:
+            _product = self.vampire.get('MODIS', 'vegetation_product')
+        else:
+            _product = product
+        _spectral_subset = json.loads(self.vampire.get('MODIS_PRODUCTS', '{0}.NDVI'.format(_product)))
+        _subset_name = self.vampire.get('MODIS_PRODUCTS', '{0}.NDVI_Name'.format(_product))
         new_files = self._extract_subset(input_dir, output_dir, patterns,
-                                         self.vampire.get('MODIS_NDVI', 'ndvi_spectral_subset'),
-                                         self.vampire.get('MODIS_NDVI', 'ndvi_subset_name'),
+                                         _spectral_subset, _subset_name,
+                                         #self.vampire.get('MODIS_NDVI', 'ndvi_spectral_subset'),
+                                         #self.vampire.get('MODIS_NDVI', 'ndvi_subset_name'),
                                          overwrite)
         self.vampire.logger.info('leaving extract_NDVI')
         return new_files
@@ -162,9 +169,16 @@ class MODISProcessor:
         else:
             _output_pattern = output_pattern
         patterns = (_file_pattern, _output_pattern)
+        if product is None:
+            _product = self.vampire.get('MODIS', 'vegetation_product')
+        else:
+            _product = product
+        _spectral_subset = json.loads(self.vampire.get('MODIS_PRODUCTS', '{0}.EVI'.format(_product)))
+        _subset_name = self.vampire.get('MODIS_PRODUCTS', '{0}.EVI_Name'.format(_product))
         new_files = self._extract_subset(input_dir, output_dir, patterns,
-                                         json.loads(self.vampire.get('MODIS_EVI', 'evi_spectral_subset')),
-                                         self.vampire.get('MODIS_EVI', 'evi_subset_name'),
+                                         _spectral_subset, _subset_name,
+                                         #json.loads(self.vampire.get('MODIS_EVI', 'evi_spectral_subset')),
+                                         #self.vampire.get('MODIS_EVI', 'evi_subset_name'),
                                          overwrite)
         self.vampire.logger.info('leaving extract_EVI')
         return new_files

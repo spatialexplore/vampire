@@ -673,10 +673,14 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
                         print self.day_of_year
                         print self.base_day_of_year
                         print self.start_date
+                        _days = (self.start_date - datetime.datetime.strptime('{0}-01-01'.format(self.year), "%Y-%m-%d")).days
+                        print 'Days: {0}'.format(_days)
+                        _remainder = _days % 16
+
                         _date_test = self.day_of_year
                         if not calendar.isleap(int(self.year)):
                             _date_test = _date_test+1
-                        if (_date_test-1) % 16 == 0:
+                        if (_days) % 16 == 0:
                             # this is a 16-day date, use this and the previous 8-day data
                             _prev_date = datetime.datetime(int(self.year), 1, 1) + datetime.timedelta(self.day_of_year - 9)
                             # need to download and process previous 8-day data too.

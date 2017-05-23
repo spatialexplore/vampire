@@ -39,6 +39,47 @@ class RasterProcessor:
                                 patterns=_patterns, overwrite=overwrite, nodata=nodata, logger=logger)
         return None
 
+    def match_projection(self, master_file, master_dir, master_pattern,
+                         slave_file, slave_dir, slave_pattern,
+                         output_file, output_dir, output_pattern):
+        if master_file is None:
+            _file_list = vampire.directory_utils.get_matching_files(master_dir, master_pattern)
+            if _file_list is not None:
+                _master_file = _file_list[0]
+            else:
+                raise ValueError, "No matching master file found."
+        else:
+            _master_file = master_file
+
+        if slave_file is None:
+            _file_list = vampire.directory_utils.get_matching_files(slave_dir, slave_pattern)
+            if _file_list is not None:
+                _slave_file = _file_list[0]
+            else:
+                raise ValueError, "No matching slave file found."
+        else:
+            _slave_file = slave_file
+
+        if output_file is not None:
+            _output_file = output_file
+            _output_dir = os.path.dirname(_output_file)
+        else:
+            if output_dir is None:
+                raise ValueError, "No output directory provided."
+            if output_pattern is None:
+                raise ValueError, "No output pattern provided."
+            _output_dir = output_dir
+            _output_file = os.path.join(_output_dir, vampire.filename_utils.generate_output_filename(
+                os.path.basename(_slave_file), slave_pattern, output_pattern, False))
+
+        if not os.path.isdir(_output_dir):
+            # need to create output dir
+            os.makedirs(_output_dir)
+
+        raster_utils.reproject_image_to_master(_master_file, _slave_file, _output_file)
+
+        return None
+
     # def average_files(self, input_dir, input_pattern, output_dir, output_pattern):
     #     if not os.path.isdir(output_dir):
     #         # need to create output dir
