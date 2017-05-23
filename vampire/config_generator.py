@@ -11,7 +11,7 @@ import CHIRPSConfigFactory
 def generate_config_file(output_file, params):
     if os.path.exists(output_file):
         try:
-            pfile = open(output_file, 'a')
+            pfile = open(output_file, 'w')
         except IOError as e:
             if e.errno == errno.EACCES:
                 return "Error creating file " + output_file
