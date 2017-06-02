@@ -94,3 +94,41 @@ class RasterProcessor:
     #     calculate_statistics.calc_average(file_list=_file_list, avg_file=_output_file)
     #
     #     return None
+
+    def calc_zonal_statistics(self, raster_file, raster_dir, raster_pattern,
+                              polygon_file, polygon_dir, polygon_pattern,
+                              zone_field, output_dir, output_file, output_pattern):
+
+        if raster_file is None:
+            _file_list = vampire.directory_utils.get_matching_files(raster_dir, raster_pattern)
+            if _file_list is not None:
+                _raster_file = _file_list[0]
+            else:
+                raise ValueError, "No matching raster file found."
+        else:
+            _raster_file = raster_file
+
+        if polygon_file is None:
+            _file_list = vampire.directory_utils.get_matching_files(polygon_dir, polygon_pattern)
+            if _file_list is not None:
+                _polygon_file = _file_list[0]
+            else:
+                raise ValueError, "No matching polygon file found."
+        else:
+            _polygon_file = polygon_file
+
+        if output_file is None:
+            if output_dir is None:
+                raise ValueError, "No output directory provided."
+            if output_pattern is None:
+                raise ValueError, "No output pattern provided."
+            _output_dir = output_dir
+            _output_file = os.path.join(_output_dir, vampire.filename_utils.generate_output_filename(
+                os.path.basename(_raster_file), raster_pattern, output_pattern, False))
+        else:
+            _output_file = output_file
+
+        calculate_statistics.calc_zonal_statistics(raster_file=_raster_file, polygon_file=_polygon_file,
+                                                   zone_field=zone_field, output_table=_output_file)
+
+        return None
