@@ -254,7 +254,7 @@ class MODISProcessor:
         return None
 
     def calc_longterm_stats(self, input_dir, output_dir, product,
-                            country, interval, input_pattern=None, output_pattern=None,
+                            interval, country=None, input_pattern=None, output_pattern=None,
                             start_date=None, end_date=None,
                             function_list=None):
         self.vampire.logger.info('entering calc_longterm_stats')
@@ -267,6 +267,10 @@ class MODISProcessor:
                 raise # product unknown
         else:
             _output_pattern = output_pattern
+        if country is None:
+            _country = self.vampire.get('vampire', 'home_country')
+        else:
+            _country = country
         if input_pattern is None:
             if country == 'Global':
                 if product == self.vampire.get('MODIS', 'vegetation_product'):
@@ -310,19 +314,42 @@ class MODISProcessor:
         for f in _all_files:
             _fname = os.path.basename(f)
             _result = re.match(_input_pattern, _fname)
-            _f_date = datetime.date(int(_result.group('year')), int(_result.group('month')), int(_result.group('day')))
-            # TODO: base date should be from start of long-term average data, not necessarily 2000
-            _base_date = datetime.date(2000, int(_result.group('month')), int(_result.group('day')))
-#            _base_name = '{0}-{1}'.format(_result.group('base_name'), _result.group('version'))
-            if start_date is not None and _f_date < (dateutil.parser.parse(start_date)).date():
-                break
-            else:
-                if end_date is not None and _f_date > (dateutil.parser.parse(end_date)).date():
-                    break
+            if not 'month' in _result.groupdict():
+                if 'dayofyear' in _result.groupdict():
+                    _dt = datetime.datetime(int(_result.group('year')), 1,1) + \
+                          datetime.timedelta(int(_result.group('dayofyear'))-1)
+                    _month = _dt.month
+                    _day = _dt.day
                 else:
-                    _yrs.append(_result.group('year'))
-                    _doy.append(_f_date.timetuple().tm_yday)
-                    _file_list.setdefault(_f_date.timetuple().tm_yday, []).append(f)
+                    raise ValueError('No month or day of year in file pattern')
+            else:
+                _month = int(_result.group('month'))
+                _day = int(_result.group('day'))
+
+            _f_date = datetime.date(int(_result.group('year')), _month, _day)
+            # TODO: base date should be from start of long-term average data, not necessarily 2000
+            _base_date = datetime.date(2000, _month, _day)
+#            _base_name = '{0}-{1}'.format(_result.group('base_name'), _result.group('version'))
+            # check if start_date is a datetime object or a string
+            if start_date is not None:
+                if type(start_date) is datetime.date or type(start_date) is datetime.datetime:
+                    if _f_date < start_date.date():
+                        break
+                else:
+                    if _f_date < (dateutil.parser.parse(start_date)).date():
+                        break
+            else:
+                if end_date is not None:
+                    if type(end_date) is datetime.date or type(end_date) is datetime.datetime:
+                        if _f_date > end_date:
+                            break
+                    else:
+                        if _f_date > (dateutil.parser.parse(end_date)).date():
+                            break
+#                else:
+            _yrs.append(_result.group('year'))
+            _doy.append(_f_date.timetuple().tm_yday)
+            _file_list.setdefault(_f_date.timetuple().tm_yday, []).append(f)
 
         _years = set(_yrs)
         _syr = min(_years) #1981
