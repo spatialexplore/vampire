@@ -2,6 +2,7 @@ import processing.CHIRPSProcessor
 import processing.MODISProcessor
 import processing.RasterProcessor
 import processing.ClimateAnalysis
+import processing.ImpactAnalysis
 import processing.raster_utils as raster_utils
 import yaml
 
@@ -151,10 +152,10 @@ class ConfigProcessor():
                         _input_pattern = process['file_pattern']
                     except Exception, e:
                         raise ConfigFileError("No input file pattern 'file_pattern' set.")
-                    try:
+                    if 'country' in process:
                         _country = process['country']
-                    except Exception, e:
-                        raise ConfigFileError("No country provided.")
+                    else:
+                        _country = None
                     if 'output_pattern' in process:
                         _output_pattern = process['output_pattern']
                     else:
@@ -176,7 +177,7 @@ class ConfigProcessor():
                     else:
                         _interval = None
                     mp.calc_longterm_stats(input_dir=_input_dir, output_dir=_output_dir, product=_product,
-                                           country=_country, interval=_interval,
+                                           interval=_interval, country=_country,
                                            input_pattern=_input_pattern, output_pattern=_output_pattern,
                                            start_date=_start_date, end_date=_end_date, function_list=_function_list)
 
@@ -614,6 +615,55 @@ class ConfigProcessor():
             rp.match_projection(master_file=_master_filename, master_dir=_master_dir, master_pattern=_master_pattern,
                                 slave_file=_slave_filename, slave_dir=_slave_dir, slave_pattern=_slave_pattern,
                                 output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern)
+
+        elif process['type'] == 'zonal_statistics':
+            if logger: logger.debug("Calculate zonal statistics as a table from raster and polygon")
+            _raster_filename = None
+            _polygon_filename = None
+            _raster_dir = None
+            _raster_pattern = None
+            _polygon_dir = None
+            _polygon_pattern = None
+            _output_file = None
+            _output_dir = None
+            _output_pattern = None
+            _zone_field = None
+
+            if 'raster_file' in process:
+                _raster_filename = process['raster_file']
+            else:
+                if not 'raster_dir' in process:
+                    raise ConfigFileError("No raster file 'raster_file' or pattern 'raster_pattern'/directory 'raster_dir' specified.", None)
+                else:
+                    _raster_dir = process['raster_dir']
+                    _raster_pattern = process['raster_pattern']
+            if 'polygon_file' in process:
+                _polygon_filename = process['polygon_file']
+            else:
+                if not 'polygon_dir' in process:
+                    raise ConfigFileError("No polygon file 'polygon_file' or pattern 'polygon_pattern'/directory 'polygon_dir' specified.", None)
+                else:
+                    _polygon_dir = process['polygon_dir']
+                    _polygon_pattern = process['polygon_pattern']
+
+            if 'output_file' in process:
+                _output_file = process['output_file']
+            else:
+                if not 'output_pattern' in process:
+                    raise ConfigFileError("No output filename 'output_file' or output pattern 'output_pattern' specified.", None)
+                else:
+                    _output_pattern = process['output_pattern']
+                    _output_dir = process['output_dir']
+
+            if 'zone_field' in process:
+                _zone_field = process['zone_field']
+            else:
+                raise ConfigFileError("No zone field specified", None)
+
+            rp.calc_zonal_statistics(raster_file=_raster_filename, raster_dir=_raster_dir, raster_pattern=_raster_pattern,
+                                polygon_file=_polygon_filename, polygon_dir=_polygon_dir, polygon_pattern=_polygon_pattern,
+                                output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
+                                zone_field=_zone_field)
         # elif process['type'] == 'average_files':
         #     if logger: logger.debug("Compute average of raster files")
         #
@@ -637,6 +687,98 @@ class ConfigProcessor():
         #                      output_dir=_output_dir, output_pattern=_out_pattern)
         return None
     #
+
+    def _process_impact(self, process, cfg, logger=None):
+        ia = processing.ImpactAnalysis.ImpactAnalysis()
+        if process['type'] == 'area':
+            if logger: logger.debug("Compute area of event impact")
+
+            _hazard_pattern = None
+            _hazard_dir = None
+            _hazard_file = None
+            if 'hazard_file' in process:
+                _hazard_file = process['hazard_file']
+            elif 'hazard_pattern' in process:
+                _hazard_dir = process['hazard_dir']
+                _hazard_pattern = process['hazard_pattern']
+            else:
+                raise ConfigFileError('No hazard filename "hazard_file" or hazard dir/pattern "hazard_dir / hazard_pattern" set', None)
+
+            if 'boundary_file' in process:
+                _boundary_file = process['boundary_file']
+            else:
+                raise ConfigFileError('No boundary file "boundary_file" provided', None)
+
+            if 'boundary_field' in process:
+                _boundary_field = process['boundary_field']
+            else:
+                _boundary_field = None
+
+            if 'output_file' in process:
+                _output_file = process['output_file']
+            else:
+                raise ConfigFileError('No output file "output_file" specified', None)
+
+            if 'hazard_threshold' in process:
+                _threshold = process['hazard_threshold']
+            else:
+                _threshold = None
+
+            ia.calculate_impact_area(hazard_raster=_hazard_file, hazard_dir=_hazard_dir, hazard_pattern=_hazard_pattern,
+                                     boundary=_boundary_file, b_field=_boundary_field, threshold=_threshold,
+                                     output_file=_output_file)
+        elif process['type'] == 'population':
+            if logger: logger.debug("Compute population affected by event")
+
+            _hazard_pattern = None
+            _hazard_dir = None
+            _hazard_file = None
+            if 'hazard_file' in process:
+                _hazard_file = process['hazard_file']
+            elif 'hazard_pattern' in process:
+                _hazard_dir = process['hazard_dir']
+                _hazard_pattern = process['hazard_pattern']
+            else:
+                raise ConfigFileError('No hazard filename "hazard_file" or hazard dir/pattern "hazard_dir / hazard_pattern" set', None)
+
+            _population_pattern = None
+            _population_dir = None
+            _population_file = None
+            if 'population_file' in process:
+                _population_file = process['population_file']
+            elif 'population_pattern' in process:
+                _population_dir = process['population_dir']
+                _population_pattern = process['population_pattern']
+            else:
+                raise ConfigFileError('No population filename "population_file" or population dir/pattern "population_dir / population_pattern" set', None)
+
+            if 'boundary_file' in process:
+                _boundary_file = process['boundary_file']
+            else:
+                raise ConfigFileError('No boundary file "boundary_file" provided', None)
+
+            if 'boundary_field' in process:
+                _boundary_field = process['boundary_field']
+            else:
+                _boundary_field = None
+
+            if 'output_file' in process:
+                _output_file = process['output_file']
+            else:
+                raise ConfigFileError('No output file "output_file" specified', None)
+
+            if 'hazard_threshold' in process:
+                _threshold = process['hazard_threshold']
+            else:
+                _threshold = None
+
+            ia.calculate_impact_popn(hazard_raster=_hazard_file, hazard_dir=_hazard_dir, hazard_pattern=_hazard_pattern,
+                                     population_raster=_population_file,
+                                     boundary=_boundary_file, b_field=_boundary_field, threshold=_threshold,
+                                     output_file=_output_file)
+
+        return None
+
 
     def process_config(self, config, logger=None):
 
@@ -664,30 +806,38 @@ class ConfigProcessor():
 
         for i,p in enumerate(_process_list):
             try:
-                if p['process'] == 'CHIRPS':
+                if p['process'].upper() == 'CHIRPS':
                     print "Processing CHIRPS data"
                     self._process_CHIRPS(p, cfg, logger)
             except Exception, e:
                 ConfigFileError("running process CHIRPS", e)
                 raise
             try:
-                if p['process'] == 'MODIS':
+                if p['process'].upper() == 'MODIS':
                     print "Processing MODIS data"
                     self._process_MODIS(p, cfg, logger)
             except Exception, e:
                 ConfigFileError("running process MODIS", e)
                 raise
             try:
-                if p['process'] == 'Analysis':
+                if p['process'].lower() == 'analysis':
                     print "Performing data analysis"
                     self._process_analysis(p, cfg, logger)
             except Exception, e:
                 ConfigFileError("performing data analysis", e)
                 raise
             try:
-                if p['process'] == 'Raster':
+                if p['process'].lower() == 'raster':
                     print "Performing raster analysis"
                     self._process_raster(p, cfg, logger)
             except Exception, e:
                 ConfigFileError("performing raster analysis", e)
                 raise
+            try:
+                if p['process'].lower() == 'impact':
+                    print "Performing impact analysis"
+                    self._process_impact(p, cfg, logger)
+            except Exception, e:
+                ConfigFileError('performing impact analysis', e)
+
+        return None
