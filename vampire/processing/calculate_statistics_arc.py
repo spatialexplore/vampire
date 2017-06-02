@@ -38,7 +38,7 @@ def calc_std_dev(file_list, sd_file):
     # Save the output
     outRaster.save(sd_file)
 #    print "saved standard deviation in: ", sd_file
-    return 0
+    return None
 
 def calc_sum(file_list, sum_file):
 #    print "calcSum: ", file_list
@@ -48,7 +48,7 @@ def calc_sum(file_list, sum_file):
     # Save the output
     outRaster.save(sum_file)
 #    print "saved sum in: ", sum_file
-    return 0
+    return None
 
 def calc_average_of_day_night(day_file, night_file, avg_file):
     print "calcAverage: ", day_file, night_file
@@ -61,5 +61,12 @@ def calc_average_of_day_night(day_file, night_file, avg_file):
     # Save the output
     outRaster.save(avg_file)
     print "saved avg in: ", avg_file
-    return 0
+    return None
 
+def calc_zonal_statistics(raster_file, polygon_file, zone_field, output_table):
+    # first calculate statistics on raster
+    arcpy.CalculateStatistics_management(in_raster_dataset=raster_file)
+    # now calculate zonal statistics as table
+    arcpy.sa.ZonalStatisticsAsTable(in_zone_data=polygon_file, zone_field=zone_field,
+                                    in_value_raster=raster_file,out_table=output_table)
+    return None

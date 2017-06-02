@@ -1,5 +1,6 @@
 
 import rasterio
+import rasterstats
 import numpy as np
 
 def calc_average(file_list, avg_file):
@@ -117,4 +118,10 @@ def calc_average_of_day_night(day_file, night_file, avg_file):
             profile.update(dtype=rasterio.float32, nodata=-9999)
             with rasterio.open(avg_file, 'w', **profile) as dst:
                 dst.write(dst_r.astype(rasterio.float32), 1)
+    return None
+
+def calc_zonal_statistics(raster_file, polygon_file, zone_field, output_table):
+    stats = rasterstats.zonal_stats(polygon_file, raster_file, stats=['min', 'max', 'mean', 'count', 'sum'],
+                                    geojson_out=True)
+    print stats
     return None
