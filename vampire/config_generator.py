@@ -7,6 +7,7 @@ import os
 import traceback
 import MODISConfigFactory
 import CHIRPSConfigFactory
+import ImpactConfigFactory
 
 def generate_config_file(output_file, params):
     if os.path.exists(output_file):
@@ -32,6 +33,8 @@ def generate_config_file(output_file, params):
             _end_date = params['end_date']
         mf = MODISConfigFactory.MODISConfigFactory(name='mf', country=params['country'],
                                                    start_date=params['start_date'], end_date=_end_date)
+        imf = ImpactConfigFactory.ImpactConfigFactory(name='imf', country=params['country'],
+                                                      start_date=params['start_date'], end_date=_end_date)
         pfile.write(cf.generate_header_directory())
         if 'product' in params:
             if params['product'].lower() == "rainfall_anomaly":
@@ -55,6 +58,8 @@ def generate_config_file(output_file, params):
                     _interval = '16Days'
                 pfile.write(mf.generate_tci_config(interval=_interval))
                 pfile.write(mf.generate_vhi_config())
+                if params['impact'] == True:
+                    pfile.write(imf.generate_impact(product=params['product'], interval=_interval))
             elif params['product'].lower() == "rainfall_longterm_average":
                 pfile.write(cf.generate_header_chirps())
                 pfile.write(cf.generate_header_run())
