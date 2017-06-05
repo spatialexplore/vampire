@@ -2,6 +2,9 @@
 import rasterio
 import rasterstats
 import numpy as np
+import json
+import csv
+import os
 
 def calc_average(file_list, avg_file):
 #    print "calcAverage: ", file_list
@@ -123,5 +126,24 @@ def calc_average_of_day_night(day_file, night_file, avg_file):
 def calc_zonal_statistics(raster_file, polygon_file, zone_field, output_table):
     stats = rasterstats.zonal_stats(polygon_file, raster_file, stats=['min', 'max', 'mean', 'count', 'sum'],
                                     geojson_out=True)
-    print stats
-    return None
+    # export geojson to a file.
+    with open('{0}.geojson'.format(os.path.basename(output_table)), 'w') as f:
+        json.dump(stats, f)
+
+    # export to .csv
+    _stats_list = []
+    _header_row = []
+    for i in stats[0]['properties']:
+        _header_row.append(i)
+    for i in stats:
+        row = []
+        for p in i['properties']:
+            row.append(i['properties'][p])
+        _stats_list.append(row)
+    _output_csv = os.path.join(os.path.dirname(output_table), output_table)
+    with open(_output_csv, 'wb') as cf:
+        wr = csv.writer(cf)
+        wr.writerow(_header_row)
+        wr.writerows(_stats_list)
+
+    return stats
