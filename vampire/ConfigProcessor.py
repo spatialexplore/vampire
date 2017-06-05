@@ -696,6 +696,9 @@ class ConfigProcessor():
             _hazard_pattern = None
             _hazard_dir = None
             _hazard_file = None
+            _output_file = None
+            _output_dir = None
+            _output_pattern = None
             if 'hazard_file' in process:
                 _hazard_file = process['hazard_file']
             elif 'hazard_pattern' in process:
@@ -716,8 +719,11 @@ class ConfigProcessor():
 
             if 'output_file' in process:
                 _output_file = process['output_file']
+            elif 'output_pattern' in process:
+                _output_dir = process['output_dir']
+                _output_pattern = process['output_pattern']
             else:
-                raise ConfigFileError('No output file "output_file" specified', None)
+                raise ConfigFileError('No output file "output_file" or output directory/pattern "output_dir/output_pattern" specified', None)
 
             if 'hazard_threshold' in process:
                 _threshold = process['hazard_threshold']
@@ -726,7 +732,7 @@ class ConfigProcessor():
 
             ia.calculate_impact_area(hazard_raster=_hazard_file, hazard_dir=_hazard_dir, hazard_pattern=_hazard_pattern,
                                      boundary=_boundary_file, b_field=_boundary_field, threshold=_threshold,
-                                     output_file=_output_file)
+                                     output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern)
         elif process['type'] == 'population':
             if logger: logger.debug("Compute population affected by event")
 
@@ -762,8 +768,14 @@ class ConfigProcessor():
             else:
                 _boundary_field = None
 
+            _output_file = None
+            _output_dir = None
+            _output_pattern = None
             if 'output_file' in process:
                 _output_file = process['output_file']
+            elif 'output_pattern' in process:
+                _output_dir = process['output_dir']
+                _output_pattern = process['output_pattern']
             else:
                 raise ConfigFileError('No output file "output_file" specified', None)
 
@@ -775,7 +787,7 @@ class ConfigProcessor():
             ia.calculate_impact_popn(hazard_raster=_hazard_file, hazard_dir=_hazard_dir, hazard_pattern=_hazard_pattern,
                                      population_raster=_population_file,
                                      boundary=_boundary_file, b_field=_boundary_field, threshold=_threshold,
-                                     output_file=_output_file)
+                                     output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern)
 
         return None
 
