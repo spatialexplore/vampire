@@ -6,6 +6,7 @@ import functools
 import vampire.VampireDefaults as VampireDefaults
 import vampire.directory_utils as directory_utils
 import vampire.filename_utils as filename_utils
+import vampire.csv_utils as csv_utils
 
 
 try:
@@ -24,7 +25,7 @@ class ImpactAnalysis():
 
     def calculate_impact_popn(self, hazard_raster, hazard_dir, hazard_pattern, threshold,
                               population_raster, boundary, b_field, output_file,
-                              output_dir, output_pattern, hazard_var='vhi'):
+                              output_dir, output_pattern, start_date, end_date, hazard_var='vhi'):
         if threshold is None:
             # get threshold from VampireDefaults
             _threshold = self.vampire.get('hazard_impact', '{0}_threshold'.format(hazard_var))
@@ -70,14 +71,19 @@ class ImpactAnalysis():
 
         # add field to table and calculate total for each area
         if population_raster is None:
-            impact_analysis.calc_field(table_name=_output_file, new_field='pop_aff', cal_field='COUNT', type='LONG')
+            csv_utils.calc_field(table_name=_output_file, new_field='pop_aff', cal_field='COUNT', type='LONG')
         else:
-            impact_analysis.calc_field(table_name=_output_file, new_field='pop_aff', cal_field='SUM', type='LONG')
+            csv_utils.calc_field(table_name=_output_file, new_field='pop_aff', cal_field='SUM', type='LONG')
+
+        # add start and end date fields and set values
+        csv_utils.add_field(table_name=_output_file, new_field='start_date', value=start_date)
+        csv_utils.add_field(table_name=_output_file, new_field='end_date', value=end_date)
 
         return None
 
     def calculate_impact_area(self, hazard_raster, hazard_dir, hazard_pattern, threshold,
-                              boundary, b_field, output_file, output_dir, output_pattern, hazard_var='vhi'):
+                              boundary, b_field, output_file, output_dir, output_pattern, start_date, end_date,
+                              hazard_var='vhi'):
         if threshold is None:
             # get threshold from VampireDefaults
             _threshold = self.vampire.get('hazard_impact', '{0}_threshold'.format(hazard_var))
@@ -115,6 +121,16 @@ class ImpactAnalysis():
                                                            zone_field=b_field, output_table=_output_file)
         # convert to hectares
         # TODO: get multiplier from defaults depending on resolution of hazard raster
-        impact_analysis.calc_field(_output_file, 'area_aff', 'COUNT', 6.25)
+        csv_utils.calc_field(table_name=_output_file, new_field='area_aff', cal_field='COUNT', multiplier=6.25)
+        # add start and end date fields and set values
+        csv_utils.add_field(table_name=_output_file, new_field='start_date', value=start_date)
+        csv_utils.add_field(table_name=_output_file, new_field='end_date', value=end_date)
+
+        return None
+
+    def calculate_impact_crops(self, hazard_raster, hazard_dir, hazard_pattern, threshold,
+                               crop_boundary, crop_dir, crop_pattern, crop_field,
+                               boundary, b_field, output_file, output_dir, output_pattern, start_date, end_date,
+                               hazard_var='vhi'):
 
         return None
