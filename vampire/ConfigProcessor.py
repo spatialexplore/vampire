@@ -690,6 +690,16 @@ class ConfigProcessor():
 
     def _process_impact(self, process, cfg, logger=None):
         ia = processing.ImpactAnalysis.ImpactAnalysis()
+        if 'start_date' in process:
+            _start_date = process['start_date']
+        else:
+            _start_date = None
+
+        if 'end_date' in process:
+            _end_date = process['end_date']
+        else:
+            _end_date = None
+
         if process['type'] == 'area':
             if logger: logger.debug("Compute area of event impact")
 
@@ -732,7 +742,8 @@ class ConfigProcessor():
 
             ia.calculate_impact_area(hazard_raster=_hazard_file, hazard_dir=_hazard_dir, hazard_pattern=_hazard_pattern,
                                      boundary=_boundary_file, b_field=_boundary_field, threshold=_threshold,
-                                     output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern)
+                                     output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
+                                     start_date=_start_date, end_date=_end_date)
         elif process['type'] == 'population':
             if logger: logger.debug("Compute population affected by event")
 
@@ -787,7 +798,8 @@ class ConfigProcessor():
             ia.calculate_impact_popn(hazard_raster=_hazard_file, hazard_dir=_hazard_dir, hazard_pattern=_hazard_pattern,
                                      population_raster=_population_file,
                                      boundary=_boundary_file, b_field=_boundary_field, threshold=_threshold,
-                                     output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern)
+                                     output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
+                                     start_date=_start_date, end_date=_end_date)
 
         return None
 
