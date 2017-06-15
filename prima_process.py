@@ -12,64 +12,82 @@ import csv
 import vampire.config_generator
 import vampire.ConfigProcessor
 import vampire.VampireDefaults
+import vampire.database_utils
+import vampire.directory_utils
+import vampire.filename_utils
+import vampire.csv_utils
 
 
-#product = str(sys.argv[1])
-# dirname = str(sys.argv[2])
-# period = str(sys.argv[3])
-# period_join = period.replace('-','')
-# period_year = period.split('-')[0]
-# period_month = period.split('-')[1]
-# period_day = period.rsplit('-')[1]
+def upload_impact_to_db(product, impact_type, start_date, vp):
+    if product == 'vhi':
+        _product_dir = vp.get('hazard_impact', 'vhi_output_dir')
+        if impact_type == 'area':
+            _filename_pattern = vp.get('hazard_impact', 'vhi_area_pattern')
+            _table_name = 'vhi_area'
+#        _product_filename = os.path.join(_product_dir,
+#                                         'lka_phy_MOD13Q1.%s.250m_16_days_vhi_area_dsd.csv' % start_date.strftime(
+#                                             '%Y.%m.%d'))
+        elif impact_type == 'popn':
+            _filename_pattern = vp.get('hazard_impact', 'vhi_popn_pattern')
+            _table_name = 'vhi_popn'
+        else:
+            raise ValueError('Invalid impact type {0}'.format(impact_type))
+        _filename_pattern = _filename_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(start_date.year))
+        _filename_pattern = _filename_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(start_date.month))
+        _filename_pattern = _filename_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(start_date.day))
+        _filenames = vampire.directory_utils.get_matching_files(_product_dir, _filename_pattern)
+        _product_filename = _filenames[0]
+
+        _database = 'prima_impact'
+        _host = 'localhost'
+        _user = 'prima_user'
+        _password = 'prima_user'
+        _port = 5432
+        vampire.database_utils.insert_csv_to_table(_database, _host, _port, _user, _password, _table_name,
+                                                   _product_filename)
+    return None
+
 
 def convert_csv_to_choropleth(product, impact_type, start_date, vp):
     if product.lower() == 'vhi':
         _product_dir = vp.get('hazard_impact', 'vhi_output_dir')
         if impact_type == 'area':
-            _product_filename = os.path.join(_product_dir,
-                                        'lka_phy_MOD13Q1.%s.250m_16_days_vhi_area_dsd.csv' % start_date.strftime('%Y.%m.%d'))
+            _filename_pattern = vp.get('hazard_impact', 'vhi_area_pattern')
+            _filename_pattern = _filename_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(start_date.year))
+            _filename_pattern = _filename_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(start_date.month))
+            _filename_pattern = _filename_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(start_date.day))
+            _filenames = vampire.directory_utils.get_matching_files(_product_dir, _filename_pattern)
+            _product_filename = _filenames[0]
+            #            _product_filename = os.path.join(_product_dir,
+            #                                        'lka_phy_MOD13Q1.%s.250m_16_days_vhi_area_dsd.csv' % start_date.strftime('%Y.%m.%d'))
             _field_name = 'area_aff'
-            _output_filename = 'lka_phy_MOD13Q1.%s.vhi_impact_dsd_area.csv' % start_date.strftime('%Y.%m.%d')
+            _output_pattern = vp.get('hazard_impact', 'vhi_area_output_pattern')
+            _output_filename = vampire.filename_utils.generate_output_filename(os.path.basename(_product_filename),
+                                                                               _filename_pattern, _output_pattern)
+            #            _output_filename = 'lka_phy_MOD13Q1.%s.vhi_impact_dsd_area.csv' % start_date.strftime('%Y.%m.%d')
             _output_filename = os.path.join(_product_dir, _output_filename)
         elif impact_type == 'popn':
-            _product_filename = os.path.join(_product_dir,
-                                        'lka_phy_MOD13Q1.%s.250m_16_days_vhi_popn_dsd.csv' % start_date.strftime('%Y.%m.%d'))
+            _filename_pattern = vp.get('hazard_impact', 'vhi_popn_pattern')
+            _filename_pattern = _filename_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(start_date.year))
+            _filename_pattern = _filename_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(start_date.month))
+            _filename_pattern = _filename_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(start_date.day))
+            _filenames = vampire.directory_utils.get_matching_files(_product_dir, _filename_pattern)
+            _product_filename = _filenames[0]
+            # _product_filename = os.path.join(_product_dir,
+            #                             'lka_phy_MOD13Q1.%s.250m_16_days_vhi_popn_dsd.csv' % start_date.strftime('%Y.%m.%d'))
             _field_name = 'pop_aff'
-            _output_filename = 'lka_phy_MOD13Q1.%s.vhi_impact_dsd_popn.csv' % start_date.strftime('%Y.%m.%d')
-            _output_filename = os.path.join(_product_dir, _output_filename)
+            _output_pattern = vp.get('hazard_impact', 'vhi_popn_output_pattern')
+            _output_filename = vampire.filename_utils.generate_output_filename(os.path.basename(_product_filename),
+                                                                               _filename_pattern, _output_pattern)
+#            _output_filename = 'lka_phy_MOD13Q1.%s.vhi_impact_dsd_popn.csv' % start_date.strftime('%Y.%m.%d')
+#            _output_filename = os.path.join(_product_dir, _output_filename)
         else:
             raise ValueError('ERROR: Impact type {0} not recognised.'.format(impact_type))
-        _product_name = 'vhi'
-        _new_csv = []
-        with open(_product_filename, 'rb') as cf:
-            _reader = csv.reader(cf)
-            _header_row = next(_reader)
-            _new_header_row = ['area_id', 'value', 'start_date', 'end_date']
-            _dsd_n_index = 0
-            _value_index = 0
-            try:
-                _dsd_n_index = _header_row.index('dsd_n')
-                _value_index = _header_row.index(_field_name)
-            except ValueError, e:
-                print 'dsd_n or {0} not found in file header row.'.format(_field_name)
-                return None
-
-            for row in _reader:
-                _new_row = []
-                _new_row.append(row[_dsd_n_index])
-                _new_row.append(row[_value_index])
-                _actual_start = start_date - datetime.timedelta(days=16)
-                _new_row.append(_actual_start.strftime('%Y.%m.%d'))
-                _new_row.append(start_date.strftime('%Y.%m.%d'))
-                print _new_row
-                _new_csv.append(_new_row)
-        with open(_output_filename, 'wb') as wf:
-            wr = csv.writer(wf)
-            wr.writerow(_new_header_row)
-            wr.writerows(_new_csv)
-    return None
-
-
+        vampire.csv_utils.csv_to_choropleth_format(_product_filename, _output_filename,
+                                                   'dsd_n', _field_name, 'start_date', 'end_date')
+    else:
+        return None
+    return _output_filename
 
 def move_output_to_geoserver(product, start_date, vp):
     _geoserver_data = 'C:\\Program Files (x86)\\GeoServer 2.11.0\\data_dir\\data\\'
@@ -150,9 +168,17 @@ def upload_to_db(product, start_date):
             """INSERT INTO %(table)s (the_geom, location, ingestion)
 SELECT the_geom, %(location)s, %(ingestion)s
 FROM %(table2)s
-WHERE fid = 1""",
+WHERE fid = 1 AND NOT EXISTS (SELECT location, ingestion FROM %(table3)s WHERE %(table3)s.location = %(location)s 
+                              AND %(table3)s.ingestion = %(ingestion)s)
+""",
             {'table':psycopg2.extensions.AsIs(_table_name), 'location':_filename, 'ingestion':_ingestion_date,
-             'table2':psycopg2.extensions.AsIs(_table_name)})
+             'table2':psycopg2.extensions.AsIs(_table_name), 'table3':psycopg2.extensions.AsIs(_table_name)})
+#         """INSERT INTO %(table)s (the_geom, location, ingestion)
+# SELECT the_geom, %(location)s, %(ingestion)s
+# FROM %(table2)s
+# WHERE fid = 1""",
+#         {'table': psycopg2.extensions.AsIs(_table_name), 'location': _filename, 'ingestion': _ingestion_date,
+#          'table2': psycopg2.extensions.AsIs(_table_name)})
     except Exception, e:
         print "Error: Can't INSERT into table {0}".format(_table_name)
         print e.message
@@ -208,10 +234,15 @@ def main():
         vp = vampire.VampireDefaults.VampireDefaults()
         cp = vampire.ConfigProcessor.ConfigProcessor()
         cp.process_config(_output, vp.logger)
-#        move_output_to_geoserver(_product, _start_date, vp)
-#        upload_to_db(product=_product, start_date=_start_date)
+        move_output_to_geoserver(_product, _start_date, vp)
+        upload_to_db(product=_product, start_date=_start_date)
         convert_csv_to_choropleth(product=_product, impact_type='area', start_date=_start_date, vp=vp)
+        upload_impact_to_db(product=_product, impact_type='area', start_date=_start_date, vp=vp)
         convert_csv_to_choropleth(product=_product, impact_type='popn', start_date=_start_date, vp=vp)
+        upload_impact_to_db(product=_product, impact_type='popn', start_date=_start_date, vp=vp)
+
+        # vampire.database_utils.insert_csv_to_table(database='prima_impact', host='localhost', user='prima_user',
+        #                                            password='prima_user', table='vhi_area', csv_file='')
 
         if options.verbose: print time.asctime()
         if options.verbose: print 'TOTAL TIME IN MINUTES:',
