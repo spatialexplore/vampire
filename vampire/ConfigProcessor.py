@@ -744,6 +744,69 @@ class ConfigProcessor():
                                      boundary=_boundary_file, b_field=_boundary_field, threshold=_threshold,
                                      output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
                                      start_date=_start_date, end_date=_end_date)
+        elif process['type'] == 'crops':
+            if logger: logger.debug("Compute area of affected crops")
+
+            _hazard_pattern = None
+            _hazard_dir = None
+            _hazard_file = None
+            _output_file = None
+            _output_dir = None
+            _output_pattern = None
+            _crop_pattern = None
+            _crop_dir = None
+            _crop_file = None
+            if 'hazard_file' in process:
+                _hazard_file = process['hazard_file']
+            elif 'hazard_pattern' in process:
+                _hazard_dir = process['hazard_dir']
+                _hazard_pattern = process['hazard_pattern']
+            else:
+                raise ConfigFileError('No hazard filename "hazard_file" or hazard dir/pattern "hazard_dir / hazard_pattern" set', None)
+
+            if 'boundary_file' in process:
+                _boundary_file = process['boundary_file']
+            else:
+                raise ConfigFileError('No boundary file "boundary_file" provided', None)
+
+            if 'boundary_field' in process:
+                _boundary_field = process['boundary_field']
+            else:
+                _boundary_field = None
+
+            if 'output_file' in process:
+                _output_file = process['output_file']
+            elif 'output_pattern' in process:
+                _output_dir = process['output_dir']
+                _output_pattern = process['output_pattern']
+            else:
+                raise ConfigFileError('No output file "output_file" or output directory/pattern "output_dir/output_pattern" specified', None)
+
+            if 'hazard_threshold' in process:
+                _threshold = process['hazard_threshold']
+            else:
+                _threshold = None
+
+            if 'crop_boundary' in process:
+                _crop_file = process['crop_boundary']
+            elif 'crop_pattern' in process:
+                _crop_dir = process['crop_dir']
+                _crop_pattern = process['crop_pattern']
+            else:
+                raise ConfigFileError('No crop boundary file "crop_boundary" or crop directory/pattern "crop_dir/crop_pattern" specified', None)
+
+            if 'crop_field' in process:
+                _crop_field = process['crop_field']
+            else:
+                _crop_field = None
+
+
+            ia.calculate_impact_crops(hazard_raster=_hazard_file, hazard_dir=_hazard_dir, hazard_pattern=_hazard_pattern,
+                                     crop_boundary=_crop_file, crop_dir=_crop_dir, crop_pattern=_crop_pattern,
+                                     crop_field=_crop_field, threshold=_threshold,
+                                     admin_boundary=_boundary_file, admin_boundary_field=_boundary_field,
+                                     output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
+                                     start_date=_start_date, end_date=_end_date)
         elif process['type'] == 'population':
             if logger: logger.debug("Compute population affected by event")
 
