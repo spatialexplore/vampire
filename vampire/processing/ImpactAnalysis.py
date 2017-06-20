@@ -130,7 +130,89 @@ class ImpactAnalysis():
 
     def calculate_impact_crops(self, hazard_raster, hazard_dir, hazard_pattern, threshold,
                                crop_boundary, crop_dir, crop_pattern, crop_field,
-                               boundary, b_field, output_file, output_dir, output_pattern, start_date, end_date,
+                               admin_boundary, admin_boundary_field,
+                               output_file, output_dir, output_pattern, start_date, end_date,
                                hazard_var='vhi'):
+
+        if threshold is None:
+            # get threshold from VampireDefaults
+            _threshold = self.vampire.get('hazard_impact', '{0}_threshold'.format(hazard_var))
+        else:
+            _threshold = threshold
+
+        if hazard_raster is None:
+            if hazard_pattern is not None:
+                _input_files = directory_utils.get_matching_files(hazard_dir, hazard_pattern)
+                _hazard_raster = os.path.join(hazard_dir, _input_files[0])
+            else:
+                raise ValueError("Hazard raster is not specified")
+        else:
+            _hazard_raster = hazard_raster
+
+        if crop_boundary is None:
+            if crop_pattern is not None:
+                _crop_files = directory_utils.get_matching_files(crop_dir, crop_pattern)
+                _crop_boundary = os.path.join(crop_dir, _crop_files[0])
+            else:
+                raise ValueError("Crop boundary file not specified.")
+        else:
+            _crop_boundary = crop_boundary
+
+        if output_file is None:
+            if output_pattern is not None:
+                _input_pattern = self.vampire.get('MODIS_VHI', 'vhi_pattern')
+                _output_file = filename_utils.generate_output_filename(os.path.basename(_hazard_raster),
+                                                                       _input_pattern, output_pattern)
+                _output_file = os.path.join(output_dir, _output_file)
+                if not os.path.exists(output_dir):
+                    os.makedirs(output_dir)
+            else:
+                raise ValueError("No output specified")
+        else:
+            _output_file = output_file
+
+        if output_dir is None:
+            _output_dir = os.path.dirname(output_file)
+        else:
+            _output_dir = output_dir
+
+        # reclassify hazard raster to generate mask of all <= threshold
+        _reclass_raster = os.path.join(os.path.dirname(_output_file), 'hazard_crops_reclass.tif')
+        impact_analysis.reclassify_raster(raster=_hazard_raster, threshold=_threshold, output_raster=_reclass_raster)
+
+        _zone_table = os.path.join(_output_dir, 'hazard_crops_table.csv')
+
+        # calculate impact on boundary
+        # if have admin boundary as well, intersect the two boundaries first, then dissolve after the join to
+        # calculate crop impact per admin area
+        if admin_boundary is None:
+            _boundary = _crop_boundary
+            _zone_field = crop_field
+        else:
+            _boundary_output = os.path.join(os.path.dirname(_output_file), 'crop_admin_intersection.shp')
+            impact_analysis.intersect_boundaries([_crop_boundary, admin_boundary], _boundary_output)
+            _boundary = _boundary_output
+            _zone_field = 'fid'
+        stats = calculate_statistics.calc_zonal_statistics(raster_file=_reclass_raster, polygon_file=_boundary,
+                                                           zone_field=_zone_field, output_table=_zone_table)
+
+        # convert to hectares
+        # TODO: get multiplier from defaults depending on resolution of hazard raster
+        csv_utils.calc_field(table_name=_zone_table, new_field='area_aff', cal_field='COUNT', multiplier=6.25)
+        # add start and end date fields and set values
+        csv_utils.add_field(table_name=_zone_table, new_field='start_date', value=start_date)
+        csv_utils.add_field(table_name=_zone_table, new_field='end_date', value=end_date)
+
+        # calculate affected crops within admin areas
+        # join table to boundary, then extract district etc.
+        if admin_boundary is not None:
+            _boundary_table = os.path.join(os.path.dirname(_output_file), 'crop_admin_table.csv')
+            impact_analysis.shapefile_to_table(_boundary, _boundary_table)
+            _merge_output = os.path.join(os.path.dirname(_output_file), 'crop_hazard_merge.csv')
+            csv_utils.merge_files(file1=_zone_table, file2=_boundary_table, output_file=_merge_output,
+                                      file1_field='FID_', file2_field='FID_PADDY_')
+            _out_dict = {'area_aff':'sum'}
+            csv_utils.aggregate_on_field(input=_merge_output, ref_field='DSD_CODE',
+                                         output_fields_dict=_out_dict, output=_output_file, all_fields=True)
 
         return None
