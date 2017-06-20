@@ -1,5 +1,7 @@
 import arcpy
-
+import os
+import vampire.csv_utils
+import csv
 
 def reclassify_raster(raster, threshold, output_raster):
     in_true_constant = 1
@@ -19,12 +21,17 @@ def multiply_by_mask(raster, mask, output_raster):
     out_ras.save(output_raster)
     return None
 
-def calc_field(table_name, new_field, cal_field, multiplier=1.0, type='DOUBLE'):
-    arcpy.AddField_management(table_name, new_field, type)
-    fields = (new_field, cal_field)
-    with arcpy.da.UpdateCursor(in_table=table_name, field_names=fields) as cursor:
-        for row in cursor:
-            val = row[1]
-            row[0] = int(val*multiplier)
-            cursor.updateRow(row)
+def shapefile_to_table(input, output):
+    if os.path.splitext(output)[1] != '.dbf':
+        _output = '{0}{1}'.format(os.path.splitext(os.path.basename(output))[0], '.dbf')
+        _output_csv = '{0}{1}'.format(os.path.splitext(output)[0], '.csv')
+    else:
+        _output = os.path.basename(output)
+        _output_csv = '{0}{1}'.format(os.path.splitext(output)[0], '.csv')
+    arcpy.TableToTable_conversion(input, os.path.dirname(output), os.path.splitext(_output)[0])
+    vampire.csv_utils.convert_dbf_to_csv(os.path.join(os.path.dirname(output), _output), _output_csv)
+    return None
+
+def intersect_boundaries(boundary_list, boundary_output):
+    arcpy.Intersect_analysis(in_features=boundary_list, out_feature_class=boundary_output)
     return None
