@@ -1,8 +1,8 @@
 $python = "C:\Python27\python.exe"
 $processing_script = "c:\PRIMA\scripts\vampire\prima_process.py"
 
-#$ref_date = (Get-Date).AddDays(-48)
-$ref_date = [DateTime]'2016-12-18'
+$ref_date = (Get-Date).AddDays(-16)
+#$ref_date = [DateTime]'2016-12-18'
 #get year from last month
 $YEARNOW = ($ref_date).Year
 echo $YEARNOW
@@ -28,6 +28,10 @@ echo $time_span
 echo "ref_date:" $ref_date
 echo "remainder:" $remainder
 echo "16Day Date:" $16day_date
+$16day_end = ($16day_date).AddDays(15)
+$YEAREND = $16day_end.Year
+$MONTHEND = ($16day_end.Month).ToString("00")
+$DAYEND = ($16day_end.Day).ToString("00")
 
 #check if the final tif (lka_phy_MOD13Q1.$YEARNOW$MONTHNOW$DAYNOW.250m_16_days_EVI_EVI_VCI_VHI.tif) already exist
 $vhi_geoserver_path = "C:\Program Files (x86)\GeoServer 2.11.0\data_dir\data\vhi\lka_phy_MOD13Q1.$YEARNOW$MONTHNOW$DAYNOW.250m_16_days_EVI_EVI_VCI_VHI.tif"
@@ -37,5 +41,5 @@ if (Test-Path $vhi_geoserver_path) {
 }
 Else {
   echo "VHI for $YEARNOW-$MONTHNOW-$DAYNOW does not exist yet. Try processing."
-  & $python $processing_script -c "Sri Lanka" -p vhi -o c:\PRIMA\configs\config_vhi_current.yml -d $YEARNOW-$MONTHNOW-$DAYNOW
+  & $python $processing_script -c "Sri Lanka" -p vhi -o c:\PRIMA\configs\config_vhi_current.yml -d $YEARNOW-$MONTHNOW-$DAYNOW -t $YEAREND-$MONTHEND-$DAYEND
 }
