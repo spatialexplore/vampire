@@ -29,12 +29,15 @@ def generate_config_file(output_file, params):
     with pfile:
         cf = CHIRPSConfigFactory.CHIRPSConfigFactory(name='cf')
         _end_date = params['start_date']
+        _valid_to = None
         if 'end_date' in params:
             _end_date = params['end_date']
         mf = MODISConfigFactory.MODISConfigFactory(name='mf', country=params['country'],
                                                    start_date=params['start_date'], end_date=_end_date)
+        if 'valid_to' in params:
+            _valid_to = params['valid_to']
         imf = ImpactConfigFactory.ImpactConfigFactory(name='imf', country=params['country'],
-                                                      start_date=params['start_date'], end_date=_end_date)
+                                                      start_date=params['start_date'], end_date=_valid_to)
         pfile.write(cf.generate_header_directory())
         if 'product' in params:
             if params['product'].lower() == "rainfall_anomaly":
