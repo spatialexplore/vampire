@@ -67,15 +67,33 @@ def write_cursor(csvFile, fieldnames):
             cursor.append(dict(zip(fieldnames, values)))
     return cursor
 
-def insert_csv_to_table(database, host, port, user, password, table, csv_file, overwrite=False):
+def insert_csv_to_table(database, host, port, user, password, schema, table, csv_file, overwrite=False, index=True):
     _url = 'postgresql://{}:{}@{}:{}/{}'.format(user, password, host, port, database)
     pd = pandas.read_csv(csv_file)
     print pd
     engine = sqlalchemy.create_engine(_url)
     if overwrite:
-        pd.to_sql(table, engine, if_exists='replace')
+#        try:
+#            _lock_query = 'lock tables public.{0} write'.format(table)
+#            engine.execute(_lock_query)
+        max_id_query = 'select max(index) FROM {0}.{1}'.format(schema, table)
+        max_id = int(pandas.read_sql_query(max_id_query, engine).values)
+        pd['index'] = range(max_id + 1, max_id + len(pd) + 1)
+        pd.to_sql(table, engine, if_exists='replace', index=False)
+#        finally:
+#            engine.execute('unlock tables')
+#        pd.to_sql(table, engine, if_exists='replace', index=True)
     else:
-        pd.to_sql(table, engine, if_exists='append')
+#        try:
+#            _lock_query = 'lock tables `{0}` write'.format(table)
+#            engine.execute(_lock_query)
+        max_id_query = 'select max(index) FROM {0}.{1}'.format(schema, table)
+        max_id = int(pandas.read_sql_query(max_id_query, engine).values)
+        pd['index'] = range(max_id + 1, max_id + len(pd) + 1)
+        pd.to_sql(table, engine, if_exists='append', index=False)
+#        finally:
+#            engine.execute('unlock tables')
+#        pd.to_sql(table, engine, if_exists='append', index=True)
     #
     # # create connection to database
     # _connection_str = 'dbname={0} host={1} user={2} password={3}'.format(database, host, user, password)
