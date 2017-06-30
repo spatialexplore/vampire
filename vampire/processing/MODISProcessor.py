@@ -464,6 +464,9 @@ class MODISProcessor:
                                 # file already exists....delete first
                                 os.remove(os.path.join(output_dir, _rf))
                                 os.rename(os.path.join(output_dir, _cf), os.path.join(output_dir, _rf))
+                            else:
+                                # just remove the new file
+                                os.remove(os.path.join(output_dir, _cf))
                         else:
                             os.rename(os.path.join(output_dir, _cf), os.path.join(output_dir, _rf))
 
