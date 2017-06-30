@@ -14,7 +14,7 @@ class VampireDefaults:
         # set up logging
         self.logger = logging.getLogger('Vampire')
         logging.basicConfig(filename='vampire.log', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                            level=logging.DEBUG)
+                            level=logging.DEBUG, filemode='w')
 
 
         # load default values from .ini file
