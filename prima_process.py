@@ -23,28 +23,60 @@ def upload_impact_to_db(product, impact_type, start_date, vp):
         _product_dir = vp.get('hazard_impact', 'vhi_output_dir')
         if impact_type == 'area':
             _filename_pattern = vp.get('hazard_impact', 'vhi_area_pattern')
-            _table_name = 'vhi_area'
+            _table_name = vp.get('database', 'impact_area_table') #'vhi_area'
+            try:
+                _schema = vp.get('database', 'impact_area_schema')
+            except Exception, e:
+                _schema = vp.get('database', 'default_schema')
 #        _product_filename = os.path.join(_product_dir,
 #                                         'lka_phy_MOD13Q1.%s.250m_16_days_vhi_area_dsd.csv' % start_date.strftime(
 #                                             '%Y.%m.%d'))
         elif impact_type == 'popn':
             _filename_pattern = vp.get('hazard_impact', 'vhi_popn_pattern')
-            _table_name = 'vhi_popn'
+            _table_name = vp.get('database', 'impact_popn_table') #'vhi_popn'
+            try:
+                _schema = vp.get('database', 'impact_popn_schema')
+            except Exception, e:
+                _schema = vp.get('database', 'default_schema')
+        elif impact_type == 'crops':
+            _filename_pattern = vp.get('hazard_impact', 'vhi_crops_pattern')
+            _table_name = vp.get('database', 'impact_crops_table') #'vhi_crops'
+            try:
+                _schema = vp.get('database', 'impact_crops_schema')
+            except Exception, e:
+                _schema = vp.get('database', 'default_schema')
         else:
             raise ValueError('Invalid impact type {0}'.format(impact_type))
         _filename_pattern = _filename_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(start_date.year))
         _filename_pattern = _filename_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(start_date.month))
         _filename_pattern = _filename_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(start_date.day))
         _filenames = vampire.directory_utils.get_matching_files(_product_dir, _filename_pattern)
-        _product_filename = _filenames[0]
+        if _filenames is not None:
+            _product_filename = _filenames[0]
+        else:
+            _product_filename = None
+            raise ValueError("No product filename found in upload_impact_to_db")
 
-        _database = 'prima_impact'
-        _host = 'localhost'
-        _user = 'prima_user'
-        _password = 'prima_user'
-        _port = 5432
-        vampire.database_utils.insert_csv_to_table(_database, _host, _port, _user, _password, _table_name,
-                                                   _product_filename)
+        _database = vp.get('database', 'impact_db') #'prima_impact'
+        try:
+            _host = vp.get('database', 'impact_host') #'localhost'
+        except Exception,e:
+            _host = vp.get('database', 'default_host')
+        try:
+            _user = vp.get('database', 'impact_user') #'localhost'
+        except Exception,e:
+            _user = vp.get('database', 'default_user')
+        try:
+            _password = vp.get('database', 'impact_pw') #'localhost'
+        except Exception,e:
+            _password = vp.get('database', 'default_pw')
+        try:
+            _port = vp.get('database', 'impact_port') #'localhost'
+        except Exception,e:
+            _port = vp.get('database', 'default_port')
+        vampire.database_utils.insert_csv_to_table(database=_database, host=_host, port=_port, user=_user,
+                                                   password=_password, table=_table_name, schema=_schema,
+                                                   csv_file=_product_filename, overwrite=True)
     return None
 
 
@@ -75,7 +107,7 @@ def convert_csv_to_choropleth(product, impact_type, start_date, vp):
             _product_filename = _filenames[0]
             # _product_filename = os.path.join(_product_dir,
             #                             'lka_phy_MOD13Q1.%s.250m_16_days_vhi_popn_dsd.csv' % start_date.strftime('%Y.%m.%d'))
-            _field_name = 'pop_aff'
+            _field_name = 'popn_aff'
             _output_pattern = vp.get('hazard_impact', 'vhi_popn_output_pattern')
             _output_filename = vampire.filename_utils.generate_output_filename(os.path.basename(_product_filename),
                                                                                _filename_pattern, _output_pattern)
@@ -90,7 +122,7 @@ def convert_csv_to_choropleth(product, impact_type, start_date, vp):
     return _output_filename
 
 def move_output_to_geoserver(product, start_date, vp):
-    _geoserver_data = 'C:\\Program Files (x86)\\GeoServer 2.11.0\\data_dir\\data\\'
+    _geoserver_data = vp.get('directories', 'geoserver_data') #'C:\\Program Files (x86)\\GeoServer 2.11.0\\data_dir\\data\\'
     if product.lower() == 'rainfall_anomaly':
         # rainfall anomaly
         _product_dir = vp.get('CHIRPS_Rainfall_Anomaly', 'output_dir')
@@ -135,22 +167,50 @@ def move_output_to_geoserver(product, start_date, vp):
                         os.path.join(_dst_dir, _dst_filename))
     return None
 
-def upload_to_db(product, start_date):
-    _schema = 'public'
+def upload_to_db(product, start_date, vp):
+    try:
+        _db_name = vp.get('database', '{0}_db'.format(product.lower()))
+    except Exception, e:
+        _db_name = vp.get('database', 'default_db')
+    try:
+        _schema = vp.get('database', '{0}_schema'.format(product.lower()))
+    except Exception, e:
+        _schema = vp.get('database', 'default_schema')
+    try:
+        _host = vp.get('database', '{0}_host'.format(product.lower()))
+    except Exception, e:
+        _host = vp.get('database', 'default_host')
+    try:
+        _port = vp.get('database', '{0}_port'.format(product.lower()))
+    except Exception, e:
+        _port = vp.get('database', 'default_port')
+    try:
+        _user = vp.get('database', '{0}_user'.format(product.lower()))
+    except Exception, e:
+        _user = vp.get('database', 'default_user')
+    try:
+        _pw = vp.get('database', '{0}_pw'.format(product.lower()))
+    except Exception, e:
+        _pw = vp.get('database', 'default_pw')
+    try:
+        _table_name = '{0}.{1}'.format(_schema, vp.get('database', '{0}_table'.format(product.lower())))
+    except Exception, e:
+        raise ValueError("Database table name not in Vampire.ini")
+
     _date_string = start_date.strftime('%Y%m%d')
     if product.lower() == 'rainfall_anomaly':
         # rainfall anomaly
-        _db_name = 'prima_ra'
-        _table_name = 'rainfall_anomaly'
+#        _db_name = vp.get('database', 'default_db') #'prima_ra'
+#        _table_name = 'rainfall_anomaly'
         _filename = 'lka_cli_chirps-v2.0.%s.ratio_anom.tif' % _date_string
     elif product.lower() == 'vhi':
-        _db_name = 'prima_vhi_250m'
-        _table_name = 'public.vhi'
+#        _db_name = 'prima_vhi_250m'
+#        _table_name = 'public.vhi'
 #        _filename = 'lka_phy_MOD13Q1.20160321.250m_16_days_EVI_EVI_VCI_VHI.tif'
         _filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % _date_string
     elif product.lower() == 'spi':
-        _db_name = 'prima_spi_10day'
-        _table_name = 'public.spi'
+#        _db_name = 'prima_spi_10day'
+#        _table_name = 'public.spi'
         _filename = 'lka_cli_chirps-v2.0.%s.spi.tif' % _date_string
     else:
         raise ValueError, 'Product {0} is not a valid product (ra, vhi, spi)'.format(product)
@@ -160,7 +220,7 @@ def upload_to_db(product, start_date):
     _ingestion_date = _ingestion_date.replace(hour=6)
     print _ingestion_date
     # create connection to database
-    _connection_str = 'dbname={0} host={1} user={2} password={3}'.format(_db_name, 'localhost', 'prima_user', 'prima_user')
+    _connection_str = 'dbname={0} host={1} user={2} password={3}'.format(_db_name, _host, _user, _pw)
     _conn = psycopg2.connect(_connection_str)
     _cur = _conn.cursor()
     try:
@@ -196,6 +256,7 @@ def main():
         parser.add_option('-o', '--output', dest='output', action='store', help='output filename')
         parser.add_option('-i', '--interval', dest='interval', action='store', help='interval')
         parser.add_option('-d', '--start_date', dest='start_date', action='store', help='start year-month')
+        parser.add_option('-t', '--valid_to', dest='valid_to', action='store', help='valid to year-month-day')
         (options, args) = parser.parse_args()
         #if len(args) < 1:
         #    parser.error ('missing argument')
@@ -229,17 +290,26 @@ def main():
                 _start_date = datetime.datetime.strptime(options.start_date, "%Y-%m-%d")
             print 'start_date=', _start_date
             params['start_date'] = _start_date
+        if options.valid_to:
+            try:
+                _valid_to = datetime.datetime.strptime(options.valid_to, "%Y-%m")
+            except ValueError:
+                # can't parse string, try with day as well
+                _valid_to = datetime.datetime.strptime(options.valid_to, "%Y-%m-%d")
+            print 'valid_to=', _valid_to
+            params['valid_to'] = _valid_to
         params['impact'] = True
         vampire.config_generator.generate_config_file(_output, params)
         vp = vampire.VampireDefaults.VampireDefaults()
         cp = vampire.ConfigProcessor.ConfigProcessor()
         cp.process_config(_output, vp.logger)
         move_output_to_geoserver(_product, _start_date, vp)
-        upload_to_db(product=_product, start_date=_start_date)
-        convert_csv_to_choropleth(product=_product, impact_type='area', start_date=_start_date, vp=vp)
+        upload_to_db(product=_product, start_date=_start_date, vp=vp)
+#        convert_csv_to_choropleth(product=_product, impact_type='area', start_date=_start_date, vp=vp)
         upload_impact_to_db(product=_product, impact_type='area', start_date=_start_date, vp=vp)
-        convert_csv_to_choropleth(product=_product, impact_type='popn', start_date=_start_date, vp=vp)
+#        convert_csv_to_choropleth(product=_product, impact_type='popn', start_date=_start_date, vp=vp)
         upload_impact_to_db(product=_product, impact_type='popn', start_date=_start_date, vp=vp)
+        upload_impact_to_db(product=_product, impact_type='crops', start_date=_start_date, vp=vp)
 
         # vampire.database_utils.insert_csv_to_table(database='prima_impact', host='localhost', user='prima_user',
         #                                            password='prima_user', table='vhi_area', csv_file='')
