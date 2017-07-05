@@ -72,13 +72,19 @@ def insert_csv_to_table(database, host, port, user, password, schema, table, csv
     pd = pandas.read_csv(csv_file)
     print pd
     engine = sqlalchemy.create_engine(_url)
+    # check if table exists first
+    if check_table_exists(database=database, host=host, user=user, password=password, table_name=table):
+        index_name = list(pd.columns.values)[0].upper()
+        max_id_query = 'select max(index) FROM {0}.{1}'.format(schema, table)
+        max_id = int(pandas.read_sql_query(max_id_query, engine).values)
+        pd['index'] = range(max_id + 1, max_id + len(pd) + 1)
+    else:
+        pd['index'] = range(1, len(pd) + 1)
+
     if overwrite:
 #        try:
 #            _lock_query = 'lock tables public.{0} write'.format(table)
 #            engine.execute(_lock_query)
-        max_id_query = 'select max(index) FROM {0}.{1}'.format(schema, table)
-        max_id = int(pandas.read_sql_query(max_id_query, engine).values)
-        pd['index'] = range(max_id + 1, max_id + len(pd) + 1)
         pd.to_sql(table, engine, if_exists='replace', index=False)
 #        finally:
 #            engine.execute('unlock tables')
@@ -87,31 +93,10 @@ def insert_csv_to_table(database, host, port, user, password, schema, table, csv
 #        try:
 #            _lock_query = 'lock tables `{0}` write'.format(table)
 #            engine.execute(_lock_query)
-        max_id_query = 'select max(index) FROM {0}.{1}'.format(schema, table)
-        max_id = int(pandas.read_sql_query(max_id_query, engine).values)
-        pd['index'] = range(max_id + 1, max_id + len(pd) + 1)
         pd.to_sql(table, engine, if_exists='append', index=False)
 #        finally:
 #            engine.execute('unlock tables')
 #        pd.to_sql(table, engine, if_exists='append', index=True)
-    #
-    # # create connection to database
-    # _connection_str = 'dbname={0} host={1} user={2} password={3}'.format(database, host, user, password)
-    # _conn = psycopg2.connect(_connection_str)
-    # _cur = _conn.cursor()
-    # _fieldnames = get_fieldnames(csv_file)
-    # _write_cursor = write_cursor(csv_file, _fieldnames)
-    #
-    # _sql_statement = """
-    #     COPY %s FROM STDIN WITH
-    #         CSV
-    #         HEADER
-    #         DELIMITER AS ','
-    #     """
-    # _cur.copy_expert(sql=_sql_statement % table, file=csv_file)
-    #
-    # _conn.commit()
-    # _cur.close()
-    # _conn.close()
+
     return None
 
