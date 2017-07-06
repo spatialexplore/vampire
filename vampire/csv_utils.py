@@ -108,12 +108,14 @@ def calc_normalized_field(table_name, new_field, area_field, total_field, admin_
         _max_area_aff = _df[area_field].max()
         _min_total_area = _df[total_field].min()
         _max_total_area = _df[total_field].max()
-        _df[new_field] = (_df[area_field] / _df[total_field] ) * (_df[total_field] / (admin_area['shape_Area']/10000.0)) * 100.0
+        for index,row in _df.iterrows():
+            _admin_row = admin_area.loc[(admin_area['dsd_code'] == row['dsd_c'])]
+            row[new_field] = (row[area_field] / row[total_field] ) * (row[total_field] / (_admin_row['shape_Area']/10000.0)) * 100.0
 #        _df[new_field] = ((_df[area_field] - _min_area_aff) / (_max_area_aff - _min_area_aff)) / (
 #            (_df[total_field] - _min_total_area) / (_max_total_area - _min_total_area))
 #        _df[new_field] = _df[new_field].abs() * 100.0
 ##        print _df
-#        _df.to_csv(table_name)
+        _df.to_csv(table_name)
     return None
 
 def csv_to_choropleth_format(input_filename, output_filename, area_field, value_field, start_date_field, end_date_field):
