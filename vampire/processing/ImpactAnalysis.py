@@ -23,6 +23,39 @@ class ImpactAnalysis():
         self.vampire = VampireDefaults.VampireDefaults()
         return
 
+    def calculate_impact_poverty(self, crop_impact_file, crop_impact_dir, crop_impact_pattern, crop_impact_field,
+                                 poor_file, poor_field,
+                                 threshold_mapping,
+                                 output_file, output_dir, output_pattern,
+                                 start_date, end_date):
+        if crop_impact_file is None:
+            if crop_impact_pattern is not None:
+                _input_files = directory_utils.get_matching_files(crop_impact_dir, crop_impact_pattern)
+                _crop_impact_file = os.path.join(crop_impact_dir, _input_files[0])
+            else:
+                raise ValueError("Hazard raster is not specified")
+        else:
+            _crop_impact_file = crop_impact_file
+
+        if output_file is None:
+            if output_pattern is not None:
+                _input_pattern = self.vampire.get('hazard_impact', 'crop_impact_pattern')
+                _output_file = filename_utils.generate_output_filename(os.path.basename(_crop_impact_file),
+                                                                       _input_pattern, output_pattern)
+                _output_file = os.path.join(output_dir, _output_file)
+                if not os.path.exists(output_dir):
+                    os.makedirs(output_dir)
+            else:
+                raise ValueError("No output specified")
+        else:
+            _output_file = output_file
+
+        impact_analysis.calculate_poverty_impact(self, _crop_impact_file, crop_impact_field,
+                                                 poor_file, poor_field, _output_file,
+                                                 threshold_mapping, start_date, end_date)
+
+        return None
+
     def calculate_impact_popn(self, hazard_raster, hazard_dir, hazard_pattern, threshold,
                               population_raster, boundary, b_field, output_file,
                               output_dir, output_pattern, start_date, end_date, hazard_var='vhi'):
