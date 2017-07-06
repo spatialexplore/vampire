@@ -14,7 +14,7 @@ def add_field(table_name, new_field, value, type='DATE'):
             for row in _reader:
                 _new_row = row
                 _new_row.append(value)
-                print _new_row
+#                print _new_row
                 _new_csv.append(_new_row)
         with open(table_name, 'wb') as wf:
             wr = csv.writer(wf)
@@ -48,12 +48,72 @@ def calc_field(table_name, new_field, cal_field, multiplier=1.0, type='DOUBLE'):
                         _new_row.append(float(_val*multiplier))
                 else:
                     _new_row.append('')
-                print _new_row
+ #               print _new_row
                 _new_csv.append(_new_row)
         with open(table_name, 'wb') as wf:
             wr = csv.writer(wf)
             wr.writerow(_header_row)
             wr.writerows(_new_csv)
+    return None
+
+def calc_pc_field(table_name, new_field, numerator_field, denominator_field):
+    base,ext = os.path.splitext(table_name)
+    if ext == '.csv':
+        _new_csv = []
+        with open(table_name, 'rb') as cf:
+            _reader = csv.reader(cf)
+            _header_row = next(_reader)
+            _header_row.append(new_field)
+            # convert all to lower case for comparison
+            _lower_header = [x.lower() for x in _header_row]
+            _num_index = 0
+            _den_index = 0
+            try:
+                _num_index = _lower_header.index(numerator_field.lower())
+            except ValueError, e:
+                print '{0} not found in file header row.'.format(numerator_field)
+                return None
+            try:
+                _den_index = _lower_header.index(denominator_field.lower())
+            except ValueError, e:
+                print '{0} not found in file header row.'.format(denominator_field)
+                return None
+            for row in _reader:
+                _new_row = row
+                if row[_num_index] != '':
+                    _num_val = float(row[_num_index])
+                    if row[_den_index] != '':
+                        _den_val = float(row[_den_index])
+                        if type == 'LONG':
+                            _new_row.append(int(_num_val/_den_val*100))
+                        else:
+                            _new_row.append(float(_num_val/_den_val*100.0))
+                    else:
+                        _new_row.append('')
+                else:
+                    _new_row.append('')
+#                print _new_row
+                _new_csv.append(_new_row)
+        with open(table_name, 'wb') as wf:
+            wr = csv.writer(wf)
+            wr.writerow(_header_row)
+            wr.writerows(_new_csv)
+    return None
+
+def calc_normalized_field(table_name, new_field, area_field, total_field, admin_area):
+    base,ext = os.path.splitext(table_name)
+    if ext == '.csv':
+        _df = pandas.read_csv(table_name)
+        _min_area_aff = _df[area_field].min()
+        _max_area_aff = _df[area_field].max()
+        _min_total_area = _df[total_field].min()
+        _max_total_area = _df[total_field].max()
+        _df[new_field] = (_df[area_field] / _df[total_field] ) * (_df[total_field] / (admin_area['shape_Area']/10000.0)) * 100.0
+#        _df[new_field] = ((_df[area_field] - _min_area_aff) / (_max_area_aff - _min_area_aff)) / (
+#            (_df[total_field] - _min_total_area) / (_max_total_area - _min_total_area))
+#        _df[new_field] = _df[new_field].abs() * 100.0
+##        print _df
+#        _df.to_csv(table_name)
     return None
 
 def csv_to_choropleth_format(input_filename, output_filename, area_field, value_field, start_date_field, end_date_field):
