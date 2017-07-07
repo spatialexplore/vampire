@@ -65,15 +65,16 @@ def calculate_crop_impact(hazard_raster, threshold, hazard_var,
         else:
             _boundary = crop_boundary
             _zone_field = 'fid'
-    stats = calculate_statistics.calc_zonal_statistics(raster_file=_reclass_raster, polygon_file=_boundary,
-                                                       zone_field=_zone_field, output_table=_zone_table)
+# TODO: uncomment - commented to improve performance
+#    stats = calculate_statistics.calc_zonal_statistics(raster_file=_reclass_raster, polygon_file=_boundary,
+#                                                       zone_field=_zone_field, output_table=_zone_table)
 
     # convert to hectares
     # TODO: get multiplier from defaults depending on resolution of hazard raster
-    csv_utils.calc_field(table_name=_zone_table, new_field='area_aff', cal_field='COUNT', multiplier=6.25)
-    # add start and end date fields and set values
-    csv_utils.add_field(table_name=_zone_table, new_field='start_date', value=start_date)
-    csv_utils.add_field(table_name=_zone_table, new_field='end_date', value=end_date)
+#    csv_utils.calc_field(table_name=_zone_table, new_field='area_aff', cal_field='COUNT', multiplier=6.25)
+#    # add start and end date fields and set values
+#    csv_utils.add_field(table_name=_zone_table, new_field='start_date', value=start_date)
+#    csv_utils.add_field(table_name=_zone_table, new_field='end_date', value=end_date)
 
     # calculate affected crops within admin areas
     # join table to boundary, then extract district etc.
@@ -84,15 +85,15 @@ def calculate_crop_impact(hazard_raster, threshold, hazard_var,
         #            csv_utils.merge_files(file1=_zone_table, file2=_boundary_table, output_file=_merge_output,
         #                                      file1_field='FID_', file2_field='FID_PADDY_')
         _merge_output = _zone_table
-        _out_dict = {'area_aff': 'sum', 'Shape_Area': 'sum'}
+        _out_dict = {'area_aff': 'sum', 'Hectares': 'sum'}
         csv_utils.aggregate_on_field(input=_merge_output, ref_field=admin_field,
                                      output_fields_dict=_out_dict, output=output_file, all_fields=True)
         # calculate percentage
-        csv_utils.calc_field(table_name=output_file, new_field='total_area_ha', cal_field='Shape_Area',
-                             multiplier=100.0)
+        csv_utils.calc_field(table_name=output_file, new_field='total_area_ha', cal_field='Hectares') #,
+#                             multiplier=100.0)
         csv_utils.calc_pc_field(table_name=output_file, new_field='impact_pc', numerator_field='area_aff',
                                 denominator_field='total_area_ha')
-        _gf = geopandas.read_file('C:\PRISM\data\Shapefiles\Boundaries\National\lka_bnd_adm3_dsd_nbro_wgs84.shp')
+        _gf = geopandas.GeoDataFrame.from_file('C:\PRISM\data\Shapefiles\Boundaries\National\lka_bnd_adm3_dsd_nbro_wgs84.shp')
 
         csv_utils.calc_normalized_field(table_name=output_file, new_field='impact_norm',
                                         area_field='area_aff', total_field='total_area_ha', admin_area=_gf)
