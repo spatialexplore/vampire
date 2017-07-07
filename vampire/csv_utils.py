@@ -103,17 +103,26 @@ def calc_pc_field(table_name, new_field, numerator_field, denominator_field):
 def calc_normalized_field(table_name, new_field, area_field, total_field, admin_area):
     base,ext = os.path.splitext(table_name)
     if ext == '.csv':
-        _df = pandas.read_csv(table_name)
+        _df = pandas.read_csv(table_name) #, dtype={'dsd_code':'str'})
+        _df['dsd_code'] = _df['DSD_C'].map('{:.0f}'.format)
+        _df[new_field] = 0.0
+        _df = pandas.merge(_df, admin_area[['dsd_code', 'shape_Area']], on='dsd_code', how='left')
+
+        def new_value_formula(area, total, shape_area):
+            return (area / total) * (total / (shape_area/10000.0)) * 100.0
+        _df[new_field] = _df.apply(lambda row: new_value_formula(row[area_field], row[total_field],
+                                                                 row['shape_Area']), axis=1)
+#        for index,row in _df.iterrows():
+#            _admin_row = admin_area.loc[(admin_area['dsd_code'] == str(int(row['dsd_code'])))]
+##            row[new_field] = (row[area_field] / row[total_field] ) * (row[total_field] / (_admin_row['shape_Area']/10000.0)) * 100.0
+#            _df.loc[index, new_field] = (row[area_field] / row[total_field] ) * (row[total_field] / (_admin_row['shape_Area']/10000.0)) * 100.0
         _min_area_aff = _df[area_field].min()
         _max_area_aff = _df[area_field].max()
         _min_total_area = _df[total_field].min()
         _max_total_area = _df[total_field].max()
-        for index,row in _df.iterrows():
-            _admin_row = admin_area.loc[(admin_area['dsd_code'] == row['dsd_c'])]
-            row[new_field] = (row[area_field] / row[total_field] ) * (row[total_field] / (_admin_row['shape_Area']/10000.0)) * 100.0
-#        _df[new_field] = ((_df[area_field] - _min_area_aff) / (_max_area_aff - _min_area_aff)) / (
-#            (_df[total_field] - _min_total_area) / (_max_total_area - _min_total_area))
-#        _df[new_field] = _df[new_field].abs() * 100.0
+        _df['impact_norm2'] = ((_df[area_field] - _min_area_aff) / (_max_area_aff - _min_area_aff)) / (
+            (_df[total_field] - _min_total_area) / (_max_total_area - _min_total_area))
+        _df['impact_norm2'] = _df['impact_norm2'].abs() * 100.0
 ##        print _df
         _df.to_csv(table_name)
     return None
