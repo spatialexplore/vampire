@@ -14,27 +14,18 @@ import ogr
 import vampire.csv_utils as csv_utils
 import calculate_statistics_os as calculate_statistics
 
-def calculate_poverty_impact(self, crop_impact_file, crop_impact_field,
-                             poor_file, poor_field,
-                             match_field,
+def calculate_poverty_impact(self, popn_impact_file, popn_impact_field, popn_match_field,
+                             poor_file, poor_field, poor_match_field, multiplier,
                              output_file, output_field,
-                             threshold_mapping, start_date, end_date):
+                             start_date, end_date):
     _poverty = geopandas.read_file(poor_file)
-    _crops = pandas.read_csv(crop_impact_file)
-    _impact = _crops.copy()
-    for i in _poverty.iterrows:
-        _impact_value = None
-        _crops_row = _crops.loc[_crops[match_field] == i[match_field]]
-        if _crops_row:
-            _crops_value = _crops_row[crop_impact_field]
-            _poverty_value = i[poor_field]
-            for t in threshold_mapping:
-                if _crops_value >= t[0][0] and _crops_value < t[0][1]:
-                    if _poverty_value >= t[1][0] and _poverty_value < t[1][1]:
-                        _impact_value = t[2]
-                        break
-            _impact_row = _impact.loc[_impact[match_field] == i[match_field]]
-            _impact_row[output_field] = _impact_value
+    _popn_impact = pandas.read_csv(popn_impact_file)
+    _popn_impact[popn_match_field] = _popn_impact[popn_match_field].map('{:.0f}'.format)
+    _merged = pandas.merge(_popn_impact, _poverty[[poor_field, poor_match_field]], how='inner', left_on=popn_match_field, right_on=poor_match_field)
+    _merged[output_field] = _merged[popn_impact_field] * (_merged[poor_field]*multiplier)
+    _merged['start_date'] = start_date
+    _merged['end_date'] = end_date
+    _merged.to_csv(output_file)
     return None
 
 def calculate_crop_impact(hazard_raster, threshold, hazard_var,
@@ -53,28 +44,31 @@ def calculate_crop_impact(hazard_raster, threshold, hazard_var,
     # calculate impact on boundary
     # if have admin boundary as well, intersect the two boundaries first, then dissolve after the join to
     # calculate crop impact per admin area
-    if admin_boundary is None:
-        _boundary = crop_boundary
-        _zone_field = crop_field
-    else:
-        if intersect:
-            _boundary_output = os.path.join(_output_dir, 'crop_admin_intersection.shp')
-            intersect_boundaries([crop_boundary, admin_boundary], _boundary_output)
-            _boundary = _boundary_output
-            _zone_field = 'fid'
-        else:
-            _boundary = crop_boundary
-            _zone_field = 'fid'
-# TODO: uncomment - commented to improve performance
-#    stats = calculate_statistics.calc_zonal_statistics(raster_file=_reclass_raster, polygon_file=_boundary,
-#                                                       zone_field=_zone_field, output_table=_zone_table)
+    _boundary = crop_boundary
+    _zone_field = admin_field.lower() #'fid'
+###    don't do intersect
+#    if admin_boundary is None:
+#        _boundary = crop_boundary
+#        _zone_field = crop_field
+#    else:
+#        if intersect:
+#            _boundary_output = os.path.join(_output_dir, 'crop_admin_intersection.shp')
+#            intersect_boundaries([crop_boundary, admin_boundary], _boundary_output)
+#            _boundary = _boundary_output
+#            _zone_field = 'fid'
+#        else:
+#            _boundary = crop_boundary
+#            _zone_field = 'fid'
+###
+    stats = calculate_statistics.calc_zonal_statistics(raster_file=_reclass_raster, polygon_file=_boundary,
+                                                       zone_field=_zone_field, output_table=_zone_table)
 
     # convert to hectares
     # TODO: get multiplier from defaults depending on resolution of hazard raster
-#    csv_utils.calc_field(table_name=_zone_table, new_field='area_aff', cal_field='COUNT', multiplier=6.25)
-#    # add start and end date fields and set values
-#    csv_utils.add_field(table_name=_zone_table, new_field='start_date', value=start_date)
-#    csv_utils.add_field(table_name=_zone_table, new_field='end_date', value=end_date)
+    csv_utils.calc_field(table_name=_zone_table, new_field='area_aff', cal_field='COUNT', multiplier=6.25)
+    # add start and end date fields and set values
+    csv_utils.add_field(table_name=_zone_table, new_field='start_date', value=start_date)
+    csv_utils.add_field(table_name=_zone_table, new_field='end_date', value=end_date)
 
     # calculate affected crops within admin areas
     # join table to boundary, then extract district etc.
@@ -85,15 +79,16 @@ def calculate_crop_impact(hazard_raster, threshold, hazard_var,
         #            csv_utils.merge_files(file1=_zone_table, file2=_boundary_table, output_file=_merge_output,
         #                                      file1_field='FID_', file2_field='FID_PADDY_')
         _merge_output = _zone_table
-        _out_dict = {'area_aff': 'sum', 'Hectares': 'sum'}
+        _out_dict = {'area_aff': 'sum', 'crops_ha': 'sum'}
         csv_utils.aggregate_on_field(input=_merge_output, ref_field=admin_field,
                                      output_fields_dict=_out_dict, output=output_file, all_fields=True)
         # calculate percentage
-        csv_utils.calc_field(table_name=output_file, new_field='total_area_ha', cal_field='Hectares') #,
+        csv_utils.calc_field(table_name=output_file, new_field='total_area_ha', cal_field='crops_ha') #,
 #                             multiplier=100.0)
         csv_utils.calc_pc_field(table_name=output_file, new_field='impact_pc', numerator_field='area_aff',
                                 denominator_field='total_area_ha')
-        _gf = geopandas.GeoDataFrame.from_file('C:\PRISM\data\Shapefiles\Boundaries\National\lka_bnd_adm3_dsd_nbro_wgs84.shp')
+        _gf = geopandas.GeoDataFrame.from_file(admin_boundary)
+#        _gf = geopandas.GeoDataFrame.from_file('C:\PRIMA\data\Shapefiles\Boundaries\National\lka_bnd_adm3_dsd_nbro_wgs84.shp')
 
         csv_utils.calc_normalized_field(table_name=output_file, new_field='impact_norm',
                                         area_field='area_aff', total_field='total_area_ha', admin_area=_gf)
