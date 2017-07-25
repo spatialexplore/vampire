@@ -4,6 +4,7 @@ import vampire.directory_utils as directory_utils
 import vampire.filename_utils as filename_utils
 import gdal
 import rasterio
+import numpy as np
 
 def clip_raster_to_shp(shpfile, in_raster, out_raster, gdal_path, nodata=True, logger=None):
     # call gdalwarp to clip to shapefile
@@ -198,3 +199,26 @@ def reproject_cut ( slave, box=None, t_srs=None, s_srs=None, res=None ):
     dst_ds = None  # Flush to disk
     return dst_filename
 
+def mask_by_shapefile(raster_file, polygon_file, output_file, gdal_path, nodata=None, logger=None):
+    try:
+        if logger: logger.debug("%s", polygon_file)
+        if logger: logger.debug("%s", raster_file)
+        if logger: logger.debug("%s", output_file)
+        gdal_exe = os.path.join(gdal_path, 'gdalwarp')
+        if nodata:
+            retcode = subprocess.call(
+                [gdal_exe, '-dstnodata', '-9999', '--config', 'GDALWARP_IGNORE_BAD_CUTLINE', 'YES',
+                 '-cutline', polygon_file, raster_file, output_file])
+        else:
+            retcode = subprocess.call(
+                [gdal_exe, '--config', 'GDALWARP_IGNORE_BAD_CUTLINE', 'YES',
+                 '-crop_to_cutline', '-cutline', polygon_file, raster_file, output_file])
+        if logger: logger.debug("gdalwarp return code is %s", retcode)
+    except subprocess.CalledProcessError as e:
+        if logger: logger.error("Error in gdalwarp")
+        if logger: logger.error("%s", e.output)
+        #        raise
+    except Exception, e:
+        if logger: logger.error("Warning in gdalwarp")
+
+    return None
