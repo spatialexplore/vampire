@@ -664,6 +664,53 @@ class ConfigProcessor():
                                 polygon_file=_polygon_filename, polygon_dir=_polygon_dir, polygon_pattern=_polygon_pattern,
                                 output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
                                 zone_field=_zone_field)
+        elif process['type'] == 'apply_mask':
+            if logger: logger.debug("Apply shapefile mask to raster")
+            _raster_filename = None
+            _polygon_filename = None
+            _raster_dir = None
+            _raster_pattern = None
+            _polygon_dir = None
+            _polygon_pattern = None
+            _output_file = None
+            _output_dir = None
+            _output_pattern = None
+
+            if 'raster_file' in process:
+                _raster_filename = process['raster_file']
+            else:
+                if not 'raster_dir' in process:
+                    raise ConfigFileError("No raster file 'raster_file' or pattern 'raster_pattern'/directory 'raster_dir' specified.", None)
+                else:
+                    _raster_dir = process['raster_dir']
+                    _raster_pattern = process['raster_pattern']
+            if 'polygon_file' in process:
+                _polygon_filename = process['polygon_file']
+            else:
+                if not 'polygon_dir' in process:
+                    raise ConfigFileError("No polygon file 'polygon_file' or pattern 'polygon_pattern'/directory 'polygon_dir' specified.", None)
+                else:
+                    _polygon_dir = process['polygon_dir']
+                    _polygon_pattern = process['polygon_pattern']
+
+            if 'output_file' in process:
+                _output_file = process['output_file']
+            else:
+                if not 'output_pattern' in process:
+                    raise ConfigFileError("No output filename 'output_file' or output pattern 'output_pattern' specified.", None)
+                else:
+                    _output_pattern = process['output_pattern']
+                    _output_dir = process['output_dir']
+            if 'no_data' in process:
+                _no_data = True
+            else:
+                _no_data = False
+
+            rp.mask_by_shapefile(raster_file=_raster_filename, raster_dir=_raster_dir, raster_pattern=_raster_pattern,
+                                 polygon_file=_polygon_filename, polygon_dir=_polygon_dir, polygon_pattern=_polygon_pattern,
+                                 output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
+                                 nodata=_no_data, logger=logger)
+
         # elif process['type'] == 'average_files':
         #     if logger: logger.debug("Compute average of raster files")
         #
@@ -863,6 +910,72 @@ class ConfigProcessor():
                                      boundary=_boundary_file, b_field=_boundary_field, threshold=_threshold,
                                      output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
                                      start_date=_start_date, end_date=_end_date)
+        elif process['type'] == 'poverty':
+            if logger: logger.debug("Compute poor population affected by event")
+            _hazard_pattern = None
+            _hazard_dir = None
+            _hazard_file = None
+            if 'hazard_file' in process:
+                _hazard_file = process['hazard_file']
+            elif 'hazard_pattern' in process:
+                _hazard_dir = process['hazard_dir']
+                _hazard_pattern = process['hazard_pattern']
+            else:
+                raise ConfigFileError('No hazard filename "hazard_file" or hazard dir/pattern "hazard_dir / hazard_pattern" set', None)
+            _hazard_field = None
+            if 'hazard_field' in process:
+                _hazard_field = process['hazard_field']
+            if 'hazard_area_code' in process:
+                _hazard_match_field = process['hazard_area_code']
+            else:
+                _hazard_match_field = None
+            _poverty_pattern = None
+            _poverty_dir = None
+            _poverty_file = None
+            if 'poverty_file' in process:
+                _poverty_file = process['poverty_file']
+            elif 'poverty_pattern' in process:
+                _poverty_dir = process['poverty_dir']
+                _poverty_pattern = process['poverty_pattern']
+            else:
+                raise ConfigFileError('No poverty filename "poverty_file" or poverty dir/pattern "poverty_dir / poverty_pattern" set', None)
+            if 'poverty_field' in process:
+                _poverty_field = process['poverty_field']
+            else:
+                _poverty_field = None
+            if 'poverty_area_code' in process:
+                _poverty_match_field = process['poverty_area_code']
+            else:
+                _poverty_match_field = None
+            if 'poverty_multiplier' in process:
+                _poverty_multiplier = process['poverty_multiplier']
+            else:
+                _poverty_multiplier = None
+
+            _output_file = None
+            _output_dir = None
+            _output_pattern = None
+            if 'output_file' in process:
+                _output_file = process['output_file']
+            elif 'output_pattern' in process:
+                _output_dir = process['output_dir']
+                _output_pattern = process['output_pattern']
+            else:
+                raise ConfigFileError('No output file "output_file" specified', None)
+            if 'output_field' in process:
+                _output_field = process['output_field']
+            else:
+                _output_field = None
+
+
+            ia.calculate_impact_poverty(impact_file=_hazard_file, impact_dir=_hazard_dir,
+                                        impact_pattern=_hazard_pattern, impact_field=_hazard_field,
+                                        impact_match_field=_hazard_match_field,
+                                        poor_file=_poverty_file, poor_field=_poverty_field,
+                                        poor_match_field=_poverty_match_field, poor_multiplier=_poverty_multiplier,
+                                        output_file=_output_file, output_dir=_output_dir,
+                                        output_pattern=_output_pattern, output_field=_output_field,
+                                        start_date=_start_date, end_date=_end_date)
 
         return None
 
