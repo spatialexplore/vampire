@@ -23,24 +23,33 @@ class ImpactAnalysis():
         self.vampire = VampireDefaults.VampireDefaults()
         return
 
-    def calculate_impact_poverty(self, crop_impact_file, crop_impact_dir, crop_impact_pattern, crop_impact_field,
-                                 poor_file, poor_field,
-                                 threshold_mapping,
-                                 output_file, output_dir, output_pattern,
+    def calculate_impact_poverty(self, impact_file, impact_dir, impact_pattern,
+                                 impact_field, impact_match_field,
+                                 poor_file, poor_field, poor_multiplier, poor_match_field,
+                                 output_file, output_dir, output_pattern, output_field,
                                  start_date, end_date):
-        if crop_impact_file is None:
-            if crop_impact_pattern is not None:
-                _input_files = directory_utils.get_matching_files(crop_impact_dir, crop_impact_pattern)
-                _crop_impact_file = os.path.join(crop_impact_dir, _input_files[0])
+        if impact_file is None:
+            if impact_pattern is not None:
+                _input_files = directory_utils.get_matching_files(impact_dir, impact_pattern)
+                _impact_file = os.path.join(impact_dir, _input_files[0])
             else:
                 raise ValueError("Hazard raster is not specified")
         else:
-            _crop_impact_file = crop_impact_file
+            _impact_file = impact_file
+
+        if impact_match_field is None:
+            _impact_match_field = self.vampire.get_country(self.vampire.get_home_country())['crop_area_code']
+        else:
+            _impact_match_field = impact_match_field
+        if poor_match_field is None:
+            _poor_match_field = self.vampire.get_country(self.vampire.get_home_country())['admin_3_boundary_area_code']
+        else:
+            _poor_match_field = poor_match_field
 
         if output_file is None:
             if output_pattern is not None:
-                _input_pattern = self.vampire.get('hazard_impact', 'crop_impact_pattern')
-                _output_file = filename_utils.generate_output_filename(os.path.basename(_crop_impact_file),
+                _input_pattern = self.vampire.get('hazard_impact', 'vhi_popn_pattern')
+                _output_file = filename_utils.generate_output_filename(os.path.basename(_impact_file),
                                                                        _input_pattern, output_pattern)
                 _output_file = os.path.join(output_dir, _output_file)
                 if not os.path.exists(output_dir):
@@ -50,10 +59,24 @@ class ImpactAnalysis():
         else:
             _output_file = output_file
 
-        impact_analysis.calculate_poverty_impact(self, _crop_impact_file, crop_impact_field,
-                                                 poor_file, poor_field, _output_file,
-                                                 threshold_mapping, start_date, end_date)
+        if poor_multiplier is None:
+            _multiplier = 0.01
+        else:
+            _multiplier = poor_multiplier
 
+        if output_field is None:
+            _output_field = 'poor_aff'
+        else:
+            _output_field = output_field
+
+        impact_analysis.calculate_poverty_impact(self, popn_impact_file=_impact_file,
+                                                 popn_impact_field=impact_field,
+                                                 popn_match_field=_impact_match_field,
+                                                 poor_file=poor_file, poor_field=poor_field,
+                                                 poor_match_field=_poor_match_field,
+                                                 multiplier=_multiplier,
+                                                 output_file=_output_file, output_field=_output_field,
+                                                 start_date=start_date, end_date=end_date)
         return None
 
     def calculate_impact_popn(self, hazard_raster, hazard_dir, hazard_pattern, threshold,
@@ -76,7 +99,7 @@ class ImpactAnalysis():
 
         if output_file is None:
             if output_pattern is not None:
-                _input_pattern = self.vampire.get('MODIS_VHI', 'vhi_pattern')
+                _input_pattern = self.vampire.get('MODIS_VHI', 'vhi_crop_pattern')
                 _output_file = filename_utils.generate_output_filename(os.path.basename(_hazard_raster),
                                                                        _input_pattern, output_pattern)
                 _output_file = os.path.join(output_dir, _output_file)
@@ -134,7 +157,7 @@ class ImpactAnalysis():
 
         if output_file is None:
             if output_pattern is not None:
-                _input_pattern = self.vampire.get('MODIS_VHI', 'vhi_pattern')
+                _input_pattern = self.vampire.get('MODIS_VHI', 'vhi_crop_pattern')
                 _output_file = filename_utils.generate_output_filename(os.path.basename(_hazard_raster),
                                                                        _input_pattern, output_pattern)
                 _output_file = os.path.join(output_dir, _output_file)
