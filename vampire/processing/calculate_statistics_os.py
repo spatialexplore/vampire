@@ -127,8 +127,8 @@ def calc_zonal_statistics(raster_file, polygon_file, zone_field, output_table):
     stats = rasterstats.zonal_stats(polygon_file, raster_file, stats=['min', 'max', 'mean', 'count', 'sum'],
                                     geojson_out=True)
     # export geojson to a file.
-    with open('{0}.geojson'.format(os.path.basename(output_table)), 'w') as f:
-        json.dump(stats, f)
+#    with open('{0}.geojson'.format(os.path.basename(output_table)), 'w') as f:
+#        json.dump(stats, f)
 
     # export to .csv
     _stats_list = []
