@@ -15,12 +15,19 @@ class ImpactConfigFactory(ConfigFactory.ConfigFactory):
     def set_dates(self, start_date, end_date=None):
         self.start_date = start_date
         self.end_date = end_date
-        self.year = self.start_date.strftime("%Y")
-        self.month = self.start_date.strftime("%m")
-        self.day = self.start_date.strftime("%d")
+        self.year = self.end_date.strftime("%Y")
+        self.month = self.end_date.strftime("%m")
+        self.day = self.end_date.strftime("%d")
+        # self.year = self.start_date.strftime("%Y")
+        # self.month = self.start_date.strftime("%m")
+        # self.day = self.start_date.strftime("%d")
         _base_date = datetime.datetime.strptime("2000.{0}.01".format(self.month), "%Y.%m.%d")
         self.base_day_of_year = _base_date.timetuple().tm_yday
-        self.day_of_year = self.start_date.timetuple().tm_yday
+        self.day_of_year = self.end_date.timetuple().tm_yday
+#        self.day_of_year = self.start_date.timetuple().tm_yday
+        if self.start_date is None:
+            self.start_date = self.end_date - datetime.timedelta(self.vampire.get('hazard_impact', 'vhi_interval'))
+        return
 
     def _generate_area_impact_section(self, hazard_file, hazard_dir, hazard_pattern,
                                       boundary_file, boundary_dir, boundary_pattern, boundary_field,
@@ -48,19 +55,19 @@ class ImpactConfigFactory(ConfigFactory.ConfigFactory):
       boundary_field: {boundary_field}""".format(boundary_field=boundary_field)
         if output_file is not None:
             file_string += """
-      output_file: {output_dir}
-      """.format(output_dir=output_dir)
+      output_file: {output_dir}""".format(output_dir=output_dir)
         else:
             file_string += """
       output_dir: {output_dir}
-      output_pattern: '{output_pattern}'
-      """.format(output_dir=output_dir, output_pattern=output_pattern)
+      output_pattern: '{output_pattern}'""".format(output_dir=output_dir, output_pattern=output_pattern)
         if start_date is not None:
             file_string += """
       start_date: {start_date}""".format(start_date=start_date)
         if end_date is not None:
             file_string += """
       end_date: {end_date}""".format(end_date=end_date)
+        file_string += """
+        """
         return file_string
 
     def _generate_popn_impact_section(self, hazard_file, hazard_dir, hazard_pattern,
@@ -98,14 +105,15 @@ class ImpactConfigFactory(ConfigFactory.ConfigFactory):
         else:
             file_string += """
       output_dir: {output_dir}
-      output_pattern: '{output_pattern}'
-        """.format(output_dir=output_dir, output_pattern=output_pattern)
+      output_pattern: '{output_pattern}'""".format(output_dir=output_dir, output_pattern=output_pattern)
         if start_date is not None:
             file_string += """
       start_date: {start_date}""".format(start_date=start_date)
         if end_date is not None:
             file_string += """
       end_date: {end_date}""".format(end_date=end_date)
+        file_string += """
+        """
         return file_string
 
     def _generate_crop_impact_section(self, hazard_file, hazard_dir, hazard_pattern,
@@ -159,10 +167,59 @@ class ImpactConfigFactory(ConfigFactory.ConfigFactory):
         if end_date is not None:
             file_string += """
       end_date: {end_date}""".format(end_date=end_date)
+        file_string += """
+        """
+        return file_string
+
+    def _generate_poverty_impact_section(self, hazard_file, hazard_dir, hazard_pattern, hazard_field,
+                                         poverty_file, poverty_dir, poverty_pattern, poverty_field,
+                                         output_file, output_dir, output_pattern,
+                                         start_date, end_date):
+
+        file_string = """
+    # calculate population impact (poverty)
+    - process: impact
+      type: poverty"""
+        if hazard_file is not None:
+            file_string += """
+      hazard_file: {hazard_file}""".format(hazard_file=hazard_file)
+        else:
+            file_string += """
+      hazard_dir: {hazard_dir}
+      hazard_pattern: '{hazard_pattern}'""".format(hazard_dir=hazard_dir, hazard_pattern=hazard_pattern)
+        file_string += """
+      hazard_field: {hazard_field}""".format(hazard_field=hazard_field)
+        if poverty_file is not None:
+            file_string += """
+      poverty_file: {poverty_file}""".format(poverty_file=poverty_file)
+        else:
+            file_string += """
+      poverty_dir: {poverty_dir}
+      poverty_pattern: '{poverty_pattern}'""".format(poverty_dir=poverty_dir, poverty_pattern=poverty_pattern)
+        if poverty_field is not None:
+            file_string += """
+      poverty_field: {poverty_field}""".format(poverty_field=poverty_field)
+        if output_file is not None:
+            file_string += """
+      output_file: {output_dir}
+          """.format(output_dir=output_dir)
+        else:
+            file_string += """
+      output_dir: {output_dir}
+      output_pattern: '{output_pattern}'""".format(output_dir=output_dir, output_pattern=output_pattern)
+        if start_date is not None:
+            file_string += """
+      start_date: {start_date}""".format(start_date=start_date)
+        if end_date is not None:
+            file_string += """
+      end_date: {end_date}""".format(end_date=end_date)
+        file_string += """
+        """
         return file_string
 
 
-    def generate_impact(self, product, interval):
+
+    def generate_impact(self, product, interval, masked=False):
         _hazard_file = None
         _hazard_dir = None
         _hazard_pattern = None
@@ -178,8 +235,12 @@ class ImpactConfigFactory(ConfigFactory.ConfigFactory):
         _start_date = self.start_date
         _end_date = self.end_date
         if product == 'vhi':
-            _hazard_dir = self.vampire.get('MODIS_VHI', 'vhi_product_dir')
-            _hazard_pattern = self.vampire.get('MODIS_VHI', 'vhi_pattern')
+            if masked:
+                _hazard_dir = self.vampire.get('MODIS_VHI', 'vhi_product_dir')
+                _hazard_pattern = self.vampire.get('MODIS_VHI', 'vhi_crop_pattern')
+            else:
+                _hazard_dir = self.vampire.get('MODIS_VHI', 'vhi_product_dir')
+                _hazard_pattern = self.vampire.get('MODIS_VHI', 'vhi_pattern')
             _hazard_pattern = _hazard_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.year))
             _hazard_pattern = _hazard_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(self.month))
             _hazard_pattern = _hazard_pattern.replace('(?P<day>\d{2})', '(?P<day>{0})'.format(self.day))
@@ -214,14 +275,32 @@ class ImpactConfigFactory(ConfigFactory.ConfigFactory):
             _admin_pattern = None
             _admin_field = _boundary_field
             _output_pattern = self.vampire.get('hazard_impact', 'vhi_crops_output_pattern')
-            filestring += self._generate_crop_impact_section(hazard_file=_hazard_file, hazard_dir=_hazard_dir,
-                                                             hazard_pattern=_hazard_pattern,
-                                                             crop_boundary=_crop_boundary, crop_dir=_crop_dir,
-                                                             crop_pattern=_crop_pattern, crop_field=_crop_field,
-                                                             admin_boundary=_admin_file, admin_boundary_dir=_admin_dir,
-                                                             admin_boundary_pattern=_admin_pattern,
-                                                             admin_field=_admin_field, output_file=_output_file,
-                                                             output_dir=_output_dir, output_pattern=_output_pattern,
-                                                             start_date=_start_date, end_date=_end_date)
+            # filestring += self._generate_crop_impact_section(hazard_file=_hazard_file, hazard_dir=_hazard_dir,
+            #                                                  hazard_pattern=_hazard_pattern,
+            #                                                  crop_boundary=_crop_boundary, crop_dir=_crop_dir,
+            #                                                  crop_pattern=_crop_pattern, crop_field=_crop_field,
+            #                                                  admin_boundary=_admin_file, admin_boundary_dir=_admin_dir,
+            #                                                  admin_boundary_pattern=_admin_pattern,
+            #                                                  admin_field=_admin_field, output_file=_output_file,
+            #                                                  output_dir=_output_dir, output_pattern=_output_pattern,
+            #                                                  start_date=_start_date, end_date=_end_date)
+            _hazard_table = None
+            _hazard_dir = _output_dir
+            _hazard_pattern = self.vampire.get('hazard_impact', 'vhi_popn_pattern')
+            _hazard_pattern = _hazard_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.year))
+            _hazard_pattern = _hazard_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(self.month))
+            _hazard_pattern = _hazard_pattern.replace('(?P<day>\d{2})', '(?P<day>{0})'.format(self.day))
+            _poverty_file = self.vampire.get_country(self.country)['poverty_boundary']
+            _poverty_field = self.vampire.get_country(self.country)['poverty_field']
+            _poverty_dir = None
+            _poverty_pattern = None
+            _output_pattern = self.vampire.get('hazard_impact', 'vhi_poverty_output_pattern')
 
+            filestring += self._generate_poverty_impact_section(hazard_file=_hazard_table, hazard_dir=_hazard_dir,
+                                                                hazard_pattern=_hazard_pattern, hazard_field='popn_aff',
+                                                                poverty_file=_poverty_file, poverty_dir=_poverty_dir,
+                                                                poverty_pattern=_poverty_pattern, poverty_field=_poverty_field,
+                                                                output_file=_output_file, output_dir=_output_dir,
+                                                                output_pattern=_output_pattern,
+                                                                start_date=_start_date, end_date=_end_date)
         return filestring
