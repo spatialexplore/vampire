@@ -1533,3 +1533,54 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
 ## Processing chain end - Compute Vegetation Health Index"""
 
         return file_string
+
+    def generate_mask(self, raster_file=None, raster_dir=None, raster_pattern=None,
+                      polgon_file=None, polygon_dir=None, polygon_pattern=None,
+                      output_file=None, output_dir=None, output_pattern=None,
+                      ):
+        file_string = """
+    ## Processing chain begin - Mask product"""
+
+        if raster_file is None:
+            if raster_dir is None:
+                _raster_dir = self.vampire.get('MODIS_VHI', 'vhi_product_dir')
+            else:
+                _raster_dir = raster_dir
+            _raster_file = None
+            if raster_pattern is None:
+                _raster_pattern = self.vampire.get('MODIS_VHI', 'vhi_pattern')
+                _raster_pattern = _raster_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.year))
+                _raster_pattern = _raster_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(self.month))
+                _raster_pattern = _raster_pattern.replace('(?P<day>\d{2})', '(?P<day>{0})'.format(self.day))
+            else:
+                _raster_pattern = raster_pattern
+        else:
+            _raster_file = raster_file
+            _raster_pattern = None
+            _raster_dir = None
+
+        _output_dir = None
+        _output_pattern = None
+        if output_file is None:
+            if output_dir is None:
+                _output_dir = self.vampire.get('MODIS_VHI', 'vhi_product_dir')
+            else:
+                _output_dir = output_dir
+            if output_pattern is None:
+                _output_pattern = self.vampire.get('MODIS_VHI', 'vhi_crop_output_pattern')
+            else:
+                _output_pattern = output_pattern
+            _output_file = None
+        else:
+            _output_file = output_file
+
+        _polygon_dir = None
+        _polygon_pattern = None
+        if polgon_file is None:
+            _polygon_file = self.vampire.get_country(self.country)['crop_boundary']
+        else:
+            _polygon_file = polgon_file
+
+        file_string += self.generate_mask_section(_raster_dir, _output_dir, _raster_pattern, _output_pattern,
+                                                  _polygon_file, no_data=False)
+        return file_string
