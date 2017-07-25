@@ -45,6 +45,13 @@ def upload_impact_to_db(product, impact_type, start_date, vp):
                 _schema = vp.get('database', 'impact_crops_schema')
             except Exception, e:
                 _schema = vp.get('database', 'default_schema')
+        elif impact_type == 'poverty':
+            _filename_pattern = vp.get('hazard_impact', 'vhi_poverty_pattern')
+            _table_name = vp.get('database', 'impact_poverty_table')  # 'vhi_crops'
+            try:
+                _schema = vp.get('database', 'impact_poverty_schema')
+            except Exception, e:
+                _schema = vp.get('database', 'default_schema')
         else:
             raise ValueError('Invalid impact type {0}'.format(impact_type))
         _filename_pattern = _filename_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(start_date.year))
@@ -76,7 +83,7 @@ def upload_impact_to_db(product, impact_type, start_date, vp):
             _port = vp.get('database', 'default_port')
         vampire.database_utils.insert_csv_to_table(database=_database, host=_host, port=_port, user=_user,
                                                    password=_password, table=_table_name, schema=_schema,
-                                                   csv_file=_product_filename, overwrite=True)
+                                                   csv_file=_product_filename) #, overwrite=True)
     return None
 
 
@@ -203,19 +210,22 @@ def upload_to_db(product, start_date, vp):
 #        _db_name = vp.get('database', 'default_db') #'prima_ra'
 #        _table_name = 'rainfall_anomaly'
         _filename = 'lka_cli_chirps-v2.0.%s.ratio_anom.tif' % _date_string
+        _ingestion_date = start_date - datetime.timedelta(days=int(vp.get('CHIRPS_Rainfall_Anomaly', 'interval')))
     elif product.lower() == 'vhi':
 #        _db_name = 'prima_vhi_250m'
 #        _table_name = 'public.vhi'
 #        _filename = 'lka_phy_MOD13Q1.20160321.250m_16_days_EVI_EVI_VCI_VHI.tif'
         _filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % _date_string
+        _ingestion_date = start_date - datetime.timedelta(days=int(vp.get('MODIS_VHI', 'interval')))
     elif product.lower() == 'spi':
 #        _db_name = 'prima_spi_10day'
 #        _table_name = 'public.spi'
         _filename = 'lka_cli_chirps-v2.0.%s.spi.tif' % _date_string
+        _ingestion_date = start_date - datetime.timedelta(days=int(vp.get('CHIRPS_SPI', 'interval')))
     else:
         raise ValueError, 'Product {0} is not a valid product (ra, vhi, spi)'.format(product)
 
-    _ingestion_date = start_date #datetime.datetime.strptime(start_date, '%Y-%m-%d')
+#    _ingestion_date = start_date #datetime.datetime.strptime(start_date, '%Y-%m-%d')
     print _ingestion_date
     _ingestion_date = _ingestion_date.replace(hour=6)
     print _ingestion_date
@@ -256,7 +266,7 @@ def main():
         parser.add_option('-o', '--output', dest='output', action='store', help='output filename')
         parser.add_option('-i', '--interval', dest='interval', action='store', help='interval')
         parser.add_option('-d', '--start_date', dest='start_date', action='store', help='start year-month')
-        parser.add_option('-t', '--valid_to', dest='valid_to', action='store', help='valid to year-month-day')
+        parser.add_option('-t', '--valid_from', dest='valid_from', action='store', help='valid from year-month-day')
         (options, args) = parser.parse_args()
         #if len(args) < 1:
         #    parser.error ('missing argument')
@@ -290,15 +300,16 @@ def main():
                 _start_date = datetime.datetime.strptime(options.start_date, "%Y-%m-%d")
             print 'start_date=', _start_date
             params['start_date'] = _start_date
-        if options.valid_to:
+        if options.valid_from:
             try:
-                _valid_to = datetime.datetime.strptime(options.valid_to, "%Y-%m")
+                _valid_from = datetime.datetime.strptime(options.valid_from, "%Y-%m")
             except ValueError:
                 # can't parse string, try with day as well
-                _valid_to = datetime.datetime.strptime(options.valid_to, "%Y-%m-%d")
-            print 'valid_to=', _valid_to
-            params['valid_to'] = _valid_to
+                _valid_from = datetime.datetime.strptime(options.valid_from, "%Y-%m-%d")
+            print 'valid_from=', _valid_from
+            params['valid_from'] = _valid_from
         params['impact'] = True
+        params['mask'] = True
         vampire.config_generator.generate_config_file(_output, params)
         vp = vampire.VampireDefaults.VampireDefaults()
         cp = vampire.ConfigProcessor.ConfigProcessor()
@@ -309,7 +320,8 @@ def main():
         upload_impact_to_db(product=_product, impact_type='area', start_date=_start_date, vp=vp)
 #        convert_csv_to_choropleth(product=_product, impact_type='popn', start_date=_start_date, vp=vp)
         upload_impact_to_db(product=_product, impact_type='popn', start_date=_start_date, vp=vp)
-        upload_impact_to_db(product=_product, impact_type='crops', start_date=_start_date, vp=vp)
+#        upload_impact_to_db(product=_product, impact_type='crops', start_date=_start_date, vp=vp)
+        upload_impact_to_db(product=_product, impact_type='poverty', start_date=_start_date, vp=vp)
 
         # vampire.database_utils.insert_csv_to_table(database='prima_impact', host='localhost', user='prima_user',
         #                                            password='prima_user', table='vhi_area', csv_file='')
