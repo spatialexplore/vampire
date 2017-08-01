@@ -1,9 +1,9 @@
 $python = "C:\Python27\python.exe"
-$processing_script = "c:\PRIMA\scripts\vampire\prima_process.py"
+$processing_script = "c:\PRISM\scripts\vampire\prima_process.py"
 
 # use today-10days as date
-$ref_date = (Get-Date).AddDays(-10)
-#$ref_date = [DateTime]'2017-05-21'
+#$ref_date = (Get-Date).AddDays(-10)
+$ref_date = [DateTime]'2017-07-01'
 
 #get year from last month
 $YEARNOW = ($ref_date).Year
@@ -31,14 +31,14 @@ echo $DAYNOW
 echo $dekad
 
 #check if the final tif (idn_cli_chirps-$YEARNOW$MONTHNOW.ratio_anom.tif) already exist
-$ra_geoserver_path = "C:\Program Files (x86)\GeoServer 2.11.0\data_dir\data\rainfall_anomally\lka_cli_chirps-v2.0.$YEARNOW$MONTHNOW$dekad_day.ratio_anom.tif"
+$ra_geoserver_path = "C:\PRISM\data\Geoserver\data_dir\data\rainfall_anomally\lka_cli_chirps-v2.0.$YEARNOW$MONTHNOW$dekad_day.ratio_anom.tif"
 echo $ra_geoserver_path
 if (Test-Path $ra_geoserver_path) {
   echo "File exists"
 }
 Else {
   echo "Rainfall anomaly for $YEARNOW-$MONTHNOW-$dekad_day does not exist yet. Try processing."
-  & $python $processing_script -c "Sri Lanka" -p rainfall_anomaly -i dekad -o c:\PRIMA\configs\config_rainfall_current.yml -d $YEARNOW-$MONTHNOW-$dekad_day
-  & $python c:\xampp\htdocs\prima-lk\python\send_email_log.py "C:\PRIMA\scripts\vampire\vampire.log"
+  & $python $processing_script -c "Sri Lanka" -p rainfall_anomaly -i dekad -o c:\PRISM\configs\config_rainfall_current.yml -d $YEARNOW-$MONTHNOW-$dekad_day
+  & $python c:\xampp\htdocs\prism\python\send_email_log.py "C:\PRISM\scripts\vampire\vampire.log"
 }
 

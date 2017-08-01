@@ -1,8 +1,8 @@
 $python = "C:\Python27\python.exe"
-$processing_script = "c:\PRIMA\scripts\vampire\prima_process.py"
+$processing_script = "c:\PRISM\scripts\vampire\prism_process.py"
 
 $ref_date = (Get-Date).AddDays(-16)
-#$ref_date = [DateTime]'2016-12-18'
+#$ref_date = [DateTime]'2017-07-29'
 #get year from last month
 $YEARNOW = ($ref_date).Year
 echo $YEARNOW
@@ -39,13 +39,13 @@ $valid_DAY = ($valid_from.Day).ToString("00")
 echo $valid_from
 
 #check if the final tif (lka_phy_MOD13Q1.$YEARNOW$MONTHNOW$DAYNOW.250m_16_days_EVI_EVI_VCI_VHI.tif) already exist
-$vhi_geoserver_path = "C:\Program Files (x86)\GeoServer 2.11.0\data_dir\data\vhi\lka_phy_MOD13Q1.$YEARNOW$MONTHNOW$DAYNOW.250m_16_days_EVI_EVI_VCI_VHI.tif"
+$vhi_geoserver_path = "C:\PRISM\data\Geoserver\data_dir\data\vhi\lka_phy_MOD13Q1.$YEARNOW$MONTHNOW$DAYNOW.250m_16_days_EVI_EVI_VCI_VHI.tif"
 echo $vhi_geoserver_path
 if (Test-Path $vhi_geoserver_path) {
   echo "File exists"
 }
 Else {
   echo "VHI for $YEARNOW-$MONTHNOW-$DAYNOW does not exist yet. Try processing."
-  & $python $processing_script -c "Sri Lanka" -p vhi -o c:\PRIMA\configs\config_vhi_current.yml -d $YEARNOW-$MONTHNOW-$DAYNOW -t $valid_YEAR-$valid_MONTH-$valid_DAY
-#  & $python $processing_script -c "Sri Lanka" -p vhi -o c:\PRIMA\configs\config_vhi_current.yml -d $YEARNOW-$MONTHNOW-$DAYNOW -t $YEAREND-$MONTHEND-$DAYEND
+  & $python $processing_script -c "Sri Lanka" -p vhi -o c:\PRISM\configs\config_vhi_current.yml -d $YEARNOW-$MONTHNOW-$DAYNOW -t $valid_YEAR-$valid_MONTH-$valid_DAY
+#  & $python $processing_script -c "Sri Lanka" -p vhi -o c:\PRISM\configs\config_vhi_current.yml -d $YEARNOW-$MONTHNOW-$DAYNOW -t $YEAREND-$MONTHEND-$DAYEND
 }
