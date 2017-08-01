@@ -150,8 +150,7 @@ def move_output_to_geoserver(product, start_date, vp):
         _dst_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % start_date.strftime('%Y%m%d')
     elif product.lower() == 'vhi_masked':
         _product_dir = vp.get('MODIS_VHI', 'vhi_product_dir')
-        _product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif' % start_date.strftime(
-            '%Y.%m.%d')
+        _product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif' % start_date.strftime('%Y.%m.%d')
         _product_name = 'vhi_mask'  # os.path.join('vhi', _product_filename)
         _dst_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_masked.tif' % start_date.strftime('%Y%m%d')
     elif product.lower() == 'spi':
@@ -323,7 +322,7 @@ def main():
         vp = vampire.VampireDefaults.VampireDefaults()
         cp = vampire.ConfigProcessor.ConfigProcessor()
         cp.process_config(_output, vp.logger)
-        move_output_to_geoserver(_product, _start_date, vp)
+        move_output_to_geoserver(product=_product, start_date=_start_date, vp=vp)
         upload_to_db(product=_product, start_date=_start_date, vp=vp)
         if params['mask']:
             move_output_to_geoserver(product='vhi_masked', start_date=_start_date, vp=vp)
