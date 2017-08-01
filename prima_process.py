@@ -148,6 +148,12 @@ def move_output_to_geoserver(product, start_date, vp):
         _product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % start_date.strftime('%Y.%m.%d')
         _product_name = 'vhi' #os.path.join('vhi', _product_filename)
         _dst_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % start_date.strftime('%Y%m%d')
+    elif product.lower() == 'vhi_masked':
+        _product_dir = vp.get('MODIS_VHI', 'vhi_product_dir')
+        _product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif' % start_date.strftime(
+            '%Y.%m.%d')
+        _product_name = 'vhi_mask'  # os.path.join('vhi', _product_filename)
+        _dst_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_masked.tif' % start_date.strftime('%Y%m%d')
     elif product.lower() == 'spi':
         _product_dir = vp.get('CHIRPS_SPI', 'output_dir')
         if start_date.day < 11:
@@ -216,6 +222,9 @@ def upload_to_db(product, start_date, vp):
 #        _table_name = 'public.vhi'
 #        _filename = 'lka_phy_MOD13Q1.20160321.250m_16_days_EVI_EVI_VCI_VHI.tif'
         _filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % _date_string
+        _ingestion_date = start_date - datetime.timedelta(days=int(vp.get('MODIS_VHI', 'interval')))
+    elif product.lower() == 'vhi_masked':
+        _filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_masked.tif' % _date_string
         _ingestion_date = start_date - datetime.timedelta(days=int(vp.get('MODIS_VHI', 'interval')))
     elif product.lower() == 'spi':
 #        _db_name = 'prima_spi_10day'
@@ -316,7 +325,10 @@ def main():
         cp.process_config(_output, vp.logger)
         move_output_to_geoserver(_product, _start_date, vp)
         upload_to_db(product=_product, start_date=_start_date, vp=vp)
-#        convert_csv_to_choropleth(product=_product, impact_type='area', start_date=_start_date, vp=vp)
+        if params['mask']:
+            move_output_to_geoserver(product='vhi_masked', start_date=_start_date, vp=vp)
+            upload_to_db(product='vhi_masked', start_date=_start_date, vp=vp)
+    #        convert_csv_to_choropleth(product=_product, impact_type='area', start_date=_start_date, vp=vp)
         upload_impact_to_db(product=_product, impact_type='area', start_date=_start_date, vp=vp)
 #        convert_csv_to_choropleth(product=_product, impact_type='popn', start_date=_start_date, vp=vp)
         upload_impact_to_db(product=_product, impact_type='popn', start_date=_start_date, vp=vp)
