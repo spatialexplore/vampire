@@ -73,6 +73,12 @@ class VampireDefaults:
             return self.countries[country]['abbreviation']
         return
 
+    def get_country_name(self, country_code):
+        for c in self.countries:
+            if country_code.lower() == self.countries[c]['abbreviation'].lower():
+                return c
+        return None
+
     def print_defaults(self):
         print self.config._sections
 
