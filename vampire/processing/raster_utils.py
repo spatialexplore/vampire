@@ -207,11 +207,11 @@ def mask_by_shapefile(raster_file, polygon_file, output_file, gdal_path, nodata=
         gdal_exe = os.path.join(gdal_path, 'gdalwarp')
         if nodata:
             retcode = subprocess.call(
-                [gdal_exe, '-dstnodata', '-9999', '--config', 'GDALWARP_IGNORE_BAD_CUTLINE', 'YES',
+                [gdal_exe, '-overwrite', '-dstnodata', '-9999', '--config', 'GDALWARP_IGNORE_BAD_CUTLINE', 'YES',
                  '-cutline', polygon_file, raster_file, output_file])
         else:
             retcode = subprocess.call(
-                [gdal_exe, '--config', 'GDALWARP_IGNORE_BAD_CUTLINE', 'YES',
+                [gdal_exe, '-overwrite', '--config', 'GDALWARP_IGNORE_BAD_CUTLINE', 'YES',
                  '-crop_to_cutline', '-cutline', polygon_file, raster_file, output_file])
         if logger: logger.debug("gdalwarp return code is %s", retcode)
     except subprocess.CalledProcessError as e:
