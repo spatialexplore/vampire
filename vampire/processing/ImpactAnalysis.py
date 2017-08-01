@@ -37,12 +37,13 @@ class ImpactAnalysis():
         else:
             _impact_file = impact_file
 
+        _country_name = self.vampire.get_country_name(self.vampire.get_home_country())
         if impact_match_field is None:
-            _impact_match_field = self.vampire.get_country(self.vampire.get_home_country())['crop_area_code']
+            _impact_match_field = self.vampire.get_country(_country_name)['crop_area_code']
         else:
             _impact_match_field = impact_match_field
         if poor_match_field is None:
-            _poor_match_field = self.vampire.get_country(self.vampire.get_home_country())['admin_3_boundary_area_code']
+            _poor_match_field = self.vampire.get_country(_country_name)['admin_3_boundary_area_code']
         else:
             _poor_match_field = poor_match_field
 
