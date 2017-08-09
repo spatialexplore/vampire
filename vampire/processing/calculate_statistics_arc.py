@@ -5,7 +5,24 @@ import os
 import vampire.csv_utils
 
 def calc_average(file_list, avg_file):
-#    print "calcAverage: ", file_list
+    """ Calculate pixel-by-pixel average of a list of rasters and save result as new raster. 
+    
+    For each pixel, calculate the average of values in the list of rasters. Uses ArcPy
+    CellStatistics function. Requires an ArcGIS SpatialAnalyst licence.
+
+    Parameters
+    ----------
+    file_list : list
+        List of raster files
+    avg_file : str
+        Filename of output file
+
+    Returns
+    -------
+    None
+        Returns None
+
+    """
     arcpy.cellSize = "MAXOF"
     arcpy.extent = "MAXOF"
     outRaster = arcpy.sa.CellStatistics(file_list, "MEAN")
@@ -15,7 +32,25 @@ def calc_average(file_list, avg_file):
     return None
 
 def calc_min(file_list, min_file):
-#    print "calcMin: ", file_list
+    """ Calculate pixel-by-pixel minimum of a list of rasters and save result as new raster. 
+    
+    For each pixel, calculate the minimum of values in the list of rasters. Uses ArcPy
+    CellStatistics function. Requires an ArcGIS SpatialAnalyst licence.
+    
+    Parameters
+    ----------
+    file_list : list
+        List of raster files
+    min_file : str
+        Filename of output file
+    
+    Returns
+    -------
+    None
+        Returns None
+    
+    """
+    #    print "calcMin: ", file_list
     arcpy.cellSize = "MAXOF"
     arcpy.extent = "MAXOF"
     outRaster = arcpy.sa.CellStatistics(file_list, "MINIMUM")
@@ -25,7 +60,25 @@ def calc_min(file_list, min_file):
     return None
 
 def calc_max(file_list, max_file):
-#    print "calcAverage: ", file_list
+    """ Calculate pixel-by-pixel maximum of a list of rasters and save result as new raster. 
+    
+    For each pixel, calculate the maximum of values in the list of rasters. Uses ArcPy
+    CellStatistics function. Requires an ArcGIS SpatialAnalyst licence.
+    
+    Parameters
+    ----------
+    file_list : list
+        List of raster files
+    max_file : str
+        Filename of output file
+    
+    Returns
+    -------
+    None
+        Returns None
+    
+    """
+    #    print "calcAverage: ", file_list
     arcpy.cellSize = "MAXOF"
     arcpy.extent = "MAXOF"
     outRaster = arcpy.sa.CellStatistics(file_list, "MAXIMUM")
@@ -35,7 +88,25 @@ def calc_max(file_list, max_file):
     return None
 
 def calc_std_dev(file_list, sd_file):
-#    print "calcStDev: ", file_list
+    """ Calculate pixel-by-pixel standard deviation of a list of rasters and save result as new raster. 
+    
+    For each pixel, calculate the standard deviation of values in the list of rasters. Uses ArcPy
+    CellStatistics function. Requires an ArcGIS SpatialAnalyst licence.
+    
+    Parameters
+    ----------
+    file_list : list
+        List of raster files
+    sd_file : str
+        Filename of output file
+    
+    Returns
+    -------
+    None
+        Returns None
+    
+    """
+    #    print "calcStDev: ", file_list
     arcpy.cellSize = "MAXOF"
     arcpy.extent = "MAXOF"
     outRaster = arcpy.sa.CellStatistics(file_list, "STD")
@@ -45,7 +116,25 @@ def calc_std_dev(file_list, sd_file):
     return None
 
 def calc_sum(file_list, sum_file):
-#    print "calcSum: ", file_list
+    """ Calculate pixel-by-pixel sum of a list of rasters and save result as new raster. 
+    
+    For each pixel, calculate the sum of values in the list of rasters. Uses ArcPy
+    CellStatistics function. Requires an ArcGIS SpatialAnalyst licence.
+    
+    Parameters
+    ----------
+    file_list : list
+        List of raster files
+    sum_file : str
+        Filename of output file
+    
+    Returns
+    -------
+    None
+        Returns None
+    
+    """
+    #    print "calcSum: ", file_list
     arcpy.cellSize = "MAXOF"
     arcpy.extent = "MAXOF"
     outRaster = arcpy.sa.CellStatistics(file_list, "SUM")
@@ -55,6 +144,26 @@ def calc_sum(file_list, sum_file):
     return None
 
 def calc_average_of_day_night(day_file, night_file, avg_file):
+    """ Calculate pixel-by-pixel average of land surface temperature day and night rasters and save result as new raster. 
+
+    For each pixel, calculate the mean of values in the two rasters. Uses ArcPy
+    CellStatistics function. Requires an ArcGIS SpatialAnalyst licence.
+
+    Parameters
+    ----------
+    day_file : str
+        Filename of day file
+    night_file : str
+        Filename of night file
+    avg_file : str
+        Filename of output file
+
+    Returns
+    -------
+    None
+        Returns None
+
+    """
     print "calcAverage: ", day_file, night_file
     #an empty array/vector in which to store the different bands
     rasters = []
@@ -68,7 +177,30 @@ def calc_average_of_day_night(day_file, night_file, avg_file):
     return None
 
 def calc_zonal_statistics(raster_file, polygon_file, zone_field, output_table):
-    # first calculate statistics on raster
+    """ Calculate zonal statistics for a raster and vector and save result as .dbf and .csv files. 
+
+    For each polygon in the vector file, calculate set of statistics from the raster (sum, mean, max, min, count). 
+    Uses ArcPy ZonalStatisticsAsTable function. Requires an ArcGIS SpatialAnalyst licence.
+
+    Parameters
+    ----------
+    raster_file : str
+        Filename of raster file
+    polygon_file : str
+        Filename of vector file
+    zone_field : str
+        Name of field labelling the zones within vector file
+    output_table : str
+        Filename of output table (.dbf or .csv)
+
+    Returns
+    -------
+    None
+        Returns None
+
+    """
+
+    # First calculate statistics on raster.
     arcpy.CalculateStatistics_management(in_raster_dataset=raster_file)
     # set up .dbf and .csv filenames
     if output_table.endswith('.dbf'):
