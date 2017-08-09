@@ -1,5 +1,5 @@
 import time
-import config
+import configArcGIS as config
 import arcpy
 import arceditor
 import os
