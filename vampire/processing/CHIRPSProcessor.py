@@ -32,6 +32,28 @@ class CHIRPSProcessor:
 
     # helper function to calculate statistics for a list of files.
     def calculate_stats(self, file_list, new_filename, output_dir, function_list):
+        """ Calculate statistics for a list of raster files and save results to output directory. 
+
+        For each raster in the list, calculate each statistic in the list of functions. All resulting
+        rasters are saved in the output directory with the new filename and statistic function name.
+
+        Parameters
+        ----------
+        file_list : list
+            Filename of raster file
+        new_filename : str
+            Filename of output file
+        output_dir : str
+            Name of directory to save output files in
+        function_list : list
+            List of statistics to calculate. Valid statistic functions are AVG, SUM, STD, MIN and MAX
+
+        Returns
+        -------
+        None
+            Returns None
+
+        """
         for f in function_list:
             if f == 'AVG':
                 newfile = '{0}.avg.tif'.format(new_filename)
@@ -60,6 +82,31 @@ class CHIRPSProcessor:
     # Download CHIRPS precipitation data for given interval. Will download all available data unless start and/or
     # end dates are provided.
     def download_data(self, output_dir, interval, dates=None, start_date=None, end_date=None, overwrite=False):
+        """ Download CHIRPS precipitation data for given interval. 
+
+        Download CHIRPS precipitation data for given interval. Will download all available data unless start 
+        and/or end dates are provided.
+
+        Parameters
+        ----------
+        output_dir : str
+            Filename of raster file
+        interval : str
+            Filename of vector file
+        dates : str
+            Name of field labelling the zones within vector file
+        start_date : str
+            Filename of output table (.dbf or .csv)
+        end_date : str
+            F
+        overwrite : boolean
+
+        Returns
+        -------
+        None
+            Returns None
+
+        """
         _ftp_dir = self.vampire.get('CHIRPS', 'ftp_dir_{0}'.format(interval.lower()))
         files_list = []
         all_files = []
