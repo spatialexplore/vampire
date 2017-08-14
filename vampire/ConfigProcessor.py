@@ -4,6 +4,8 @@ import processing.RasterProcessor
 import processing.ClimateAnalysis
 import processing.ImpactAnalysis
 import processing.raster_utils as raster_utils
+import vampire.GISServerManager
+import vampire.DatabaseManager
 import yaml
 
 class ConfigFileError(ValueError):
@@ -979,6 +981,37 @@ class ConfigProcessor():
 
         return None
 
+    def _process_publish(self, process, cfg, logger=None):
+        if 'start_date' in process:
+            _start_date = process['start_date']
+        else:
+            _start_date = None
+
+        if 'end_date' in process:
+            _end_date = process['end_date']
+        else:
+            _end_date = None
+
+        if process['type'] == 'gis_server':
+            if logger: logger.debug("Publish data to GIS server")
+            _product = None
+            if 'product' in process:
+                _product = process['product']
+            else:
+                raise ConfigFileError("No product specified.", None)
+            gis = vampire.GISServerManager.GISServerManager('gis_server')
+            gis.upload_to_GIS_server(_product, _start_date)
+
+        elif process['type'] == 'database':
+            if logger: logger.debug("Publish data to database")
+            if 'product' in process:
+                _product = process['product']
+            else:
+                raise ConfigFileError("No product specified.", None)
+            db = vampire.DatabaseManager.DatabaseManager()
+            db.upload_to_database(_product, _start_date, _end_date)
+
+        return None
 
     def process_config(self, config, logger=None):
 
