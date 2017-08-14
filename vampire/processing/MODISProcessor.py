@@ -58,6 +58,10 @@ class MODISProcessor:
         _dates = []
 #        if dates is None:
         # need to get list of dates first
+        if not os.path.exists(output_dir):
+            self.vampire.logger.debug("%s does not exist. Creating directory", output_dir)
+            os.makedirs(output_dir)
+
         _modis_connect = downmodis.downModis(destinationFolder=output_dir, user=_user, password=_password,
                                              product=product, today=None, delta=_delta, tiles=tiles)
         _modis_connect.connect()
@@ -77,6 +81,7 @@ class MODISProcessor:
             _month = d #'{date}-01'.format(date=d)
             _folder_date = datetime.datetime.strptime(_month, '%Y.%m.%d').strftime('%Y.%m.%d')
             _new_folder = output_dir #os.path.join(output_dir, _folder_date)
+# don't need anymore? done above instead?
              # create folder if it doesn't already exist
             if not os.path.exists(_new_folder):
                 self.vampire.logger.debug("%s does not exist. Creating directory", _new_folder)
