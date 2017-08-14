@@ -348,7 +348,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
 
         # need to extract both day and night layers then average them
         # pattern for files to extract from
-        if self.vampire.get('MODIS_PRODUCTS', '{0}.mosaic_dir'.format(product)) is None:
+        if self.vampire.get('MODIS_PRODUCTS', '{0}.mosaic_dir'.format(product)) == '': #is None:
             # no mosaic, so data uses day of year
             _modis_pattern = self.vampire.get('MODIS_LST', 'lst_pattern')
         else:
@@ -360,6 +360,7 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
             _modis_pattern = _modis_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.year))
             _modis_pattern = _modis_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.month))
             _modis_pattern = _modis_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.day))
+            _modis_pattern = _modis_pattern.replace('(?P<dayofyear>\d{3})', '(?P<dayofyear>{0:0>3})'.format(self.day_of_year))
         _lst_output_pattern = self.vampire.get('MODIS_LST', 'lst_output_pattern')
         file_string = self.generate_extract_section(input_dir=_data_dir, output_dir=_day_dir,
                                                     product=product, layer='LST_Day',
@@ -805,6 +806,8 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
             _lst_min_pattern = self.vampire.get('MODIS_LST_Long_Term_Average', 'lta_pattern')
             _lst_min_pattern = _lst_min_pattern.replace('(?P<day_of_yr>\d{3})', '(?P<day_of_yr>{0:0>3})'.
                                                         format(self.day_of_year))
+            _lst_min_pattern = _lst_min_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.
+                                                        format(self.month))
             _lst_min_pattern = _lst_min_pattern.replace('(?P<statistic>.*)', 'min')
         else:
             _lst_min_pattern = lst_min_pattern
@@ -812,6 +815,8 @@ class MODISConfigFactory(ConfigFactory.ConfigFactory):
             _lst_max_pattern = self.vampire.get('MODIS_LST_Long_Term_Average', 'lta_pattern')
             _lst_max_pattern = _lst_max_pattern.replace('(?P<day_of_yr>\d{3})', '(?P<day_of_yr>{0:0>3})'.
                                                         format(self.day_of_year))
+            _lst_max_pattern = _lst_max_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.
+                                                        format(self.month))
             _lst_max_pattern = _lst_max_pattern.replace('(?P<statistic>.*)', 'max')
         else:
             _lst_max_pattern = lst_max_pattern
