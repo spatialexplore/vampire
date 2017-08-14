@@ -118,6 +118,8 @@ class ClimateAnalysis():
                 os.path.split(_cur_filename)[1], cur_pattern, dst_pattern))
         else:
             _dst_filename = dst_filename
+        if not os.path.isdir(os.path.dirname(_dst_filename)):
+            os.makedirs(os.path.dirname(_dst_filename))
 
         vegetation_analysis.calc_VCI(_cur_filename, _evi_max_filename, _evi_min_filename, _dst_filename)
         self.vampire.logger.info('leaving calc_vci')
