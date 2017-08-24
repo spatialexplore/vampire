@@ -8,6 +8,8 @@ import traceback
 import MODISConfigFactory
 import CHIRPSConfigFactory
 import ImpactConfigFactory
+import PublishConfigFactory
+#import products.BaseProduct as BaseProduct
 
 def generate_config_file(output_file, params):
     if os.path.exists(output_file):
@@ -42,6 +44,11 @@ def generate_config_file(output_file, params):
                                                       start_date=_valid_from, end_date=params['start_date'])
         pfile.write(cf.generate_header_directory())
         if 'product' in params:
+#            _product = BaseProduct.BaseProduct.create(product_type=params['product'], params=params)
+#            pfile.write(_product.generate_header())
+#            pfile.write(cf.generate_header_run())
+#            pfile.write(_product.generate_config())
+
             if params['product'].lower() == "rainfall_anomaly":
                 pfile.write(cf.generate_header_chirps())
                 pfile.write(cf.generate_header_run())
@@ -70,6 +77,10 @@ def generate_config_file(output_file, params):
                         pfile.write(mf.generate_mask())
                 if params['impact'] == True:
                     pfile.write(imf.generate_impact(product=params['product'], interval=_interval, masked=_mask))
+                if params['publish'] == True:
+                    pf = PublishConfigFactory.PublishConfigFactory(name='pf', country=params['country'],
+                                                      start_date=_valid_from, end_date=params['start_date'])
+                    pfile.write(pf.generate_publish_gis(product=params['product'], interval=_interval, masked=_mask))
             elif params['product'].lower() == "rainfall_longterm_average":
                 pfile.write(cf.generate_header_chirps())
                 pfile.write(cf.generate_header_run())
