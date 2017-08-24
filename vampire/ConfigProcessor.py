@@ -4,8 +4,8 @@ import processing.RasterProcessor
 import processing.ClimateAnalysis
 import processing.ImpactAnalysis
 import processing.raster_utils as raster_utils
-import vampire.GISServerManager
-import vampire.DatabaseManager
+import GISServerInterface
+import DatabaseManager
 import yaml
 
 class ConfigFileError(ValueError):
@@ -999,8 +999,19 @@ class ConfigProcessor():
                 _product = process['product']
             else:
                 raise ConfigFileError("No product specified.", None)
-            gis = vampire.GISServerManager.GISServerManager('gis_server')
-            gis.upload_to_GIS_server(_product, _start_date)
+            _input_file = None
+            _input_dir = None
+            _input_pattern = None
+            if 'input_file' in process:
+                _input_file = process['input_file']
+            elif 'input_pattern' in process:
+                _input_dir = process['input_dir']
+                _input_pattern = process['input_pattern']
+            else:
+                raise ConfigFileError('No input filename "input_file" or input dir/pattern "input_dir / input_pattern" set', None)
+            gis = GISServerInterface.GISServerInterface('gis_server')
+            gis.upload_to_GIS_server(product=_product, input_file=_input_file, input_dir=_input_dir,
+                                     input_pattern=_input_pattern, start_date=_start_date, end_date=_end_date)
 
         elif process['type'] == 'database':
             if logger: logger.debug("Publish data to database")
@@ -1008,7 +1019,7 @@ class ConfigProcessor():
                 _product = process['product']
             else:
                 raise ConfigFileError("No product specified.", None)
-            db = vampire.DatabaseManager.DatabaseManager()
+            db = DatabaseManager.DatabaseManager()
             db.upload_to_database(_product, _start_date, _end_date)
 
         return None
