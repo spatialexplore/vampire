@@ -2,6 +2,8 @@
 import rasterio
 import numpy as np
 import os
+import logging
+logger = logging.getLogger(__name__)
 
 # calculate a rainfall anomaly surface as int(100 * (current rainfall/long-term average rainfall) )
 def calc_rainfall_anomaly(cur_filename, lta_filename, dst_filename):
