@@ -9,7 +9,8 @@ import MODISConfigFactory
 import CHIRPSConfigFactory
 import ImpactConfigFactory
 import PublishConfigFactory
-#import products.BaseProduct as BaseProduct
+import config_products.BaseProduct as BaseProduct
+import config_products.BaseImpactProduct as BaseImpactProduct
 
 def generate_config_file(output_file, params):
     if os.path.exists(output_file):
@@ -29,69 +30,115 @@ def generate_config_file(output_file, params):
             raise
 
     with pfile:
-        cf = CHIRPSConfigFactory.CHIRPSConfigFactory(name='cf')
-        _end_date = params['start_date']
-        _valid_to = None
-        if 'end_date' in params:
-            _end_date = params['end_date']
-        mf = MODISConfigFactory.MODISConfigFactory(name='mf', country=params['country'],
-                                                   start_date=params['start_date'], end_date=_end_date)
-        if 'valid_from' in params:
-            _valid_from = params['valid_from']
-        else:
-            _valid_from = params['start_date']
-        imf = ImpactConfigFactory.ImpactConfigFactory(name='imf', country=params['country'],
-                                                      start_date=_valid_from, end_date=params['start_date'])
-        pfile.write(cf.generate_header_directory())
+        # cf = CHIRPSConfigFactory.CHIRPSConfigFactory(name='cf')
+        # _end_date = params['start_date']
+        # _valid_to = None
+        # if 'end_date' in params:
+        #     _end_date = params['end_date']
+        # mf = MODISConfigFactory.MODISConfigFactory(name='mf', country=params['country'],
+        #                                            start_date=params['start_date'], end_date=_end_date)
+        # if 'valid_from' in params:
+        #     _valid_from = params['valid_from']
+        # else:
+        #     _valid_from = params['start_date']
+        # imf = ImpactConfigFactory.ImpactConfigFactory(name='imf', country=params['country'],
+        #                                               start_date=_valid_from, end_date=params['start_date'])
+        # pfile.write(cf.generate_header_directory())
         if 'product' in params:
-#            _product = BaseProduct.BaseProduct.create(product_type=params['product'], params=params)
-#            pfile.write(_product.generate_header())
-#            pfile.write(cf.generate_header_run())
-#            pfile.write(_product.generate_config())
+            _product = BaseProduct.BaseProduct.create(product_type=params['product'], country=params['country'],
+                                                      product_date=params['start_date'], interval=params['interval']) #params=params)
+            pfile.write(_product.generate_header())
+            pfile.write("""
+run:
+""")
+            pfile.write(_product.generate_config())
 
-            if params['product'].lower() == "rainfall_anomaly":
-                pfile.write(cf.generate_header_chirps())
-                pfile.write(cf.generate_header_run())
-                pfile.write(cf.generate_rainfall_anomaly_config(params['country'], params['interval'],
-                                                                params['start_date']))
-            elif params['product'].lower() == "evi_longterm_average":
-                pfile.write(mf.generate_header_run())
-                if 'interval' in params:
-                    _interval = params['interval']
-                else:
-                    _interval = '16Days'
-                pfile.write(mf.generate_evi_long_term_average(interval=_interval))
-            elif params['product'].lower() == "vhi":
-                pfile.write(mf.generate_header_run())
-                pfile.write(mf.generate_vci_config())
-                if 'interval' in params:
-                    _interval = params['interval']
-                else:
-                    _interval = '16Days'
-                pfile.write(mf.generate_tci_config(interval=_interval))
-                pfile.write(mf.generate_vhi_config())
-                _mask = False
-                if 'mask' in params:
-                    if params['mask'] == True:
-                        _mask = True
-                        pfile.write(mf.generate_mask())
-                if params['impact'] == True:
-                    pfile.write(imf.generate_impact(product=params['product'], interval=_interval, masked=_mask))
-                if params['publish'] == True:
-                    pf = PublishConfigFactory.PublishConfigFactory(name='pf', country=params['country'],
-                                                      start_date=_valid_from, end_date=params['start_date'])
-                    pfile.write(pf.generate_publish_gis(product=params['product'], interval=_interval, masked=_mask))
-            elif params['product'].lower() == "rainfall_longterm_average":
-                pfile.write(cf.generate_header_chirps())
-                pfile.write(cf.generate_header_run())
-                pfile.write(cf.generate_rainfall_long_term_average_config(params['country'],
-                                                                            params['interval']
-                                                                            ))
-            elif params['product'].lower() == "spi":
-                pfile.write(cf.generate_header_chirps())
-                pfile.write(cf.generate_header_run())
-                pfile.write(cf.generate_standardized_precipitation_index_config(params['country'], params['interval'],
-                                                                params['start_date']))
+            if 'mask' in params and params['mask'] == True:
+                pfile.write(_product.generate_mask_config())
+
+            if 'impact' in params and params['impact'] == True:
+                if params['product'] == 'vhi':
+                    _popn_impact = BaseImpactProduct.BaseImpactProduct.create(impact_type='vhi_impact_popn',
+                                                                              country=params['country'],
+                                                                              valid_from_date=_product.valid_from_date,
+                                                                              valid_to_date=_product.valid_to_date
+                                                                              )
+                    pfile.write(_popn_impact.generate_config(hazard_file=_product.output_file,
+                                                             hazard_dir=_product.output_dir,
+                                                             hazard_pattern=_product.output_pattern))
+                    _area_impact = BaseImpactProduct.BaseImpactProduct.create(impact_type='vhi_impact_area',
+                                                                              country=params['country'],
+                                                                              valid_from_date=_product.valid_from_date,
+                                                                              valid_to_date=_product.valid_to_date
+                                                                              )
+                    pfile.write(_area_impact.generate_config(hazard_file=_product.output_file,
+                                                             hazard_dir=_product.output_dir,
+                                                             hazard_pattern=_product.output_pattern))
+                    if 'publish' in params and params['publish'] == True:
+                        pfile.write(_popn_impact.generate_publish_config())
+                        pfile.write(_area_impact.generate_publish_config())
+            if 'publish' in params and params['publish'] == True:
+                pfile.write(_product.generate_publish_config())
+
+#            if params['product'] == 'vhi':
+#                if 'mask' in params:
+#                    if params['mask'] == True:
+#                        _mask = True
+#                        _masked_vhi = BaseProduct.BaseProduct.create(product_type=params['masked_vhi'], country=params['country'],
+#                                                                     product_date=params['start_date'], interval=params['interval'])
+#                        pfile.write(_masked_vhi.generate_config())
+#                    else:
+#                        _mask = False
+#                else:
+#                    _mask = False
+#                if params['impact'] == True:
+#                    _popn_impact = BaseProduct.BaseProduct.create(product_type='vhi_impact_popn', country=params['country'],
+#                                                                  product_date=params['start_date'], interval=params['interval'])
+#                    pfile.write(_popn_impact.generate_config(masked=_mask))
+
+#            if params['product'].lower() == "rainfall_anomaly":
+#                pfile.write(cf.generate_header_chirps())
+#                pfile.write(cf.generate_header_run())
+#                pfile.write(cf.generate_rainfall_anomaly_config(params['country'], params['interval'],
+#                                                                params['start_date']))
+#             if params['product'].lower() == "evi_longterm_average":
+#                 pfile.write(mf.generate_header_run())
+#                 if 'interval' in params:
+#                     _interval = params['interval']
+#                 else:
+#                     _interval = '16Days'
+#                 pfile.write(mf.generate_evi_long_term_average(interval=_interval))
+            # elif params['product'].lower() == "vhi":
+            #     pfile.write(mf.generate_header_run())
+            #     pfile.write(mf.generate_vci_config())
+            #     if 'interval' in params:
+            #         _interval = params['interval']
+            #     else:
+            #         _interval = '16Days'
+            #     pfile.write(mf.generate_tci_config(interval=_interval))
+            #     pfile.write(mf.generate_vhi_config())
+            #     _mask = False
+            #     if 'mask' in params:
+            #         if params['mask'] == True:
+            #             _mask = True
+            #             pfile.write(mf.generate_mask())
+            #     if params['impact'] == True:
+            #         pfile.write(imf.generate_impact(product=params['product'], interval=_interval, masked=_mask))
+            #     if params['publish'] == True:
+            #         pf = PublishConfigFactory.PublishConfigFactory(name='pf', country=params['country'],
+            #                                           start_date=_valid_from, end_date=params['start_date'])
+            #         pfile.write(pf.generate_publish_gis(product=params['product'], interval=_interval, masked=_mask))
+            # elif params['product'].lower() == "rainfall_longterm_average":
+            #     pfile.write(cf.generate_header_chirps())
+            #     pfile.write(cf.generate_header_run())
+            #     pfile.write(cf.generate_rainfall_long_term_average_config(params['country'],
+            #                                                                 params['interval']
+            #                                                                 ))
+            # elif params['product'].lower() == "spi":
+            #     pfile.write(cf.generate_header_chirps())
+            #     pfile.write(cf.generate_header_run())
+            #     pfile.write(cf.generate_standardized_precipitation_index_config(params['country'], params['interval'],
+            #                                                     params['start_date']))
         pfile.close()
     return 0
 
