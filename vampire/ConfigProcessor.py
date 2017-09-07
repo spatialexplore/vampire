@@ -7,6 +7,8 @@ import processing.raster_utils as raster_utils
 import GISServerInterface
 import DatabaseManager
 import yaml
+import logging
+logger = logging.getLogger(__name__)
 
 class ConfigFileError(ValueError):
     def __init__(self, message, e, *args):
@@ -17,7 +19,7 @@ class ConfigFileError(ValueError):
 
 class ConfigProcessor():
 
-    def _process_CHIRPS(self, process, cfg, logger=None):
+    def _process_CHIRPS(self, process, cfg):
         try:
             output_dir = process['output_dir']
         except Exception, e:
@@ -62,10 +64,10 @@ class ConfigProcessor():
             raise ConfigFileError('Unknown CHIRPS process type {0}'.format(process['type']))
         return None
 
-    def _process_MODIS(self, process, cfg, logger=None):
+    def _process_MODIS(self, process, cfg):
         mp = processing.MODISProcessor.MODISProcessor()
         if process['type'] == 'download':
-            if logger: logger.debug("Downloading MODIS data")
+            logger.debug("Downloading MODIS data")
             try:
                 output_dir = process['output_dir']
             except Exception, e:
@@ -92,7 +94,7 @@ class ConfigProcessor():
             mp.download_data(output_dir=output_dir, product=_product, tiles=_tiles,
                              dates=_dates, mosaic_dir=_mosaic_dir)
         elif process['type'] == 'extract':
-            if logger: logger.debug("Extract layer from MODIS data")
+            logger.debug("Extract layer from MODIS data")
             try:
                 _input_dir = process['input_dir']
             except Exception, e:
@@ -122,7 +124,7 @@ class ConfigProcessor():
         elif process['type'] == 'calc_average':
             if 'layer' in process:
                 if process['layer'] == 'day_night_temp':
-                    if logger: logger.debug("Calculate Average temperature from Day & Night for files matching pattern")
+                    logger.debug("Calculate Average temperature from Day & Night for files matching pattern")
                     day_dir = process['lst_day_dir']
                     night_dir = process['lst_night_dir']
                     output_dir = process['output_dir']
@@ -137,7 +139,7 @@ class ConfigProcessor():
                     patterns = (input_pattern, output_pattern)
                     mp.match_day_night_files(day_dir, night_dir, output_dir, patterns)
                 elif process['layer'] == 'long_term_statistics':
-                    if logger: logger.debug("Calculate long-term statistics for files matching pattern")
+                    logger.debug("Calculate long-term statistics for files matching pattern")
                     try:
                         _input_dir = process['input_dir']
                     except Exception, e:
@@ -185,10 +187,10 @@ class ConfigProcessor():
 
         return None
 
-    def _process_analysis(self, process, cfg, logger=None):
+    def _process_analysis(self, process, cfg):
         ca = processing.ClimateAnalysis.ClimateAnalysis()
         if process['type'] == 'rainfall_anomaly':
-            if logger: logger.debug("Compute monthly rainfall anomaly")
+            logger.debug("Compute monthly rainfall anomaly")
             cur_file = None
             lta_file = None
             out_file = None
@@ -251,7 +253,7 @@ class ConfigProcessor():
                                      cur_pattern=cur_pattern, lta_pattern=lta_pattern,
                                      dst_filename=out_file, dst_pattern=output_pattern, dst_dir=output_dir )
         elif process['type'] == 'SPI':
-            if logger: logger.debug("Compute standardized precipitation index")
+            logger.debug("Compute standardized precipitation index")
             cur_file = None
             lta_file = None
             ltsd_file = None
@@ -322,7 +324,7 @@ class ConfigProcessor():
                                                      dst_dir=output_dir )
 
         elif process['type'] == 'days_since_last_rain':
-            if logger: logger.debug("Compute Days Since Last Rain")
+            logger.debug("Compute Days Since Last Rain")
             if 'input_dir' in process:
                 _input_dir = process['input_dir']
             else:
@@ -363,7 +365,7 @@ class ConfigProcessor():
             _output_dir = None
             _output_pattern = None
 
-            if logger: logger.debug("Compute Vegetation Condition Index")
+            logger.debug("Compute Vegetation Condition Index")
             if 'current_file' in process:
                 _cur_file = process['current_file']
             else:
@@ -416,7 +418,7 @@ class ConfigProcessor():
                         dst_filename=_output_file, dst_dir=_output_dir, dst_pattern=_output_pattern)
 
         elif process['type'] == 'TCI':
-            if logger: logger.debug("Compute Temperature Condition Index")
+            logger.debug("Compute Temperature Condition Index")
             _cur_file = None
             _cur_dir = None
             _cur_pattern = None
@@ -431,7 +433,7 @@ class ConfigProcessor():
             _output_pattern = None
             _interval = None
 
-            if logger: logger.debug("Compute Temperature Condition Index")
+            logger.debug("Compute Temperature Condition Index")
             if 'current_file' in process:
                 _cur_file = process['current_file']
             else:
@@ -488,7 +490,7 @@ class ConfigProcessor():
                         )
 
         elif process['type'] == 'VHI':
-            if logger: logger.debug("Compute Vegetation Health Index")
+            logger.debug("Compute Vegetation Health Index")
             _vci_file = None
             _vci_dir = None
             _vci_pattern = None
@@ -539,10 +541,10 @@ class ConfigProcessor():
 
         return None
 
-    def _process_raster(self, process, cfg, logger=None):
+    def _process_raster(self, process, cfg):
         rp = processing.RasterProcessor.RasterProcessor()
         if process['type'] == 'crop':
-            if logger: logger.debug("Crop raster data to boundary")
+            logger.debug("Crop raster data to boundary")
 
             if 'file_pattern' in process:
                 _pattern = process['file_pattern']
@@ -575,9 +577,9 @@ class ConfigProcessor():
                 raise ConfigFileError("No boundary file specified." ,e)
             rp.crop_files(input_dir=_input_dir, output_dir=_output_dir, boundary_file=_boundary_file,
                           file_pattern=_pattern, output_pattern=_out_pattern, overwrite=_overwrite,
-                          nodata=_no_data, logger=logger)
+                          nodata=_no_data)
         elif process['type'] == 'match_projection':
-            if logger: logger.debug("Reproject file to same extent and resolution as master")
+            logger.debug("Reproject file to same extent and resolution as master")
             _master_filename = None
             _slave_filename = None
             _master_dir = None
@@ -619,7 +621,7 @@ class ConfigProcessor():
                                 output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern)
 
         elif process['type'] == 'zonal_statistics':
-            if logger: logger.debug("Calculate zonal statistics as a table from raster and polygon")
+            logger.debug("Calculate zonal statistics as a table from raster and polygon")
             _raster_filename = None
             _polygon_filename = None
             _raster_dir = None
@@ -667,7 +669,7 @@ class ConfigProcessor():
                                 output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
                                 zone_field=_zone_field)
         elif process['type'] == 'apply_mask':
-            if logger: logger.debug("Apply shapefile mask to raster")
+            logger.debug("Apply shapefile mask to raster")
             _raster_filename = None
             _polygon_filename = None
             _raster_dir = None
@@ -711,7 +713,7 @@ class ConfigProcessor():
             rp.mask_by_shapefile(raster_file=_raster_filename, raster_dir=_raster_dir, raster_pattern=_raster_pattern,
                                  polygon_file=_polygon_filename, polygon_dir=_polygon_dir, polygon_pattern=_polygon_pattern,
                                  output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
-                                 nodata=_no_data, logger=logger)
+                                 nodata=_no_data)
 
         # elif process['type'] == 'average_files':
         #     if logger: logger.debug("Compute average of raster files")
@@ -737,7 +739,7 @@ class ConfigProcessor():
         return None
     #
 
-    def _process_impact(self, process, cfg, logger=None):
+    def _process_impact(self, process, cfg):
         ia = processing.ImpactAnalysis.ImpactAnalysis()
         if 'start_date' in process:
             _start_date = process['start_date']
@@ -750,7 +752,7 @@ class ConfigProcessor():
             _end_date = None
 
         if process['type'] == 'area':
-            if logger: logger.debug("Compute area of event impact")
+            logger.debug("Compute area of event impact")
 
             _hazard_pattern = None
             _hazard_dir = None
@@ -794,7 +796,7 @@ class ConfigProcessor():
                                      output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
                                      start_date=_start_date, end_date=_end_date)
         elif process['type'] == 'crops':
-            if logger: logger.debug("Compute area of affected crops")
+            logger.debug("Compute area of affected crops")
 
             _hazard_pattern = None
             _hazard_dir = None
@@ -857,7 +859,7 @@ class ConfigProcessor():
                                      output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
                                      start_date=_start_date, end_date=_end_date)
         elif process['type'] == 'population':
-            if logger: logger.debug("Compute population affected by event")
+            logger.debug("Compute population affected by event")
 
             _hazard_pattern = None
             _hazard_dir = None
@@ -913,7 +915,7 @@ class ConfigProcessor():
                                      output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
                                      start_date=_start_date, end_date=_end_date)
         elif process['type'] == 'poverty':
-            if logger: logger.debug("Compute poor population affected by event")
+            logger.debug("Compute poor population affected by event")
             _hazard_pattern = None
             _hazard_dir = None
             _hazard_file = None
@@ -981,7 +983,7 @@ class ConfigProcessor():
 
         return None
 
-    def _process_publish(self, process, cfg, logger=None):
+    def _process_publish(self, process, cfg):
         if 'start_date' in process:
             _start_date = process['start_date']
         else:
@@ -993,7 +995,7 @@ class ConfigProcessor():
             _end_date = None
 
         if process['type'] == 'gis_server':
-            if logger: logger.debug("Publish data to GIS server")
+            logger.debug("Publish data to GIS server")
             _product = None
             if 'product' in process:
                 _product = process['product']
@@ -1014,7 +1016,7 @@ class ConfigProcessor():
                                      input_pattern=_input_pattern, start_date=_start_date, end_date=_end_date)
 
         elif process['type'] == 'database':
-            if logger: logger.debug("Publish data to database")
+            logger.debug("Publish data to database")
             if 'product' in process:
                 _product = process['product']
             else:
@@ -1024,7 +1026,7 @@ class ConfigProcessor():
 
         return None
 
-    def process_config(self, config, logger=None):
+    def process_config(self, config):
 
         global options, args
         try:
@@ -1034,53 +1036,50 @@ class ConfigProcessor():
                     cfg = yaml.load(ymlfile)
             else:
                 print "no config"
-                if logger:
-                    logger.error("A config file is required. Please specify a config file on the command line.")
+                logger.error("A config file is required. Please specify a config file on the command line.")
                 return -1
         except Exception, e:
-            if logger:
-                logger.error("Cannot load config file.")
+            logger.error("Cannot load config file.")
             raise ConfigFileError('no run in cfg',e)
 
         if not 'run' in cfg:
             print "Error in cfg!!"
         _process_list = cfg['run']
-        if logger:
-            logger.debug(_process_list)
+        logger.debug(_process_list)
 
         for i,p in enumerate(_process_list):
             try:
                 if p['process'].upper() == 'CHIRPS':
                     print "Processing CHIRPS data"
-                    self._process_CHIRPS(p, cfg, logger)
+                    self._process_CHIRPS(p, cfg)
             except Exception, e:
                 ConfigFileError("running process CHIRPS", e)
                 raise
             try:
                 if p['process'].upper() == 'MODIS':
                     print "Processing MODIS data"
-                    self._process_MODIS(p, cfg, logger)
+                    self._process_MODIS(p, cfg)
             except Exception, e:
                 ConfigFileError("running process MODIS", e)
                 raise
             try:
                 if p['process'].lower() == 'analysis':
                     print "Performing data analysis"
-                    self._process_analysis(p, cfg, logger)
+                    self._process_analysis(p, cfg)
             except Exception, e:
                 ConfigFileError("performing data analysis", e)
                 raise
             try:
                 if p['process'].lower() == 'raster':
                     print "Performing raster analysis"
-                    self._process_raster(p, cfg, logger)
+                    self._process_raster(p, cfg)
             except Exception, e:
                 ConfigFileError("performing raster analysis", e)
                 raise
             try:
                 if p['process'].lower() == 'impact':
                     print "Performing impact analysis"
-                    self._process_impact(p, cfg, logger)
+                    self._process_impact(p, cfg)
             except Exception, e:
                 ConfigFileError('performing impact analysis', e)
 
