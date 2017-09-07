@@ -3,6 +3,8 @@ import os
 import arcpy
 import gdal
 import numpy
+import logging
+logger = logging.getLogger(__name__)
 
 # Check out the ArcGIS Spatial Analyst extension license
 if arcpy.CheckExtension("Spatial") == "Available":
