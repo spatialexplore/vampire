@@ -13,6 +13,8 @@ import dateutil.parser
 import subprocess
 #from subprocess import check_call, CalledProcessError
 from pymodis import downmodis
+import logging
+logger = logging.getLogger(__name__)
 
 try:
     import calculate_statistics_arc as calculate_statistics
@@ -44,7 +46,7 @@ class MODISProcessor:
     # No changes to projection are performed.
     def download_data(self, output_dir, product,
                       dates=None, tiles=None, mosaic_dir=None, overwrite=False):
-        self.vampire.logger.info('entering download_data')
+        logger.info('entering download_data')
 
 
     #def getMODISDataFromURL(output_dir, product, tiles, dates, mosaic_dir,
@@ -59,7 +61,7 @@ class MODISProcessor:
 #        if dates is None:
         # need to get list of dates first
         if not os.path.exists(output_dir):
-            self.vampire.logger.debug("%s does not exist. Creating directory", output_dir)
+            logger.debug("%s does not exist. Creating directory", output_dir)
             os.makedirs(output_dir)
 
         _modis_connect = downmodis.downModis(destinationFolder=output_dir, user=_user, password=_password,
@@ -77,26 +79,26 @@ class MODISProcessor:
 #            _dates = dates
 
         for d in _dates:
-            self.vampire.logger.debug("downloading data for %s", d)
+            logger.debug("downloading data for %s", d)
             _month = d #'{date}-01'.format(date=d)
             _folder_date = datetime.datetime.strptime(_month, '%Y.%m.%d').strftime('%Y.%m.%d')
             _new_folder = output_dir #os.path.join(output_dir, _folder_date)
 # don't need anymore? done above instead?
              # create folder if it doesn't already exist
             if not os.path.exists(_new_folder):
-                self.vampire.logger.debug("%s does not exist. Creating directory", _new_folder)
+                logger.debug("%s does not exist. Creating directory", _new_folder)
                 os.makedirs(_new_folder)
             _modis_download = downmodis.downModis(destinationFolder=_new_folder, tiles=tiles,
                                                   product=product, today=_month, delta=_delta,
                                                   user=_user, password=_password)
             _modis_download.connect()
             _check_files = _modis_download.getFilesList(_folder_date)
-    #            if logger: logger.debug("check files: %s", _check_files)
+    #            logger.debug("check files: %s", _check_files)
             _dl_files = _modis_download.checkDataExist(_check_files)
             try:
                 _modis_download.downloadsAllDay(clean=True)
             except Exception, e:
-                self.vampire.logger.debug('Error in pymodis.modisDown.downloadsAllDay downloading %s', _dl_files)
+                logger.debug('Error in pymodis.modisDown.downloadsAllDay downloading %s', _dl_files)
                 raise ValueError('Error in pymodis.modisDown.downloadsAllDay')
             _modis_download.removeEmptyFiles()
             _modis_download.closeFilelist()
@@ -106,8 +108,8 @@ class MODISProcessor:
                 if os.path.splitext(os.path.join(_new_folder, f))[1] == '.hdf':
                     _files_list.append(os.path.join(_new_folder, f))
             _files = glob.glob(os.path.join(_new_folder, '{product}*.hdf'.format(product=product[:-4])))
-    #            if logger: logger.debug("files: %s", _files)
-            self.vampire.logger.debug("downloaded files: %s", _files_list)
+    #            logger.debug("files: %s", _files)
+            logger.debug("downloaded files: %s", _files_list)
             if mosaic_dir:
                 # mosaic files
                 mosaic_file = self.mosaic_tiles(_files_list, mosaic_dir, product)
@@ -115,11 +117,11 @@ class MODISProcessor:
 
         if mosaic_dir:
             return _m_files
-        self.vampire.logger.info('leaving download_data')
+        logger.info('leaving download_data')
         return _dl_files
 
     def mosaic_tiles(self, files, output_dir, product, overwrite=False):
-        self.vampire.logger.info('entering mosaic_tiles')
+        logger.info('entering mosaic_tiles')
 #def mosaicTiles(files, output_dir, tools_dir="", overwrite = False, subset=[1,1,0,0,0,0,0,0,0,0,0], ofmt='HDF4Image',
 #                gdal=False, logger = None):
         # use MRTools
@@ -138,11 +140,11 @@ class MODISProcessor:
                                os.path.normpath(os.path.join(output_dir, _new_filename)),
                                _spectral_subset)
         os.remove(_list_filename)
-        self.vampire.logger.info('leaving mosaic_tiles')
+        logger.info('leaving mosaic_tiles')
         return _new_filename
 
     def extract_NDVI(self, input_dir, output_dir, patterns=None, product=None, overwrite=False):
-        self.vampire.logger.info('entering extract_NDVI')
+        logger.info('entering extract_NDVI')
 #def extractNDVI(base_path, output_path, tools_path,
 #                patterns = None, suffix = modis_constants['ndvi_subset'], overwrite = False, logger = None):
         if not patterns:
@@ -159,11 +161,11 @@ class MODISProcessor:
                                          #self.vampire.get('MODIS_NDVI', 'ndvi_spectral_subset'),
                                          #self.vampire.get('MODIS_NDVI', 'ndvi_subset_name'),
                                          overwrite)
-        self.vampire.logger.info('leaving extract_NDVI')
+        logger.info('leaving extract_NDVI')
         return new_files
 
     def extract_EVI(self, input_dir, output_dir, file_pattern=None, output_pattern=None, product=None, overwrite = False):
-        self.vampire.logger.info('entering extract_EVI')
+        logger.info('entering extract_EVI')
         if file_pattern is None:
             _file_pattern = self.vampire.get('MODIS', 'modis_monthly_pattern')
         else:
@@ -185,12 +187,12 @@ class MODISProcessor:
                                          #json.loads(self.vampire.get('MODIS_EVI', 'evi_spectral_subset')),
                                          #self.vampire.get('MODIS_EVI', 'evi_subset_name'),
                                          overwrite)
-        self.vampire.logger.info('leaving extract_EVI')
+        logger.info('leaving extract_EVI')
         return new_files
 
     def extract_LST(self, input_dir, output_dir, file_pattern=None, output_pattern=None, layer=None,
                     product=None, overwrite = False):
-        self.vampire.logger.info('entering extract_LST')
+        logger.info('entering extract_LST')
         if file_pattern is None:
             _file_pattern = self.vampire.get('MODIS', 'modis_monthly_pattern')
         else:
@@ -221,18 +223,17 @@ class MODISProcessor:
                                          _spectral_subset,
                                          _subset_name,
                                          overwrite)
-        self.vampire.logger.info('leaving extract_LST')
+        logger.info('leaving extract_LST')
         return new_files
 
     def match_day_night_files(self, day_dir, night_dir, output_dir, patterns=None):
-        self.vampire.logger.info('entering match_day_night_files')
+        logger.info('entering match_day_night_files')
         nightFiles = set(os.listdir(night_dir))
         if patterns[0]:
             if not os.path.isdir(day_dir):
-                dayFiles = vampire.directory_utils.get_matching_files(os.path.dirname(day_dir), patterns[0],
-                                                                      self.vampire.logger)
+                dayFiles = vampire.directory_utils.get_matching_files(os.path.dirname(day_dir), patterns[0])
             else:
-                dayFiles = vampire.directory_utils.get_matching_files(day_dir, patterns[0], self.vampire.logger)
+                dayFiles = vampire.directory_utils.get_matching_files(day_dir, patterns[0])
         else:
             dayFiles = list(os.listdir(day_dir))
         print "Day files: ", dayFiles
@@ -255,14 +256,14 @@ class MODISProcessor:
                         np = os.path.join(night_dir, n_fl)
                         calculate_statistics.calc_average_of_day_night(dp, np, avg_file=avg_fl)
                         break
-        self.vampire.logger.info('leaving match_day_night_files')
+        logger.info('leaving match_day_night_files')
         return None
 
     def calc_longterm_stats(self, input_dir, output_dir, product,
                             interval, country=None, input_pattern=None, output_pattern=None,
                             start_date=None, end_date=None,
                             function_list=None):
-        self.vampire.logger.info('entering calc_longterm_stats')
+        logger.info('entering calc_longterm_stats')
         if output_pattern is None:
             if product == self.vampire.get('MODIS', 'vegetation_product'):
                 _output_pattern = self.vampire.get('MODIS_EVI_Long_Term_Average', 'lta_output_pattern')
@@ -312,7 +313,7 @@ class MODISProcessor:
         #     # use default - monthly
         #     _interval = interval
 
-        _all_files = vampire.directory_utils.get_matching_files(input_dir, input_pattern, self.vampire.logger)
+        _all_files = vampire.directory_utils.get_matching_files(input_dir, input_pattern)
         _file_list = {}
         _yrs = []
         _doy = []
@@ -418,14 +419,14 @@ class MODISProcessor:
 # #                    newfilename = '{0}.{1}-{2}.{3}.monthly.{4}yrs'.format(_base_name, _syr, _eyr, m, _numyrs)
 #                         self._calculate_stats(newfl, newfilename, output_dir, [func])
 
-        self.vampire.logger.info('leaving calc_longterm_stats')
+        logger.info('leaving calc_longterm_stats')
         return None
 
     def _extract_subset(self, input_dir, output_dir, patterns, subset, subset_name, overwrite = False):
-        self.vampire.logger.info('entering _extract_subset')
-        _all_files = vampire.directory_utils.get_matching_files(input_dir, patterns[0], self.vampire.logger)
+        logger.info('entering _extract_subset')
+        _all_files = vampire.directory_utils.get_matching_files(input_dir, patterns[0])
         if not _all_files:
-            self.vampire.logger.debug('Extracting subset {0}. No files found in {1} with pattern {2}'.format(
+            logger.debug('Extracting subset {0}. No files found in {1} with pattern {2}'.format(
                 subset_name, input_dir, patterns[0]))
             print 'No files found in ' + input_dir + ', please check directory and try again'
             return -1
@@ -443,7 +444,7 @@ class MODISProcessor:
                 try:
                     src_ds = gdal.Open(_ifl)
                 except RuntimeError, e:
-                    self.vampire.logger.debug('Unable to open file')
+                    logger.debug('Unable to open file')
                     return -1
                 sds = src_ds.GetSubDatasets()
 #                if logger: logger.debug("Number of bands: %s",src_ds.RasterCount)
@@ -482,13 +483,13 @@ class MODISProcessor:
                                 os.remove(os.path.join(output_dir, "{0}.aux.xml".format(_rf)))
                             os.rename(_aux_f, os.path.join(output_dir, "{0}.aux.xml".format(_rf)))
                         new_files.append(_rf)
-        self.vampire.logger.info('leaving _extract_subset')
+        logger.info('leaving _extract_subset')
         return new_files
 
 
 
     def _write_mosaic_list(self, filename, files=None):
-        self.vampire.logger.info('entering _write_mosaic_list')
+        logger.info('entering _write_mosaic_list')
         if files:
             try:
                 if not os.path.exists(os.path.dirname(filename)):
@@ -506,11 +507,11 @@ class MODISProcessor:
                         pfile.write('"' + f + '"')
                         pfile.write('\n')
                     pfile.close()
-        self.vampire.logger.info('leaving _write_mosaic_list')
+        logger.info('leaving _write_mosaic_list')
         return None
 
     def _mosaic_files(self, file_list, output_filename, subset):
-        self.vampire.logger.info('entering _mosaic_files')
+        logger.info('entering _mosaic_files')
         # call mrtmosaic using input filename
         try:
             mrt_path = os.path.normpath(self.vampire.get('directories', 'mrt_dir'))
@@ -530,11 +531,11 @@ class MODISProcessor:
             print("Error in mrtmosaic")
             print(e.output)
             raise
-        self.vampire.logger.info('leaving _mosaic_files')
+        logger.info('leaving _mosaic_files')
         return None
 
     def _convert_to_tiff(self, ifl, ofl, gdal_dir, overwrite=False):
-        self.vampire.logger.info('entering _convert_to_tiff')
+        logger.info('entering _convert_to_tiff')
         try:
             _gdal_translate = None
             if platform == 'Windows':
@@ -546,11 +547,11 @@ class MODISProcessor:
             print("Error in converting to .tif")
             print(e.output)
             raise
-        self.vampire.logger.info('leaving _convert_to_tiff')
+        logger.info('leaving _convert_to_tiff')
         return None
 
     def _calculate_stats(self, file_list, new_filename, output_dir, function_list):
-        self.vampire.logger.info('entering _calculate_stats')
+        logger.info('entering _calculate_stats')
         for f in function_list:
             if f == 'AVG':
 #                newfile = '{0}.avg.tif'.format(new_filename)
@@ -574,6 +575,6 @@ class MODISProcessor:
                 calculate_statistics.calc_sum(file_list, ofl)
             else:
                 print f, ' is not a valid function.'
-        self.vampire.logger.info('entering _calculate_stats')
+        logger.info('entering _calculate_stats')
         return None
 
