@@ -1,4 +1,6 @@
 import arcpy
+import logging
+logger = logging.getLogger(__name__)
 
 def calc_TCI(cur_filename, lta_max_filename, lta_min_filename, dst_filename):
     # calculate Temperature Condition Index
