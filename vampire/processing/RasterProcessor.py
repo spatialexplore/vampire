@@ -2,6 +2,8 @@ import vampire.VampireDefaults
 import vampire.directory_utils
 import vampire.filename_utils
 import vampire.processing.raster_utils as raster_utils
+import logging
+logger = logging.getLogger(__name__)
 
 import os
 # import platform
@@ -28,7 +30,7 @@ class RasterProcessor:
         return
 
     def crop_files(self, input_dir, output_dir, boundary_file, file_pattern=None,
-                   output_pattern=None, overwrite=False, nodata=True, logger=None):
+                   output_pattern=None, overwrite=False, nodata=True):
         _patterns = (file_pattern, output_pattern)
         _gdal_path = self.vampire.get('directories', 'gdal_dir')
         if not os.path.isdir(output_dir):
@@ -36,7 +38,7 @@ class RasterProcessor:
             os.makedirs(output_dir)
         raster_utils.crop_files(base_path=input_dir, output_path=output_dir, bounds=boundary_file,
                                 tools_path=_gdal_path,
-                                patterns=_patterns, overwrite=overwrite, nodata=nodata, logger=logger)
+                                patterns=_patterns, overwrite=overwrite, nodata=nodata)
         return None
 
     def match_projection(self, master_file, master_dir, master_pattern,
@@ -135,7 +137,7 @@ class RasterProcessor:
 
     def mask_by_shapefile(self, raster_file, raster_dir, raster_pattern,
                           polygon_file, polygon_dir, polygon_pattern,
-                          output_file, output_dir, output_pattern, nodata=False, logger=None):
+                          output_file, output_dir, output_pattern, nodata=False):
         if raster_file is None:
             _file_list = vampire.directory_utils.get_matching_files(raster_dir, raster_pattern)
             if _file_list is not None:
@@ -167,6 +169,6 @@ class RasterProcessor:
         _gdal_path = self.vampire.get('directories', 'gdal_dir')
 
         raster_utils.mask_by_shapefile(raster_file=_raster_file, polygon_file=_polygon_file,
-                                       output_file=_output_file, gdal_path=_gdal_path, nodata=nodata, logger=logger)
+                                       output_file=_output_file, gdal_path=_gdal_path, nodata=nodata)
 
         return None
