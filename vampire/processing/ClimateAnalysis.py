@@ -7,7 +7,8 @@ import functools
 import vampire.VampireDefaults as VampireDefaults
 import vampire.directory_utils as directory_utils
 import vampire.filename_utils as filename_utils
-import platform
+import logging
+logger = logging.getLogger(__name__)
 try:
     import precipitation_analysis_arc as precipitation_analysis
     import vegetation_analysis_arc as vegetation_analysis
@@ -51,7 +52,7 @@ class ClimateAnalysis():
                               cur_pattern=None, lta_pattern=None, dst_pattern=None,
                               dst_dir=None
                              ):
-        self.vampire.logger.info('entering calc_rainfall_anomaly')
+        logger.info('entering calc_rainfall_anomaly')
         if cur_filename is None:
             # get filename from pattern and directory
             files_list = directory_utils.get_matching_files(cur_dir, cur_pattern)
@@ -76,14 +77,14 @@ class ClimateAnalysis():
         precipitation_analysis.calc_rainfall_anomaly(cur_filename=cur_filename,
                                                      lta_filename=lta_filename,
                                                      dst_filename=dst_filename)
-        self.vampire.logger.info('leaving calc_rainfall_anomaly')
+        logger.info('leaving calc_rainfall_anomaly')
         return None
 
     def calc_vci(self, cur_filename=None, cur_dir=None, cur_pattern=None,
                  evi_max_filename=None, evi_max_dir=None, evi_max_pattern=None,
                  evi_min_filename=None, evi_min_dir=None, evi_min_pattern=None,
                  dst_filename=None, dst_dir=None, dst_pattern=None):
-        self.vampire.logger.info('entering calc_vci')
+        logger.info('entering calc_vci')
         if cur_filename is None:
             # get filename from pattern and directory
             files_list = directory_utils.get_matching_files(cur_dir, cur_pattern)
@@ -122,14 +123,14 @@ class ClimateAnalysis():
             os.makedirs(os.path.dirname(_dst_filename))
 
         vegetation_analysis.calc_VCI(_cur_filename, _evi_max_filename, _evi_min_filename, _dst_filename)
-        self.vampire.logger.info('leaving calc_vci')
+        logger.info('leaving calc_vci')
         return None
 
     def calc_tci(self, cur_filename=None, cur_dir=None, cur_pattern=None,
                  lst_max_filename=None, lst_max_dir=None, lst_max_pattern=None,
                  lst_min_filename=None, lst_min_dir=None, lst_min_pattern=None,
                  dst_filename=None, dst_dir=None, dst_pattern=None, interval=None):
-        self.vampire.logger.info('entering calc_tci')
+        logger.info('entering calc_tci')
         _temp_file = None
         if dst_dir is None:
             _dst_dir = self.vampire.get('MODIS_VCI', 'vci_product_dir')
@@ -201,13 +202,13 @@ class ClimateAnalysis():
                                       )
         if _temp_file is not None:
             os.remove(os.path.join(_dst_dir, _temp_file))
-        self.vampire.logger.info('leaving calc_tci')
+        logger.info('leaving calc_tci')
         return None
 
     def calc_vhi(self, vci_filename=None, vci_dir=None, vci_pattern=None,
                  tci_filename=None, tci_dir=None, tci_pattern=None,
                  dst_filename=None, dst_dir=None, dst_pattern=None):
-        self.vampire.logger.info('entering calc_vhi')
+        logger.info('entering calc_vhi')
         if vci_filename is None:
             # get filename from pattern and directory
             files_list = directory_utils.get_matching_files(vci_dir, vci_pattern)
@@ -239,17 +240,17 @@ class ClimateAnalysis():
                                      tci_filename=_tci_filename,
                                      dst_filename=_dst_filename
                                      )
-        self.vampire.logger.info('leaving calc_vhi')
+        logger.info('leaving calc_vhi')
         return None
 
     def calc_drought_impact(self, vhi_filename, poverty_filename):
-        self.vampire.logger.info('entering calc_drought_impact')
+        logger.info('entering calc_drought_impact')
 
-        self.vampire.logger.info('leaving calc_drought_impact')
+        logger.info('leaving calc_drought_impact')
         return None
 
     def calc_days_since_last_rainfall(self, data_dir, data_pattern, dst_dir, start_date, threshold, max_days):
-        self.vampire.logger.info('entering calc_days_since_last_rainfall')
+        logger.info('entering calc_days_since_last_rainfall')
         # get list of files from start_date back max_days
         files_list = directory_utils.get_matching_files(data_dir, data_pattern)
         raster_list = []
@@ -300,7 +301,7 @@ class ClimateAnalysis():
                                                     rainfall_accum_filename=ra_file,
                                                     temp_dir=self.vampire.get('directories', 'temp_dir'),
                                                     threshold=threshold, max_days=max_days)
-        self.vampire.logger.info('leaving calc_days_since_last_rainfall')
+        logger.info('leaving calc_days_since_last_rainfall')
         return None
 
     def calc_standardized_precipitation_index(self,
@@ -317,7 +318,7 @@ class ClimateAnalysis():
                                               dst_pattern=None,
                                               dst_dir=None):
 
-        self.vampire.logger.info('entering calc_standardized_precipitation_index')
+        logger.info('entering calc_standardized_precipitation_index')
         if cur_filename is None:
             # get filename from pattern and directory
             files_list = directory_utils.get_matching_files(cur_dir, cur_pattern)
@@ -351,5 +352,5 @@ class ClimateAnalysis():
                                                                      lta_filename=lta_filename,
                                                                      ltsd_filename=ltsd_filename,
                                                                      dst_filename=dst_filename)
-        self.vampire.logger.info('leaving calc_standardized_precipitation_index')
+        logger.info('leaving calc_standardized_precipitation_index')
         return None
