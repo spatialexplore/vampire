@@ -13,6 +13,8 @@ import csv
 import ogr
 import vampire.csv_utils as csv_utils
 import calculate_statistics_os as calculate_statistics
+import logging
+logger = logging.getLogger(__name__)
 
 def calculate_poverty_impact(self, popn_impact_file, popn_impact_field, popn_match_field,
                              poor_file, poor_field, poor_match_field, multiplier,
