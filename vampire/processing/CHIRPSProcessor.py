@@ -6,8 +6,9 @@ import ftputil
 import os
 import re
 import datetime
+import logging
+logger = logging.getLogger(__name__)
 
-import platform
 try:
     import calculate_statistics_arc as calculate_statistics
     import precipitation_analysis_arc as precip_analysis
