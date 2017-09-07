@@ -5,29 +5,31 @@ import vampire.filename_utils as filename_utils
 import gdal
 import rasterio
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
-def clip_raster_to_shp(shpfile, in_raster, out_raster, gdal_path, nodata=True, logger=None):
+def clip_raster_to_shp(shpfile, in_raster, out_raster, gdal_path, nodata=True):
     # call gdalwarp to clip to shapefile
     try:
-        if logger: logger.debug("%s",shpfile)
-        if logger: logger.debug("%s",in_raster)
-        if logger: logger.debug("%s",out_raster)
+        logger.debug("%s",shpfile)
+        logger.debug("%s",in_raster)
+        logger.debug("%s",out_raster)
         gdal_exe = os.path.join(gdal_path, 'gdalwarp')
         if nodata:
             retcode = subprocess.call([gdal_exe, '-t_srs', 'EPSG:4326', '-dstnodata', '-9999', '--config', 'GDALWARP_IGNORE_BAD_CUTLINE', 'YES', '-crop_to_cutline', '-cutline', shpfile, in_raster, out_raster])
         else:
             retcode = subprocess.call([gdal_exe, '-overwrite', '-t_srs', 'EPSG:4326', '--config', 'GDALWARP_IGNORE_BAD_CUTLINE', 'YES', '-crop_to_cutline', '-cutline', shpfile, in_raster, out_raster])
 #            print "gdalwarp -overwrite', '-t_srs', 'EPSG:4326', '-crop_to_cutline', '-cutline' {0}, {1}, {2}".format(shpfile, in_raster, out_raster)
-        if logger: logger.debug("gdalwarp return code is %s", retcode)
+        logger.debug("gdalwarp return code is %s", retcode)
     except subprocess.CalledProcessError as e:
-        if logger: logger.error("Error in gdalwarp")
-        if logger: logger.error("%s",e.output)
+        logger.error("Error in gdalwarp")
+        logger.error("%s",e.output)
 #        raise
     except Exception, e:
-        if logger: logger.error("Warning in gdalwarp")
+        logger.error("Warning in gdalwarp")
     return 0
 
-def crop_files(base_path, output_path, bounds, tools_path, patterns = None, overwrite = False, nodata=True, logger = None):
+def crop_files(base_path, output_path, bounds, tools_path, patterns = None, overwrite = False, nodata=True):
 #    import re
     _fileslist = []
     if not patterns[0]:
@@ -47,7 +49,7 @@ def crop_files(base_path, output_path, bounds, tools_path, patterns = None, over
 
         if not os.path.exists(_out_raster) or overwrite == True:
             # crop file here
-            if logger: logger.debug("Cropping file: %s",ifl)
+            logger.debug("Cropping file: %s",ifl)
             if os.path.splitext(ifl)[1] == '.gz':
                 # unzip first
                 directory_utils.unzip_file_list([ifl])
@@ -199,11 +201,11 @@ def reproject_cut ( slave, box=None, t_srs=None, s_srs=None, res=None ):
     dst_ds = None  # Flush to disk
     return dst_filename
 
-def mask_by_shapefile(raster_file, polygon_file, output_file, gdal_path, nodata=None, logger=None):
+def mask_by_shapefile(raster_file, polygon_file, output_file, gdal_path, nodata=None):
     try:
-        if logger: logger.debug("%s", polygon_file)
-        if logger: logger.debug("%s", raster_file)
-        if logger: logger.debug("%s", output_file)
+        logger.debug("%s", polygon_file)
+        logger.debug("%s", raster_file)
+        logger.debug("%s", output_file)
         gdal_exe = os.path.join(gdal_path, 'gdalwarp')
         if nodata:
             retcode = subprocess.call(
@@ -213,12 +215,12 @@ def mask_by_shapefile(raster_file, polygon_file, output_file, gdal_path, nodata=
             retcode = subprocess.call(
                 [gdal_exe, '-overwrite', '--config', 'GDALWARP_IGNORE_BAD_CUTLINE', 'YES',
                  '-crop_to_cutline', '-cutline', polygon_file, raster_file, output_file])
-        if logger: logger.debug("gdalwarp return code is %s", retcode)
+        logger.debug("gdalwarp return code is %s", retcode)
     except subprocess.CalledProcessError as e:
-        if logger: logger.error("Error in gdalwarp")
-        if logger: logger.error("%s", e.output)
+        logger.error("Error in gdalwarp")
+        logger.error("%s", e.output)
         #        raise
     except Exception, e:
-        if logger: logger.error("Warning in gdalwarp")
+        logger.error("Warning in gdalwarp")
 
     return None
