@@ -5,6 +5,8 @@ import numpy as np
 import json
 import csv
 import os
+import logging
+logger = logging.getLogger(__name__)
 
 def calc_average(file_list, avg_file):
     """ Calculate pixel-by-pixel average of list of rasters and save result as new raster. 
