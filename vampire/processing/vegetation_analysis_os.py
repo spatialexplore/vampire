@@ -5,6 +5,8 @@ import rasterio.warp
 #from rasterio.warp import reproject, RESAMPLING
 import urllib2
 import raster_utils
+import logging
+logger = logging.getLogger(__name__)
 
 
 def calc_TCI(cur_filename, lta_max_filename, lta_min_filename, dst_filename):
