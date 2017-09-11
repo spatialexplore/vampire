@@ -7,6 +7,7 @@ import VHIProductImpl
 import MODISEVILongtermAverageProductImpl
 import MODISLSTLongtermAverageProductImpl
 import CHIRPSLongtermAverageProductImpl
+import DaysSinceLastRainProductImpl
 import logging
 logger = logging.getLogger(__name__)
 
@@ -39,14 +40,14 @@ class VCIProduct(BaseProduct):
         return
 
     @property
-    def output_file(self):
-        return self.impl.output_file
+    def product_file(self):
+        return self.impl.product_file
     @property
-    def output_dir(self):
-        return self.impl.output_dir
+    def product_dir(self):
+        return self.impl.product_dir
     @property
-    def output_pattern(self):
-        return self.impl.output_pattern
+    def product_pattern(self):
+        return self.impl.product_pattern
     @property
     def valid_from_date(self):
         return self.impl.valid_from_date
@@ -73,20 +74,20 @@ class TCIProduct(BaseProduct):
         return
 
     @property
-    def output_file(self):
-        return self.impl.output_file
+    def product_file(self):
+        return self.impl.product_file
     @property
-    def output_dir(self):
-        return self.impl.output_dir
+    def product_dir(self):
+        return self.impl.product_dir
     @property
-    def output_pattern(self):
-        return self.impl.output_pattern
+    def product_pattern(self):
+        return self.impl.product_pattern
     @property
     def valid_from_date(self):
-        return self.impl.start_date
+        return self.impl.valid_from_date
     @property
     def valid_to_date(self):
-        return self.impl.end_date
+        return self.impl.valid_to_date
 
     def generate_header(self):
         return self.impl.generate_header()
@@ -107,14 +108,14 @@ class VHIProduct(BaseProduct):
         return
 
     @property
-    def output_file(self):
-        return self.impl.output_file
+    def product_file(self):
+        return self.impl.product_file
     @property
-    def output_dir(self):
-        return self.impl.output_dir
+    def product_dir(self):
+        return self.impl.product_dir
     @property
-    def output_pattern(self):
-        return self.impl.output_pattern
+    def product_pattern(self):
+        return self.impl.product_pattern
     @property
     def valid_from_date(self):
         return self.impl.valid_from_date
@@ -223,5 +224,22 @@ class CHIRPSLongtermAverageProduct(BaseProduct):
                         output_pattern=None, functions=None, download=True):
         return self.impl.generate_config(input_dir=input_dir, output_dir=output_dir, input_pattern=input_pattern,
                         output_pattern=output_pattern, functions=functions, download=download)
+
+@BaseProduct.register_subclass('days_since_last_rain')
+class DaysSinceLastRainProduct(BaseProduct):
+    # ...
+    def __init__(self, country, product_date, interval, vampire_defaults):
+        self.impl = DaysSinceLastRainProductImpl.DaysSinceLastRainProductImpl(country, product_date, interval, vampire_defaults)
+        return
+
+    def generate_header(self):
+        return self.impl.generate_header()
+
+    def generate_config(self, data_dir=None, output_dir=None, file_pattern=None,
+                        threshold=None, max_days=None, download=True, crop=True, crop_dir=None):
+        return self.impl.generate_config(data_dir=data_dir, output_dir=output_dir, file_pattern=file_pattern,
+                                         threshold=threshold, max_days=max_days, download=download,
+                                         crop=crop, crop_dir=crop_dir)
+
 
 
