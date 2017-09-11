@@ -3,6 +3,10 @@ import os
 import vampire.csv_utils
 import calculate_statistics_arc as calculate_statistics
 import csv
+import geopandas
+import pandas
+import logging
+logger = logging.getLogger(__name__)
 
 def calculate_crop_impact(hazard_raster, threshold, hazard_var,
                           crop_boundary, crop_field,
@@ -87,4 +91,18 @@ def shapefile_to_table(input, output):
 
 def intersect_boundaries(boundary_list, boundary_output):
     arcpy.Intersect_analysis(in_features=boundary_list, out_feature_class=boundary_output)
+    return None
+
+def calculate_poverty_impact(self, popn_impact_file, popn_impact_field, popn_match_field,
+                             poor_file, poor_field, poor_match_field, multiplier,
+                             output_file, output_field,
+                             start_date, end_date):
+    _poverty = geopandas.read_file(poor_file)
+    _popn_impact = pandas.read_csv(popn_impact_file)
+#    _popn_impact[popn_match_field] = _popn_impact[popn_match_field].map('{:.0f}'.format)
+    _merged = pandas.merge(_popn_impact, _poverty[[poor_field, poor_match_field]], how='inner', left_on=popn_match_field, right_on=poor_match_field)
+    _merged[output_field] = _merged[popn_impact_field] * (_merged[poor_field]*multiplier)
+    _merged['start_date'] = start_date
+    _merged['end_date'] = end_date
+    _merged.to_csv(output_file)
     return None
