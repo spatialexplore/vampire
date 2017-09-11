@@ -57,6 +57,7 @@ class MODISEVIDatasetImpl(MODISDatasetImpl.MODISDatasetImpl):
         logger.debug('MODISEVIDataset generate_config')
         config = ''
         _output_dir = data_dir
+        _crop = crop
         if download:
             config, _output_dir = super(MODISEVIDatasetImpl, self).generate_download(data_dir, mosaic_dir, tiles)
         # setup directories for extracting EVI data
@@ -84,7 +85,7 @@ class MODISEVIDatasetImpl(MODISDatasetImpl.MODISDatasetImpl):
                                            self.vp.get('MODIS_EVI', 'evi_dir_suffix'))
         else:
             _crop_dir = crop_dir
-        if crop:
+        if _crop:
             _input_pattern = self.vp.get('MODIS_EVI', 'evi_pattern')
             if self.product_date is not None:
                 # replace generic year and month in pattern with the specific ones needed so the correct file is found.
