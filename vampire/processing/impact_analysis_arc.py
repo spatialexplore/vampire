@@ -70,6 +70,7 @@ def reclassify_raster(raster, threshold, output_raster):
 #                           in_false_raster_or_constant=in_false_constant, where_clause=where_clause)
 #    out_con.save(output_raster)
     out_ras = arcpy.sa.SetNull(in_conditional_raster=raster, in_false_raster_or_constant=1, where_clause=where_clause)
+    arcpy.SetRasterProperties_management(out_ras, "GENERIC", nodata=None)
     out_ras.save(output_raster)
     return None
 
