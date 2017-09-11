@@ -1,6 +1,7 @@
 import CHIRPSDatasetImpl
 import MODISEVIDatasetImpl
 import MODISLSTDatasetImpl
+import GlobalForecastSystemDatasetImpl
 import logging
 logger = logging.getLogger(__name__)
 
@@ -86,3 +87,22 @@ class MODISLSTDataset(BaseDataset):
     @end_date.setter
     def product(self, end_date):
         self.impl.end_date = end_date
+
+
+@BaseDataset.register_subclass('GFS')
+class GlobalForecastSystemDataset(BaseDataset):
+    def __init__(self, interval, product_date, vampire_defaults, region=None):
+        self.impl = GlobalForecastSystemDatasetImpl.GlobalForecastSystemDatasetImpl(interval, product_date, vampire_defaults, region)
+        return
+    @property
+    def start_date(self):
+        return self.impl.start_date
+    @property
+    def end_date(self):
+        return self.impl.end_date
+
+
+    def generate_config(self, data_dir=None, variable=None, level=None, forecast_hr=None, download=True,
+                        crop=True, crop_dir=None):
+        return self.impl.generate_config(data_dir=data_dir, variable=variable, level=level, forecast_hr=forecast_hr,
+                                         download=download, crop=crop, crop_dir=crop_dir)
