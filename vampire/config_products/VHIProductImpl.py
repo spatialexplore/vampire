@@ -94,8 +94,6 @@ class VHIProductImpl(RasterProductImpl.RasterProductImpl):
     ## Processing chain begin - Compute Vegetation Health Index\n"""
         config += self.vci_product.generate_config()
         config += self.tci_product.generate_config()
-        _tci_pattern = None
-        _vci_pattern = None
         if tci_file is None:
             if tci_dir is None:
                 _tci_dir = self.vp.get('MODIS_TCI', 'tci_product_dir')
@@ -132,18 +130,19 @@ class VHIProductImpl(RasterProductImpl.RasterProductImpl):
             _vci_pattern = None
             _vci_dir = None
 
+        _output_pattern = None
         if output_file is None:
             if output_dir is None:
-                self.output_dir = self.vp.get('MODIS_VHI', 'vhi_product_dir')
+                self.product_dir = self.vp.get('MODIS_VHI', 'vhi_product_dir')
             else:
-                self.output_dir = output_dir
+                self.product_dir = output_dir
             if output_pattern is None:
-                self.output_pattern = self.vp.get('MODIS_VHI', 'vhi_output_pattern')
+                _output_pattern = self.vp.get('MODIS_VHI', 'vhi_output_pattern')
             else:
-                self.output_pattern = output_pattern
-            self.output_file = None
+                _output_pattern = output_pattern
+            self.product_file = None
         else:
-            self.output_file = output_file
+            self.product_file = output_file
 
         if reproject is not None:
             if reproject == 'TCI':
@@ -169,8 +168,14 @@ class VHIProductImpl(RasterProductImpl.RasterProductImpl):
 
         config += self.generate_vhi_section(tci_file=_tci_file, tci_dir=_tci_dir, tci_pattern=_tci_pattern,
                                             vci_file=_vci_file, vci_dir=_vci_dir, vci_pattern=_vci_pattern,
-                                            output_file=self.output_file, output_dir=self.output_dir,
-                                            output_pattern=self.output_pattern)
+                                            output_file=self.product_file, output_dir=self.product_dir,
+                                            output_pattern=_output_pattern)
+        # TODO: what if output_pattern is specified?
+        self.product_pattern = self.vp.get('MODIS_VHI', 'vhi_pattern')
+        self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
+        self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.product_date.month))
+        self.product_pattern = self.product_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.product_date.day))
+
         return config
 
     def generate_mask_config(self, boundary_file=None, boundary_dir=None, boundary_pattern=None, boundary_field=None,
@@ -178,16 +183,13 @@ class VHIProductImpl(RasterProductImpl.RasterProductImpl):
         config = """
     ## Processing chain begin - Mask VHI\n"""
 
-        _output_dir = None
-        _output_pattern = None
-        if self.output_file is None:
-            if self.output_dir is None:
-                self.output_dir = self.vp.get('MODIS_VHI', 'vhi_product_dir')
-            if self.output_pattern is None:
-                self.output_pattern = self.vp.get('MODIS_VHI', 'vhi_pattern')
-                self.output_pattern = self.output_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
-                self.output_pattern = self.output_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(self.product_date.month))
-                self.output_pattern = self.output_pattern.replace('(?P<day>\d{2})', '(?P<day>{0})'.format(self.product_date.day))
+        if self.product_file is None:
+            if self.product_dir is None:
+                self.product_dir = self.vp.get('MODIS_VHI', 'vhi_product_dir')
+            self.product_pattern = self.vp.get('MODIS_VHI', 'vhi_pattern')
+            self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
+            self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.product_date.month))
+            self.product_pattern = self.product_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.product_date.day))
 
         _output_dir = None
         _output_pattern = None
@@ -211,13 +213,13 @@ class VHIProductImpl(RasterProductImpl.RasterProductImpl):
         else:
             _boundary_file = boundary_file
         _raster = RasterDatasetImpl.RasterDatasetImpl()
-        config += _raster.generate_mask_section(input_file=self.output_file, input_dir=self.output_dir,
-                                                input_pattern=self.output_pattern,
+        config += _raster.generate_mask_section(input_file=self.product_file, input_dir=self.product_dir,
+                                                input_pattern=self.product_pattern,
                                                 output_file=_output_file, output_dir=_output_dir,
                                                 output_pattern=_output_pattern, boundary_file=_boundary_file,
                                                 no_data=False)
-        self.output_dir = _output_dir
-        self.output_pattern = _output_pattern
+        self.product_dir = _output_dir
+        self.product_pattern = self.vp.get('MODIS_VHI', 'vhi_crop_pattern')
         return config
 
 
