@@ -53,7 +53,7 @@ class ImpactProductImpl(object):
 
     def generate_publish_config(self):
         cfg_string = """
-    Publish product to Database
+    # Publish product to Database
     - process: Publish
       type: database
       start_date: {start_date}
