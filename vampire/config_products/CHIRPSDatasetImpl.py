@@ -76,6 +76,8 @@ class CHIRPSDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
             _data_dir = data_dir
         _download_dir = "{0}\\{1}".format(_data_dir, self.interval.capitalize())
 
+        _output_dir = _download_dir
+
         if download:
             config += self._generate_download_section(data_dir=_download_dir)
 
@@ -96,8 +98,8 @@ class CHIRPSDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
                                                               'crop_regional_output_{0}_pattern'.format(self.interval)))
                 _boundary_file = self.vp.get_country('{0}'.format(self.region))['chirps_boundary_file']
                 config += self.generate_crop_section(_download_dir, _crop_dir, _input_pattern, _output_pattern, _boundary_file)
-
-        return config
+                _output_dir = _crop_dir
+        return config, _output_dir
 
 
     """ Generate VAMPIRE config file header for CHIRPS datasets.
