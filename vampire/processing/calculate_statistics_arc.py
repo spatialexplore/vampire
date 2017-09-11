@@ -3,6 +3,8 @@ import dbfpy.dbf
 import csv
 import os
 import vampire.csv_utils
+import logging
+logger = logging.getLogger(__name__)
 
 def calc_average(file_list, avg_file):
     """ Calculate pixel-by-pixel average of a list of rasters and save result as new raster. 
@@ -199,7 +201,9 @@ def calc_zonal_statistics(raster_file, polygon_file, zone_field, output_table):
         Returns None
 
     """
-
+    arcpy.CheckOutExtension("Spatial")
+    arcpy.MakeFeatureLayer_management(polygon_file, "layer")
+    layer = arcpy.mapping.Layer("layer")
     # First calculate statistics on raster.
     arcpy.CalculateStatistics_management(in_raster_dataset=raster_file)
     # set up .dbf and .csv filenames
@@ -214,9 +218,14 @@ def calc_zonal_statistics(raster_file, polygon_file, zone_field, output_table):
     else:
         _output_dbf = '{0}.dbf'.format(output_table)
         _output_csv = '{0}.csv'.format(output_table)
+    _output_dbf = '{0}.dbf'.format(os.path.splitext(os.path.basename(raster_file))[0])
+
+    arcpy.env.workspace = os.path.dirname(raster_file)
+    _output_filename = os.path.basename(_output_dbf)
     # now calculate zonal statistics as table
-    arcpy.sa.ZonalStatisticsAsTable(in_zone_data=polygon_file, zone_field=zone_field,
-                                    in_value_raster=raster_file,out_table=_output_dbf)
+    arcpy.sa.ZonalStatisticsAsTable(in_zone_data=layer, zone_field=zone_field,
+                                    in_value_raster=raster_file,out_table=_output_dbf,
+                                    ignore_nodata="DATA", statistics_type="ALL")
     # convert to .csv
-    vampire.csv_utils.convert_dbf_to_csv(_output_dbf, _output_csv)
+    vampire.csv_utils.convert_dbf_to_csv(os.path.join(os.path.dirname(raster_file), _output_dbf), _output_csv)
     return None
