@@ -47,6 +47,8 @@ class DaysSinceLastRainTaskImpl(BaseTaskImpl.BaseTaskImpl):
             _max_days = None
         if 'start_date' in self.params:
             _start_date = self.params['start_date']
+        else:
+            _start_date = None
         self.calc_days_since_last_rainfall(data_dir=_input_dir, data_pattern=_file_pattern,
                                          dst_dir=_output_dir, start_date=_start_date,
                                          threshold=_threshold, max_days=_max_days)
@@ -72,9 +74,9 @@ class DaysSinceLastRainTaskImpl(BaseTaskImpl.BaseTaskImpl):
 
         _ref_file = regex.sub(data_pattern, functools.partial(replace_closure, 'year', '{0}'.format(start_date.year)),
                            os.path.basename(files_list[0]))
-        _ref_file = regex.sub(data_pattern, functools.partial(replace_closure, 'month', '{0}'.format(start_date.month)),
+        _ref_file = regex.sub(data_pattern, functools.partial(replace_closure, 'month', '{0:0>2}'.format(start_date.month)),
                            _ref_file)
-        _ref_file = regex.sub(data_pattern, functools.partial(replace_closure, 'day', '{0}'.format(start_date.day)),
+        _ref_file = regex.sub(data_pattern, functools.partial(replace_closure, 'day', '{0:0>2}'.format(start_date.day)),
                            _ref_file)
         dslw_file = os.path.join(dst_dir,
                                  filename_utils.generate_output_filename(_ref_file, data_pattern,
@@ -96,12 +98,15 @@ class DaysSinceLastRainTaskImpl(BaseTaskImpl.BaseTaskImpl):
                                                                        self.vp.get(
                                                                             'CHIRPS_Days_Since_Last_Rain',
                                                                            'regional_accum_output_pattern')))
+        _temp_dir = self.vp.get('directories', 'temp_dir')
+        if not os.path.exists(_temp_dir):
+            os.makedirs(_temp_dir)
         precipitation_analysis.days_since_last_rain(raster_list=raster_list,
                                                     dslw_filename=dslw_file,
                                                     dsld_filename=dsld_file,
                                                     num_wet_days_filename=num_wet_file,
                                                     rainfall_accum_filename=ra_file,
-                                                    temp_dir=self.vp.get('directories', 'temp_dir'),
+                                                    temp_dir=_temp_dir,
                                                     threshold=threshold, max_days=max_days)
         logger.info('leaving calc_days_since_last_rainfall')
         return None
