@@ -29,8 +29,11 @@ class CHIRPSDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
         self.vp = vampire_defaults
         self.region = region
 
-        if self.interval.lower() == 'dekad':
-            self.start_date = datetime.timedelta(days=-10)
+        if self.interval.lower() == 'daily':
+            self.start_date = product_date
+            self.end_date = product_date
+        elif self.interval.lower() == 'dekad':
+            self.start_date = product_date + datetime.timedelta(days=-10)
             self.end_date = product_date
         elif self.interval.lower() == 'monthly':
             self.start_date = datetime.datetime(product_date.year, product_date.month, 1) # ensure start date is first day of month
@@ -44,6 +47,21 @@ class CHIRPSDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
 #        self.start_date = params['start_date']
 #        self.country = params['country']
         return
+
+    @property
+    def start_date(self):
+        return self.__start_date
+    @start_date.setter
+    def start_date(self, sd):
+        self.__start_date = sd
+
+    @property
+    def end_date(self):
+        return self.__end_date
+    @end_date.setter
+    def end_date(self, ed):
+        self.__end_date = ed
+
 
     """ Generate a config file process for the dataset.
 
