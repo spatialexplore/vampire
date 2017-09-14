@@ -35,17 +35,30 @@ class CHIRPSDataset(BaseDataset):
     def generate_config(self, data_dir=None, download=True, crop=True, crop_dir=None):
         return self.impl.generate_config(data_dir, download, crop, crop_dir)
 
+    def start_date(self):
+        return self.impl.start_date
+    def set_start_date(self, sd):
+        self.impl.start_date = sd
+    def end_date(self):
+        return self.impl.end_date
+    def set_end_date(self, sd):
+        self.impl.end_date = sd
+
 @BaseDataset.register_subclass('MODIS_EVI')
 class MODISEVIDataset(BaseDataset):
     def __init__(self, interval, product_date, vampire_defaults, region=None):
         self.impl = MODISEVIDatasetImpl.MODISEVIDatasetImpl(interval, product_date, vampire_defaults, region)
         return
-    @property
+
     def start_date(self):
         return self.impl.start_date
-    @property
+    def set_start_date(self, sd):
+        self.impl.start_date = sd
+
     def end_date(self):
         return self.impl.end_date
+    def set_end_date(self, sd):
+        self.impl.end_date = sd
 
 
     def generate_config(self, data_dir=None, download=True, mosaic_dir=None, tiles=None, extract_dir=None,
@@ -72,20 +85,14 @@ class MODISLSTDataset(BaseDataset):
     def product(self, product):
         self.impl.product = product
 
-    @property
     def start_date(self):
         return self.impl.start_date
-
-    @start_date.setter
-    def product(self, start_date):
+    def set_start_date(self, start_date):
         self.impl.start_date = start_date
 
-    @property
     def end_date(self):
         return self.impl.end_date
-
-    @end_date.setter
-    def product(self, end_date):
+    def set_end_date(self, end_date):
         self.impl.end_date = end_date
 
 
@@ -94,12 +101,15 @@ class GlobalForecastSystemDataset(BaseDataset):
     def __init__(self, interval, product_date, vampire_defaults, region=None):
         self.impl = GlobalForecastSystemDatasetImpl.GlobalForecastSystemDatasetImpl(interval, product_date, vampire_defaults, region)
         return
-    @property
+
     def start_date(self):
         return self.impl.start_date
-    @property
+    def set_start_date(self, sd):
+        self.impl.start_date = sd
     def end_date(self):
         return self.impl.end_date
+    def set_end_date(self, sd):
+        self.impl.end_date = sd
 
 
     def generate_config(self, data_dir=None, variable=None, level=None, forecast_hr=None, download=True,
