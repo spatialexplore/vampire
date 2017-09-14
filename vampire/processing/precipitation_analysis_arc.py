@@ -62,9 +62,9 @@ def days_since_last_rain(raster_list, dslw_filename, dsld_filename, num_wet_days
             _count += 1
         else:
             break
-    print("successfully reclassified rasters")
+    logger.debug("successfully reclassified rasters")
     _reclass_rasters.sort(reverse=True)
-    print(_reclass_rasters)
+    logger.debug(_reclass_rasters)
 
     # calculate last wet day
 ##    dslwfile = env.workspace + "/lwd/output/dslw25_29.tif"
@@ -73,7 +73,7 @@ def days_since_last_rain(raster_list, dslw_filename, dsld_filename, num_wet_days
 #    dsldfile = os.path.join(output_path, '{0}_dsld{1}'.format(output_filenames[0], output_filenames[1]))
 #    #lastWetDay(reclassRasters, outputfile, len(reclassRasters))
     _calc_num_days_since(rasters=_reclass_rasters, dslw_fn=dslw_filename, dsld_fn=dsld_filename, max_days=_count)
-    print("successfully calculated last wet day")
+    logger.debug("successfully calculated last wet day")
 
     # calculate number of wet days
     cellStats = arcpy.sa.CellStatistics(_reclass_rasters, "SUM")
@@ -173,15 +173,15 @@ def _calc_num_days_since(rasters, dslw_fn, dsld_fn, max_days):
 #    dryMask.save("S:/WFP/CHIRPS/Daily/2015/p25/lwd/dryMask.tif")
 #    outHighestPosition.save("S:/WFP/CHIRPS/Daily/2015/p25/lwd/hp.tif")
     # reset NoData
-    outFinal = arcpy.sa.SetNull(_no_data_mask, _days_since_last_wet, "VALUE >= 1")
-    outFinal3 = arcpy.sa.SetNull(_no_data_mask, _days_since_last_dry, "VALUE >= 1")
+    _dslw_no_data = arcpy.sa.SetNull(_no_data_mask, _days_since_last_wet, "VALUE >= 1")
+    _dsld_no_data = arcpy.sa.SetNull(_no_data_mask, _days_since_last_dry, "VALUE >= 1")
 #    outFinal.save(env.workspace + "/lwd/output/outdslw.tif")
 #    outFinal3.save(env.workspace + "/lwd/output/outdsld.tif")
-    outFinal2 = arcpy.sa.Con(_dry_mask, -999, outFinal, "VALUE >= 1")
-    outFinal4 = arcpy.sa.Con(_wet_mask, -999, outFinal3, "VALUE >= 1")
+    _dslw_output = arcpy.sa.Con(_dry_mask, -999, _dslw_no_data, "VALUE >= 1")
+    _dsld_output = arcpy.sa.Con(_wet_mask, -999, _dsld_no_data, "VALUE >= 1")
 
     # Save the output
-    outFinal2.save(dslw_fn)
-    outFinal4.save(dsld_fn)
+    _dslw_output.save(dslw_fn)
+    _dsld_output.save(dsld_fn)
     return 0
 
