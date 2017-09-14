@@ -50,13 +50,13 @@ class CHIRPSDownloadTask(object):
 
     """
     def __init__(self, params, vampire_defaults):
-        logger.debug('Initialising MODIS download task')
+        logger.debug('Initialising CHIRPS download task')
         self.params = params
         self.vp = vampire_defaults
         return
 
     def process(self):
-        logger.debug("Downloading MODIS data")
+        logger.debug("Downloading CHIRPS data")
         try:
             output_dir = self.params['output_dir']
         except Exception, e:
