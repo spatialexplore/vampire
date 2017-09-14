@@ -4,6 +4,7 @@ import CHIRPSTasksImpl
 import RasterTasksImpl
 import ClimateAnalysisTasksImpl
 import ImpactTasksImpl
+import PublishTasksImpl
 import logging
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,16 @@ class ImpactTaskProcessor(TaskProcessor):
     # ...
     def __init__(self, params, vampire_defaults):
         self.impl = ImpactTasksImpl.ImpactTasksImpl.create(params['type'].lower(), params, vampire_defaults)
+        return
+
+    def process(self):
+        return self.impl.process()
+
+@TaskProcessor.register_subclass('publish')
+class PublishTaskProcessor(TaskProcessor):
+    # ...
+    def __init__(self, params, vampire_defaults):
+        self.impl = PublishTasksImpl.PublishTasksImpl.create(params['type'].lower(), params, vampire_defaults)
         return
 
     def process(self):
