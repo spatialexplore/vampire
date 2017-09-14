@@ -7,6 +7,7 @@ import processing.raster_utils as raster_utils
 import GISServerInterface
 import DatabaseManager
 import yaml
+import processing.TaskProcessor
 import logging
 logger = logging.getLogger(__name__)
 
@@ -143,19 +144,19 @@ class ConfigProcessor():
                     try:
                         _input_dir = process['input_dir']
                     except Exception, e:
-                        raise ConfigFileError("No input directory 'input_dir' set.")
+                        raise ConfigFileError(e, "No input directory 'input_dir' set.")
                     try:
                         _output_dir = process['output_dir']
                     except Exception, e:
-                        raise ConfigFileError("No output directory 'output_dir' set.")
+                        raise ConfigFileError(e, "No output directory 'output_dir' set.")
                     try:
                         _product = process['product']
                     except Exception, e:
-                        raise ConfigFileError("No product 'product' set.")
+                        raise ConfigFileError(e, "No product 'product' set.")
                     try:
                         _input_pattern = process['file_pattern']
                     except Exception, e:
-                        raise ConfigFileError("No input file pattern 'file_pattern' set.")
+                        raise ConfigFileError(e, "No input file pattern 'file_pattern' set.")
                     if 'country' in process:
                         _country = process['country']
                     else:
@@ -1048,39 +1049,42 @@ class ConfigProcessor():
         logger.debug(_process_list)
 
         for i,p in enumerate(_process_list):
-            try:
-                if p['process'].upper() == 'CHIRPS':
-                    print "Processing CHIRPS data"
-                    self._process_CHIRPS(p, cfg)
-            except Exception, e:
-                ConfigFileError("running process CHIRPS", e)
-                raise
-            try:
-                if p['process'].upper() == 'MODIS':
-                    print "Processing MODIS data"
-                    self._process_MODIS(p, cfg)
-            except Exception, e:
-                ConfigFileError("running process MODIS", e)
-                raise
-            try:
-                if p['process'].lower() == 'analysis':
-                    print "Performing data analysis"
-                    self._process_analysis(p, cfg)
-            except Exception, e:
-                ConfigFileError("performing data analysis", e)
-                raise
-            try:
-                if p['process'].lower() == 'raster':
-                    print "Performing raster analysis"
-                    self._process_raster(p, cfg)
-            except Exception, e:
-                ConfigFileError("performing raster analysis", e)
-                raise
-            try:
-                if p['process'].lower() == 'impact':
-                    print "Performing impact analysis"
-                    self._process_impact(p, cfg)
-            except Exception, e:
-                ConfigFileError('performing impact analysis', e)
+            _task = processing.TaskProcessor.TaskProcessor.create(p['process'].lower(), p)
+            _task.process()
+
+            # try:
+            #     if p['process'].upper() == 'CHIRPS':
+            #         print "Processing CHIRPS data"
+            #         self._process_CHIRPS(p, cfg)
+            # except Exception, e:
+            #     ConfigFileError("running process CHIRPS", e)
+            #     raise
+            # try:
+            #     if p['process'].upper() == 'MODIS':
+            #         print "Processing MODIS data"
+            #         self._process_MODIS(p, cfg)
+            # except Exception, e:
+            #     ConfigFileError("running process MODIS", e)
+            #     raise
+            # try:
+            #     if p['process'].lower() == 'analysis':
+            #         print "Performing data analysis"
+            #         self._process_analysis(p, cfg)
+            # except Exception, e:
+            #     ConfigFileError("performing data analysis", e)
+            #     raise
+            # try:
+            #     if p['process'].lower() == 'raster':
+            #         print "Performing raster analysis"
+            #         self._process_raster(p, cfg)
+            # except Exception, e:
+            #     ConfigFileError("performing raster analysis", e)
+            #     raise
+            # try:
+            #     if p['process'].lower() == 'impact':
+            #         print "Performing impact analysis"
+            #         self._process_impact(p, cfg)
+            # except Exception, e:
+            #     ConfigFileError('performing impact analysis', e)
 
         return None
