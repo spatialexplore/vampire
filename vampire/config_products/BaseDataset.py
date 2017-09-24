@@ -1,6 +1,7 @@
 import CHIRPSDatasetImpl
 import MODISEVIDatasetImpl
 import MODISLSTDatasetImpl
+import IMERGDatasetImpl
 import GlobalForecastSystemDatasetImpl
 import logging
 logger = logging.getLogger(__name__)
@@ -43,6 +44,31 @@ class CHIRPSDataset(BaseDataset):
         return self.impl.end_date
     def set_end_date(self, sd):
         self.impl.end_date = sd
+
+@BaseDataset.register_subclass('IMERG')
+class IMERGDataset(BaseDataset):
+    def __init__(self, interval, product_date, vampire_defaults, region=None):
+        self.impl = IMERGDatasetImpl.IMERGDatasetImpl(interval, product_date, vampire_defaults, region)
+        return
+
+    def start_date(self):
+        return self.impl.start_date
+    def set_start_date(self, sd):
+        self.impl.start_date = sd
+
+    def end_date(self):
+        return self.impl.end_date
+    def set_end_date(self, sd):
+        self.impl.end_date = sd
+
+    def generate_header(self):
+        return self.impl.generate_header()
+
+    def generate_config(self, data_dir=None, download=True, mosaic_dir=None, tiles=None, extract_dir=None,
+                        crop=True, crop_dir=None):
+        return self.impl.generate_config(data_dir=data_dir, download=download, crop=crop, crop_dir=crop_dir)
+
+
 
 @BaseDataset.register_subclass('MODIS_EVI')
 class MODISEVIDataset(BaseDataset):
