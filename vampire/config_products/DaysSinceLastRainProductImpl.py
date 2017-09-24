@@ -31,17 +31,19 @@ class DaysSinceLastRainProductImpl(RasterProductImpl.RasterProductImpl):
         self.interval = interval
         self.product_date = product_date
         self.vp = vampire_defaults
-        if self.interval is None:
-            self.interval = self.vp.get('CHIRPS_Days_Since_Last_Rain', 'default_interval')
+        self.data_source = self.vp.get('Days_Since_Last_Rain', 'default_data')
 
-        self.chirps_dataset = BaseDataset.BaseDataset.create(dataset_type='CHIRPS', interval=self.interval,
-                                                             product_date=self.product_date,
-                                                             vampire_defaults=self.vp, region=self.country)
-        self.valid_from_date = self.chirps_dataset.start_date()
-        self.valid_to_date = self.chirps_dataset.end_date()
+        if self.interval is None:
+            self.interval = self.vp.get('Days_Since_Last_Rain'.format(self.data_source), 'default_interval')
+
+        self.dataset = BaseDataset.BaseDataset.create(dataset_type=self.data_source, interval=self.interval,
+                                                      product_date=self.product_date,
+                                                      vampire_defaults=self.vp, region=self.country)
+        self.valid_from_date = self.dataset.start_date()
+        self.valid_to_date = self.dataset.end_date()
         return
 
-    """ Generate VAMPIRE config file header for CHIRPS datasets.
+    """ Generate VAMPIRE config file header for datasets.
 
     Parameters
     ----------
@@ -54,7 +56,7 @@ class DaysSinceLastRainProductImpl(RasterProductImpl.RasterProductImpl):
 
     """
     def generate_header(self):
-        config = self.chirps_dataset.generate_header()
+        config = self.dataset.generate_header()
         return config
 
 
@@ -105,33 +107,29 @@ class DaysSinceLastRainProductImpl(RasterProductImpl.RasterProductImpl):
     ## Processing chain begin - Compute Days Since Last Rain\n"""
         _max_days = max_days # number of days to check for rain prior to start date
         if _max_days is None:
-            _max_days = int(self.vp.get('CHIRPS_Days_Since_Last_Rain', 'default_max_days'))
-        # set CHIRPS dataset start and end dates to cover the range required.
-        self.chirps_dataset.set_start_date(self.product_date + datetime.timedelta(days=-_max_days))
-        self.chirps_dataset.set_end_date(self.product_date)
+            _max_days = int(self.vp.get('Days_Since_Last_Rain', 'default_max_days'))
+        # set dataset start and end dates to cover the range required.
+        self.dataset.set_start_date(self.product_date + datetime.timedelta(days=-_max_days))
+        self.dataset.set_end_date(self.product_date)
 
-        _c_str, _data_dir = self.chirps_dataset.generate_config(data_dir, download, crop, crop_dir)
+        _c_str, _data_dir = self.dataset.generate_config(data_dir, download, crop, crop_dir)
         cfg_string += _c_str
 
         _threshold = threshold # threshold of precipitation to count as 'wet' day
         if _threshold is None:
-            _threshold = self.vp.get('CHIRPS_Days_Since_Last_Rain', 'default_threshold')
+            _threshold = self.vp.get('Days_Since_Last_Rain', 'default_threshold')
 
-        _chirps_pattern = file_pattern
-        if _chirps_pattern is None:
+        _data_pattern = file_pattern
+        if _data_pattern is None:
             if self.country.lower() == 'global':
-                _chirps_pattern = self.vp.get('CHIRPS', 'global_daily_pattern')
+                _data_pattern = self.vp.get(self.data_source, 'global_daily_pattern')
             else:
-                _chirps_pattern = self.vp.get('CHIRPS', 'regional_daily_pattern')
-#            # replace generic year in pattern with the specific one needed so the correct file is found.
-#            _chirps_pattern = _chirps_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
-#            _chirps_pattern = _chirps_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.product_date.month))
-#            _chirps_pattern = _chirps_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.product_date.day))
+                _data_pattern = self.vp.get(self.data_source, 'regional_daily_pattern')
 
         # directory for days since last rainfall output
         _output_dir = output_dir
         if _output_dir is None:
-            _output_dir = self.vp.get('CHIRPS_Days_Since_Last_Rain', 'output_dir')
+            _output_dir = self.vp.get('Days_Since_Last_Rain', 'output_dir')
         if not os.path.dirname(_output_dir):
             os.makedirs(_output_dir)
 
@@ -145,7 +143,7 @@ class DaysSinceLastRainProductImpl(RasterProductImpl.RasterProductImpl):
       start_date: {start_date}
       threshold: {threshold}
       max_days: {max_days}""".format(
-            input_dir=_data_dir, output_dir=_output_dir, file_pattern=_chirps_pattern,
+            input_dir=_data_dir, output_dir=_output_dir, file_pattern=_data_pattern,
             start_date='{0}-{1:0>2}-{2:0>2}'.format(self.valid_from_date.year, self.valid_from_date.month,
                                                     self.valid_from_date.day),
             threshold=_threshold, max_days=_max_days
