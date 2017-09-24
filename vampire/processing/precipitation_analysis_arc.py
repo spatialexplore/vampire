@@ -52,7 +52,7 @@ def days_since_last_rain(raster_list, dslw_filename, dsld_filename, num_wet_days
     for ras in raster_list:
         # only look at last 'max_days' rasters
         if _count < max_days:
-            _new_ras = os.path.join(temp_dir, 'temp_wd{0}'.format(_count))
+            _new_ras = os.path.join(temp_dir, 'temp_wd{0:0>2}'.format(_count))
 ##            newras = os.path.join(temp_path, '{0}_wd{1}'.format(os.path.splitext(os.path.basename(ras))[0], output_filenames[1]))
 #    ##        newras = temp_path + '/' + os.path.splitext(os.path.basename(ras))[0] + '_wd' + '.tif'
 #            # check if file exists
@@ -92,11 +92,11 @@ def _reclassify_wet_day(in_raster, out_raster, threshold):
     arcpy.env.extent="MAXOF"
     arcpy.env.cellSize="MAXOF"
     ras = arcpy.sa.Raster(in_raster)
-
     out_ras = arcpy.sa.Con(in_conditional_raster=in_raster,
                            in_true_raster_or_constant=1,
                            in_false_raster_or_constant=0,
-                           where_clause="VALUE >={0}".format(threshold))
+                           where_clause="VALUE >{0}".format(int(threshold)))
+#                           where_clause="VALUE >={0}".format(threshold))
 
 #    ds = gdal.Open(in_raster)
 #    ras_array = numpy.array(ds.GetRasterBand(1).ReadAsArray())
@@ -156,21 +156,27 @@ def _calc_num_days_since(rasters, dslw_fn, dsld_fn, max_days):
         # raster[i] is 1 if wet, 0 if dry. inverseRaster = 0 if wet, 1 if dry
         _inverse_raster = arcpy.sa.BooleanNot(rasters[i])
         #remove NoData (set to 0)
-        rasters[i] = arcpy.sa.Con(arcpy.sa.IsNull(rasters[i]), 0, rasters[i])
+### temporarily remove this
+#        rasters[i] = arcpy.sa.Con(arcpy.sa.IsNull(rasters[i]), 0, rasters[i])
         _inverse_raster = arcpy.sa.Con(arcpy.sa.IsNull(_inverse_raster), 0, _inverse_raster)
         _last_x_rasters.append(rasters[i])
         _last_dry_rasters.append(_inverse_raster)
 
     # create raster with number of days since last rain
-    _days_since_last_wet = arcpy.sa.HighestPosition(_last_x_rasters)
-    _days_since_last_dry = arcpy.sa.HighestPosition(_last_dry_rasters)
-#    daysSinceLastDry.save(env.workspace + "/lwd/output/dsld.tif")
+    _highest_position_wet = arcpy.sa.HighestPosition(_last_x_rasters)
+    _highest_position_dry = arcpy.sa.HighestPosition(_last_dry_rasters)
 
-#    noDataMask.save("S:/WFP/CHIRPS/Daily/2015/p25/lwd/noDataMask.tif")
+    _days_since_last_wet = _highest_position_wet - 1
+    _days_since_last_dry = _highest_position_dry - 1
+
+    _days_since_last_dry.save("S:\\WFP2\\PRISM\\data\\Temp\\dsld.tif")
+    _days_since_last_wet.save("S:\\WFP2\\PRISM\\data\\Temp\\dslw.tif")
+
+    _no_data_mask.save("S:\\WFP2\\PRISM\\data\\Temp\\noDataMask.tif")
     _dry_mask = arcpy.sa.Con(arcpy.sa.IsNull(_dry_mask), -999, _dry_mask)
     _wet_mask = arcpy.sa.Con(arcpy.sa.IsNull(_wet_mask), -999, _wet_mask)
-#    wetMask.save("S:/WFP/CHIRPS/Daily/2015/p25/lwd/wetMask.tif")
-#    dryMask.save("S:/WFP/CHIRPS/Daily/2015/p25/lwd/dryMask.tif")
+    _wet_mask.save("S:\\WFP2\\PRISM\\data\\Temp\\wetMask.tif")
+    _dry_mask.save("S:\\WFP2\\PRISM\\data\\Temp\\dryMask.tif")
 #    outHighestPosition.save("S:/WFP/CHIRPS/Daily/2015/p25/lwd/hp.tif")
     # reset NoData
     _dslw_no_data = arcpy.sa.SetNull(_no_data_mask, _days_since_last_wet, "VALUE >= 1")
@@ -181,6 +187,8 @@ def _calc_num_days_since(rasters, dslw_fn, dsld_fn, max_days):
     _dsld_output = arcpy.sa.Con(_wet_mask, -999, _dsld_no_data, "VALUE >= 1")
 
     # Save the output
+    arcpy.SetRasterProperties_management(_dsld_output, nodata="1 -999")
+    arcpy.SetRasterProperties_management(_dslw_output, nodata="1 -999")
     _dslw_output.save(dslw_fn)
     _dsld_output.save(dsld_fn)
     return 0
