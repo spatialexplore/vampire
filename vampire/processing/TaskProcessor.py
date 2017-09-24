@@ -1,6 +1,8 @@
 import vampire.VampireDefaults as VampireDefaults
 import MODISTasksImpl
 import CHIRPSTasksImpl
+import IMERGTasksImpl
+import GFSTasksImpl
 import RasterTasksImpl
 import ClimateAnalysisTasksImpl
 import ImpactTasksImpl
@@ -44,6 +46,26 @@ class CHIRPSTaskProcessor(TaskProcessor):
     # ...
     def __init__(self, params, vampire_defaults):
         self.impl = CHIRPSTasksImpl.CHIRPSTasksImpl.create(params['type'].lower(), params, vampire_defaults)
+        return
+
+    def process(self):
+        return self.impl.process()
+
+@TaskProcessor.register_subclass('imerg')
+class IMERGTaskProcessor(TaskProcessor):
+    # ...
+    def __init__(self, params, vampire_defaults):
+        self.impl = IMERGTasksImpl.IMERGTasksImpl.create(params['type'].lower(), params, vampire_defaults)
+        return
+
+    def process(self):
+        return self.impl.process()
+
+@TaskProcessor.register_subclass('gfs')
+class GFSTaskProcessor(TaskProcessor):
+    # ...
+    def __init__(self, params, vampire_defaults):
+        self.impl = GFSTasksImpl.GFSTasksImpl.create(params['type'].lower(), params, vampire_defaults)
         return
 
     def process(self):
