@@ -25,13 +25,6 @@ except ImportError:
 import logging
 logger = logging.getLogger(__name__)
 
-class ConfigFileError(ValueError):
-    def __init__(self, message, e, *args):
-        '''Raise when the config file contains an error'''
-        self.message = message
-        self.error = e
-        super(ConfigFileError, self).__init__(message, e, *args)
-
 class MODISTasksImpl():
     subclasses = {}
 
@@ -70,7 +63,7 @@ class MODISDownloadTask(BaseTaskImpl.BaseTaskImpl):
         try:
             output_dir = self.params['output_dir']
         except Exception, e:
-            raise ConfigFileError("No output directory specified. An 'output_dir' is required.", e)
+            raise BaseTaskImpl.ConfigFileError("No output directory specified. An 'output_dir' is required.", e)
 
         _product = 'MOD13A3.005' # default product is MOD13A3
         if 'product' in self.params:
@@ -257,11 +250,11 @@ class MODISExtractTask(BaseTaskImpl.BaseTaskImpl):
         try:
             _input_dir = self.params['input_dir']
         except Exception, e:
-            raise ConfigFileError("No input directory 'input_dir' set.", e)
+            raise BaseTaskImpl.ConfigFileError("No input directory 'input_dir' set.", e)
         try:
             _output_dir = self.params['output_dir']
         except Exception, e:
-            raise ConfigFileError("No output directory 'output_dir' set.", e)
+            raise BaseTaskImpl.ConfigFileError("No output directory 'output_dir' set.", e)
         if 'file_pattern' in self.params:
             _file_pattern = self.params['file_pattern']
         else:
@@ -482,19 +475,19 @@ class MODISCalculateAverageTask(BaseTaskImpl.BaseTaskImpl):
                 try:
                     _input_dir = self.params['input_dir']
                 except Exception, e:
-                    raise ConfigFileError(e, "No input directory 'input_dir' set.")
+                    raise BaseTaskImpl.ConfigFileError(e, "No input directory 'input_dir' set.")
                 try:
                     _output_dir = self.params['output_dir']
                 except Exception, e:
-                    raise ConfigFileError(e, "No output directory 'output_dir' set.")
+                    raise BaseTaskImpl.ConfigFileError(e, "No output directory 'output_dir' set.")
                 try:
                     _product = self.params['product']
                 except Exception, e:
-                    raise ConfigFileError(e, "No product 'product' set.")
+                    raise BaseTaskImpl.ConfigFileError(e, "No product 'product' set.")
                 try:
                     _input_pattern = self.params['file_pattern']
                 except Exception, e:
-                    raise ConfigFileError(e, "No input file pattern 'file_pattern' set.")
+                    raise BaseTaskImpl.ConfigFileError(e, "No input file pattern 'file_pattern' set.")
                 if 'country' in self.params:
                     _country = self.params['country']
                 else:
