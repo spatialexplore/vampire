@@ -1,5 +1,6 @@
 import vampire.VampireDefaults as VampireDefaults
 import vampire.directory_utils
+import BaseTaskImpl
 import ftputil
 import os
 import re
@@ -13,13 +14,6 @@ except ImportError:
     import calculate_statistics_os as calculate_statistics
     import precipitation_analysis_os as precip_analysis
 
-
-class ConfigFileError(ValueError):
-    def __init__(self, message, e, *args):
-        '''Raise when the config file contains an error'''
-        self.message = message
-        self.error = e
-        super(ConfigFileError, self).__init__(message, e, *args)
 
 class CHIRPSTasksImpl():
     subclasses = {}
@@ -43,16 +37,15 @@ class CHIRPSTasksImpl():
         return cls.subclasses[process_type](params, vp)
 
 @CHIRPSTasksImpl.register_subclass('download')
-class CHIRPSDownloadTask(object):
+class CHIRPSDownloadTask(BaseTaskImpl.BaseTaskImpl):
     """ Initialise MODISDownloadTask object.
 
     Implementation class for downloading MODIS products.
 
     """
     def __init__(self, params, vampire_defaults):
+        super(CHIRPSDownloadTask, self).__init__(params, vampire_defaults)
         logger.debug('Initialising CHIRPS download task')
-        self.params = params
-        self.vp = vampire_defaults
         return
 
     def process(self):
@@ -60,7 +53,7 @@ class CHIRPSDownloadTask(object):
         try:
             output_dir = self.params['output_dir']
         except Exception, e:
-            raise ConfigFileError("No ouput directory 'output_dir' specified.", e)
+            raise BaseTaskImpl.ConfigFileError("No ouput directory 'output_dir' specified.", e)
         _dates = None
         _start_date = None
         _end_date = None
@@ -199,16 +192,15 @@ class CHIRPSDownloadTask(object):
 
 
 @CHIRPSTasksImpl.register_subclass('longterm_average')
-class CHIRPSLongtermAverageTask(object):
+class CHIRPSLongtermAverageTask(BaseTaskImpl.BaseTaskImpl):
     """ Initialise MODISDownloadTask object.
 
     Implementation class for downloading MODIS products.
 
     """
     def __init__(self, params, vampire_defaults):
+        super(CHIRPSLongtermAverageTask, self).__init__(params, vampire_defaults)
         logger.debug('Initialising MODIS download task')
-        self.params = params
-        self.vp = vampire_defaults
         return
 
     def process(self):
@@ -216,13 +208,13 @@ class CHIRPSLongtermAverageTask(object):
         try:
             output_dir = self.params['output_dir']
         except Exception, e:
-            raise ConfigFileError("No ouput directory 'output_dir' specified.", e)
+            raise BaseTaskImpl.ConfigFileError("No ouput directory 'output_dir' specified.", e)
         if 'dates' in self.params:
             dates = self.params['dates']
         try:
             input_dir = self.params['input_dir']
         except Exception, e:
-            raise ConfigFileError("No input directory 'input_dir' specified.", e)
+            raise BaseTaskImpl.ConfigFileError("No input directory 'input_dir' specified.", e)
 
         if 'functions' in self.params:
             funcs = self.params['functions']
