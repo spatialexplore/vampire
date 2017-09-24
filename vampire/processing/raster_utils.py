@@ -224,3 +224,33 @@ def mask_by_shapefile(raster_file, polygon_file, output_file, gdal_path, nodata=
         logger.error("Warning in gdalwarp")
 
     return None
+
+try:
+    import arcpy
+    def mask_by_shapefile_arc(raster_file, polygon_file, output_file, gdal_path, nodata=None):
+
+        return
+except ImportError:
+    def mask_by_shapefile_os(raster_file, polygon_file, output_file, gdal_path, nodata=None):
+        try:
+            logger.debug("%s", polygon_file)
+            logger.debug("%s", raster_file)
+            logger.debug("%s", output_file)
+            gdal_exe = os.path.join(gdal_path, 'gdalwarp')
+            if nodata:
+                retcode = subprocess.call(
+                    [gdal_exe, '-overwrite', '-dstnodata', '-9999', '--config', 'GDALWARP_IGNORE_BAD_CUTLINE', 'YES',
+                     '-cutline', polygon_file, raster_file, output_file])
+            else:
+                retcode = subprocess.call(
+                    [gdal_exe, '-overwrite', '--config', 'GDALWARP_IGNORE_BAD_CUTLINE', 'YES',
+                     '-crop_to_cutline', '-cutline', polygon_file, raster_file, output_file])
+            logger.debug("gdalwarp return code is %s", retcode)
+        except subprocess.CalledProcessError as e:
+            logger.error("Error in gdalwarp")
+            logger.error("%s", e.output)
+            #        raise
+        except Exception, e:
+            logger.error("Warning in gdalwarp")
+
+        return None
