@@ -3,7 +3,10 @@ import optparse
 import os
 import traceback
 import sys
-import vampire
+import datetime
+import vampire.VampireDefaults
+import vampire.ConfigFactory
+import vampire.ConfigProcessor
 
 if __name__ == '__main__':
     try:
@@ -17,32 +20,45 @@ if __name__ == '__main__':
         config_f = ""
         if options.generate_config:
             params = {}
-            params['country'] = 'Afganistan'
-            params['product'] = 'rainfall_longterm_average'
-            params['interval'] = 'seasonal'
-            params['start_date'] = None
+            params['country'] = 'Indonesia'
+            params['product'] = 'days_since_last_rain'
+            params['interval'] = 'daily'
+            params['output'] = 'S:\WFP2\PRISM\configs\test_dslr.yml'
+            params['start_date'] = _start_date = datetime.datetime.strptime('2014/07/01', "%Y/%m/%d")
             params['end_date'] = None
-            params['download'] = False
-            params['data_dir'] = 'U:\\WFP2\\VAMPIRE\\data\\Download\\CHIRPS\\Seasonal\\Statistics_BySeasonal'
-            params['lta_dir'] = None #'R:\\WFP2\\VAMPIRE\\data\\Download\\CHIRPS\\Monthly\\AFG'
+            params['download'] = True
+            params['data_dir'] = 'S:\\WFP2\\PRISM\\data\\Download\\IMERG\\Daily'
             params['gdal_dir'] = None
             params['mrt_dir'] = None
-            params['crop_only'] = True
+            params['crop_only'] = False
             params['overwrite'] = True
+            # params['country'] = 'Afganistan'
+            # params['product'] = 'rainfall_longterm_average'
+            # params['interval'] = 'seasonal'
+            # params['start_date'] = None
+            # params['end_date'] = None
+            # params['download'] = False
+            # params['data_dir'] = 'U:\\WFP2\\VAMPIRE\\data\\Download\\CHIRPS\\Seasonal\\Statistics_BySeasonal'
+            # params['lta_dir'] = None #'R:\\WFP2\\VAMPIRE\\data\\Download\\CHIRPS\\Monthly\\AFG'
+            # params['gdal_dir'] = None
+            # params['mrt_dir'] = None
+            # params['crop_only'] = True
+            # params['overwrite'] = True
             if options.config_file:
                 filename = options.config_file
             else:
-                filename = 'U:\\WFP2\\WFP_Server\\testing\\testGenCfg.yml'
+                filename = 'S:\\WFP2\\PRISM\\configs\\test_dslr.yml'
                 options.config_file = filename
             print "Generating config file=", filename
-            cf = vampire.ConfigFactory.ConfigFactory('')
-            cf.generate_config_file(filename,params)
+            vampire.config_generator.generate_config_file(filename, params)
+#            cf = vampire.ConfigFactory.ConfigFactory('')
+#            cf.generate_config_file(filename, params)
         if options.config_file:
             config_f = options.config_file
             print 'config file=', config_f
             vp = vampire.VampireDefaults.VampireDefaults()
             cp = vampire.ConfigProcessor.ConfigProcessor()
-            cp.process_config(config_f, vp.logger)
+            cp.process_config(config_f)
         if options.verbose: print time.asctime()
         if options.verbose: print 'TOTAL TIME IN MINUTES:',
         if options.verbose: print (time.time() - start_time) / 60.0
