@@ -63,7 +63,7 @@ class DaysSinceLastRainTaskImpl(BaseTaskImpl.BaseTaskImpl):
             _m = _r_in.match(os.path.basename(f))
             max_date = start_date - datetime.timedelta(days=max_days)
             f_date = datetime.date(int(_m.group('year')), int(_m.group('month')), int(_m.group('day')))
-            if max_date <= f_date <= start_date:
+            if max_date <= f_date < start_date:
                 raster_list.append(f)
 
         def replace_closure(subgroup, replacement, m):
@@ -78,26 +78,26 @@ class DaysSinceLastRainTaskImpl(BaseTaskImpl.BaseTaskImpl):
                            _ref_file)
         _ref_file = regex.sub(data_pattern, functools.partial(replace_closure, 'day', '{0:0>2}'.format(start_date.day)),
                            _ref_file)
+        dslw_file = self.vp.get('Days_Since_Last_Rain', 'regional_dslr_output_pattern').replace('{max_days}',
+                                                                                                '{0}d'.format(max_days))
+        dslw_file = dslw_file.replace('{threshold}', '{0}mm'.format(threshold))
         dslw_file = os.path.join(dst_dir,
-                                 filename_utils.generate_output_filename(_ref_file, data_pattern,
-                                                                         self.vp.get(
-                                                                             'CHIRPS_Days_Since_Last_Rain',
-                                                                             'regional_dslr_output_pattern')))
+                                 filename_utils.generate_output_filename(_ref_file, data_pattern, dslw_file))
+        dsld_file = self.vp.get('Days_Since_Last_Rain', 'regional_dsld_output_pattern').replace('{max_days}',
+                                                                                                '{0}d'.format(max_days))
+        dsld_file = dsld_file.replace('{threshold}', '{0}mm'.format(threshold))
         dsld_file = os.path.join(dst_dir,
-                                 filename_utils.generate_output_filename(_ref_file, data_pattern,
-                                                                         self.vp.get(
-                                                                             'CHIRPS_Days_Since_Last_Rain',
-                                                                             'regional_dsld_output_pattern')))
+                                 filename_utils.generate_output_filename(_ref_file, data_pattern, dsld_file))
+        num_wet_file = self.vp.get('Days_Since_Last_Rain', 'regional_wet_accum_output_pattern').replace('{max_days}',
+                                                                                                '{0}d'.format(max_days))
+        num_wet_file = num_wet_file.replace('{threshold}', '{0}mm'.format(threshold))
         num_wet_file = os.path.join(dst_dir,
-                                    filename_utils.generate_output_filename(_ref_file, data_pattern,
-                                                                            self.vp.get(
-                                                                                'CHIRPS_Days_Since_Last_Rain',
-                                                                                'regional_wet_accum_output_pattern')))
+                                    filename_utils.generate_output_filename(_ref_file, data_pattern, num_wet_file))
+        ra_file = self.vp.get('Days_Since_Last_Rain', 'regional_accum_output_pattern').replace('{max_days}',
+                                                                                                '{0}d'.format(max_days))
+        ra_file = ra_file.replace('{threshold}', '{0}mm'.format(threshold))
         ra_file = os.path.join(dst_dir,
-                               filename_utils.generate_output_filename(_ref_file, data_pattern,
-                                                                       self.vp.get(
-                                                                            'CHIRPS_Days_Since_Last_Rain',
-                                                                           'regional_accum_output_pattern')))
+                               filename_utils.generate_output_filename(_ref_file, data_pattern, ra_file))
         _temp_dir = self.vp.get('directories', 'temp_dir')
         if not os.path.exists(_temp_dir):
             os.makedirs(_temp_dir)
