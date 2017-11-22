@@ -6,7 +6,7 @@ import GlobalForecastSystemDatasetImpl
 import logging
 logger = logging.getLogger(__name__)
 
-class BaseDataset():
+class BaseDataset(object):
     subclasses = {}
 
     @classmethod
@@ -139,6 +139,6 @@ class GlobalForecastSystemDataset(BaseDataset):
 
 
     def generate_config(self, data_dir=None, variable=None, level=None, forecast_hr=None, download=True,
-                        crop=True, crop_dir=None):
+                        crop=True, crop_dir=None, accumulate_days=None):
         return self.impl.generate_config(data_dir=data_dir, variable=variable, level=level, forecast_hr=forecast_hr,
-                                         download=download, crop=crop, crop_dir=crop_dir)
+                                         download=download, crop=crop, crop_dir=crop_dir, accumulate_days=accumulate_days)
