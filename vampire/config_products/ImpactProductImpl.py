@@ -9,8 +9,8 @@ class ImpactProductImpl(object):
     """
     def __init__(self):
         logger.debug('Initialising Impact Product')
-        self.valid_from = None
-        self.valid_to = None
+        self.valid_from_date = None
+        self.valid_to_date = None
         self.output_file = None
         self.output_dir = None
         self.output_pattern = None
@@ -39,14 +39,14 @@ class ImpactProductImpl(object):
 
     @property
     def valid_from_date(self):
-        return self.__valid_from_date
+        return self.__valid_from_date()
     @valid_from_date.setter
     def valid_from_date(self, sd):
         self.__valid_from_date = sd
 
     @property
     def valid_to_date(self):
-        return self.__valid_to_date
+        return self.__valid_to_date()
     @valid_to_date.setter
     def valid_to_date(self, ed):
         self.__valid_to_date = ed
