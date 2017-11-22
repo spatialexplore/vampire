@@ -29,7 +29,10 @@ class GlobalForecastSystemDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
         self.vp = vampire_defaults
         self.region = region
 
-        if self.interval.lower() == 'dekad':
+        if self.interval.lower() == 'daily':
+            self.start_date = product_date
+            self.end_date = product_date
+        elif self.interval.lower() == 'dekad':
             self.start_date = datetime.timedelta(days=-10)
             self.end_date = product_date
         elif self.interval.lower() == 'monthly':
@@ -67,8 +70,9 @@ class GlobalForecastSystemDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
         Returns string containing the configuration file process.
 
     """
-    def generate_config(self, data_dir=None, variable=None, level=None, forecast_hr=None, download=True, crop=True, crop_dir=None):
-        logger.debug('GlobalForecastSystemDatabase generate_config')
+    def generate_config(self, data_dir=None, variable=None, level=None, forecast_hr=None, download=True, crop=True,
+                        crop_dir=None, accumulate_days=None):
+        logger.debug('GlobalForecastSystemDataset generate_config')
         config = ''
         if data_dir is None:
             _data_dir = self.vp.get('GFS', 'data_dir')
@@ -78,29 +82,47 @@ class GlobalForecastSystemDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
 
         if download:
             config += self._generate_download_section(data_dir=_download_dir)
+            _data_dir = _download_dir
+
+        if accumulate_days is not None:
+            if forecast_hr is None:
+                _fc_hr = self.vp.get('GFS', 'model_cycle_runtime')
+            else:
+                _fc_hr = forecast_hr
+            _raw_dir = os.path.join(_download_dir, '{0:0>4}{1:0>2}{2:0>2}{3:0>2}'.format(self.product_date.year,
+                                                                                         self.product_date.month,
+                                                                                         self.product_date.day,
+                                                                                         _fc_hr))
+            _data_pattern = self.vp.get('GFS', 'global_raw_pattern')
+            _accum_pattern = self.vp.get('GFS', 'global_output_accum_pattern')
+            config += self._generate_accumulate_section(data_dir=_raw_dir, data_pattern=_data_pattern,
+                                                        output_dir=_download_dir, output_pattern=_accum_pattern,
+                                                        accumulate_days=accumulate_days)
+            _data_dir = _download_dir
 
         if crop:
             _country_code = self.vp.get_country_code(self.region)
             if crop_dir is None:
-                _crop_dir = os.path.join(_download_dir, _country_code.upper())
+                _crop_dir = os.path.join(_data_dir, _country_code.upper())
             else:
                 _crop_dir = crop_dir
+            _data_dir = _crop_dir
 
             if self.region is not None and self.region.lower() is not 'global':
                 # self.region should contain country name
                 config += """
-        # Crop data to {country}""".format(country=self.region)
-                _input_pattern = self.vp.get('GFS', 'global_{0}_pattern'.format(self.interval))
+    # Crop data to {country}""".format(country=self.region)
+                _input_pattern = self.vp.get('GFS', 'global_accum_pattern')
                 _output_pattern = '{0}{1}'.format(self.vp.get_country_code(self.region).lower(),
-                                                  self.vp.get('CHIRPS',
-                                                              'crop_regional_output_{0}_pattern'.format(self.interval)))
+                                                  self.vp.get('GFS',
+                                                              'regional_output_accum_pattern'))
                 _boundary_file = self.vp.get_country('{0}'.format(self.region))['chirps_boundary_file']
                 config += self.generate_crop_section(_download_dir, _crop_dir, _input_pattern, _output_pattern, _boundary_file)
 
-        return config
+        return config, _data_dir
 
 
-    """ Generate VAMPIRE config file header for CHIRPS datasets.
+    """ Generate VAMPIRE config file header for GFS datasets.
 
     Parameters
     ----------
@@ -116,9 +138,9 @@ class GlobalForecastSystemDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
         config = """"""
         return config
 
-    """ Generate download process section for CHIRPS dataset.
+    """ Generate download process section for GFS dataset.
 
-    Generate VAMPIRE config file process for CHIRPS dataset download.
+    Generate VAMPIRE config file process for GFS dataset download.
 
     Parameters
     ----------
@@ -137,20 +159,38 @@ class GlobalForecastSystemDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
     # download GFS forecast data
     - process: GFS
       type: download
-      output_dir: {output_dir}""".format(interval=self.interval, output_dir=data_dir)
+      output_dir: {output_dir}""".format(output_dir=data_dir)
         # if start and end dates are specified, only download between these dates
         if self.product_date is not None:
             year = self.start_date.strftime("%Y")
             month = self.start_date.strftime("%m")
+            day = self.start_date.strftime("%d")
             # use 1st of start_date month to make sure end month is also included
-            _first_date = self.start_date.replace(self.start_date.year, self.start_date.month, 1)
+            _first_date = self.start_date.replace(self.start_date.year, self.start_date.month, self.product_date.day)
             dates = dateutil.rrule.rrule(dateutil.rrule.MONTHLY, dtstart=_first_date).between(_first_date,
                                                                                               self.end_date, inc=True)
             config += """
       dates: ["""
             for d in dates:
-                config += '{year}-{month},'.format(year=d.strftime("%Y"), month=d.strftime("%m"))
+                config += '{year}-{month}-{day},'.format(year=d.strftime("%Y"), month=d.strftime("%m"),
+                                                         day=d.strftime("%d"))
             config = config[:-1]
             config += """]
             """
+        return config
+
+    def _generate_accumulate_section(self, data_dir, data_pattern, output_dir, output_pattern, accumulate_days):
+        config = """
+    # accumulate GFS forecast data to {accumulate_days} days
+    - process: GFS
+      type: accumulate
+      data_dir: {data_dir}
+      data_pattern: '{data_pattern}'
+      output_dir: {output_dir}
+      output_pattern: '{output_pattern}'
+      number_of_days: {accumulate_days}
+      dates: [{year}-{month}-{day}]
+      """.format(accumulate_days=accumulate_days, data_dir=data_dir, data_pattern=data_pattern,
+                 output_dir=output_dir, output_pattern=output_pattern, year=self.product_date.strftime("%Y"),
+                 month=self.product_date.strftime("%m"), day=self.product_date.strftime("%d"))
         return config
