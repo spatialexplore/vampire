@@ -1,9 +1,11 @@
 import vampire.VampireDefaults as VampireDefaults
 import vampire.directory_utils
+import vampire.filename_utils
 import urllib
 import os
 import re
 import datetime
+import ast
 import logging
 logger = logging.getLogger(__name__)
 try:
@@ -68,6 +70,7 @@ class GFSDownloadTask(object):
         _variable = None
         _level = None
         _forecast_hr = None
+        _accumulate_days = None
         if 'dates' in self.params:
             _dates = self.params['dates']
         if 'start_date' in self.params:
@@ -82,15 +85,21 @@ class GFSDownloadTask(object):
             _level = self.params['level']
         if 'forecast_hr' in self.params:
             _forecast_hr = self.params['forecast_hr']
+        if 'accumulate_days' in self.params:
+            _accumulate_days = self.params['accumulate_days']
 
-        self.download_data(output_dir=output_dir, interval=self.params['interval'], variable=_variable,
-                           level=_level, forecast_hr=_forecast_hr, dates=_dates, start_date=_start_date,
-                           end_date=_end_date, overwrite=_overwrite)
+        _raw_dir = os.path.join(output_dir, "raw")
+        # download data (and accumulate to daily)
+        _raw_files_list = self.download_data(output_dir=output_dir, # interval=self.params['interval'],
+                                             variable=_variable, level=_level, forecast_hr=_forecast_hr,
+                                             dates=_dates, start_date=_start_date,
+                                             end_date=_end_date, overwrite=_overwrite)
         return None
 
-    def download_data(self, output_dir, interval, variable=None, level=None, forecast_hr=None, dates=None,
-                      start_date=None, end_date=None, overwrite=False):
-        """ Download GFS precipitation data for given interval.
+    def download_data(self, output_dir, #interval,
+                      variable=None, level=None, forecast_hr=None, dates=None,
+                      start_date=None, end_date=None, overwrite=False, accumulate_days=None, max_days=None):
+        """ Download GFS precipitation data for given interval and accumulate to given number of days if specified
 
         Download GFS precipitation data for given interval. Will download all available data unless start
         and/or end dates are provided.
@@ -118,7 +127,7 @@ class GFSDownloadTask(object):
         logger.info('entering download_data')
         base_url = self.vp.get('GFS', 'base_url') #'http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl?'
         #file=gfs.t18z.pgrb2.0p25.f006&lev_surface=on&var_APCP=on&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fgfs.2017080818' #pub/data/nccf/com/gfs/prod/gfs.' # real-time location
-        _hh = self.vp.get('GFS', 'hh') #18'
+        _hh = self.vp.get('GFS', 'model_cycle_runtime') #18'
         if forecast_hr is not None:
             _fcst_hr = forecast_hr
         else:
@@ -132,7 +141,16 @@ class GFSDownloadTask(object):
         else:
             _var = self.vp.get('GFS', 'variable') #'APCP'
 #        _date = '20170808' + _hh
-        _extent = self.vp.get('GFS', 'extent') #[0, 360, 90, -90]
+        _extent = ast.literal_eval(self.vp.get('GFS', 'extent')) #[0, 360, 90, -90]
+
+        if accumulate_days is not None:
+            _accumulate_days = accumulate_days
+        else:
+            _accumulate_days = self.vp.get('GFS', 'default_accumulate')
+        if max_days is not None:
+            _max_hrs = int(max_days) * 24
+        else:
+            _max_hrs = int(self.vp.get('GFS', 'max_days')) * 24
 
         if output_dir is not None:
             _output_dir = output_dir
@@ -140,8 +158,11 @@ class GFSDownloadTask(object):
             _output_dir = self.vp.get('GFS', 'data_dir')
 
         files_list = []
-        for i in dates:
-            _date = '{0:04d}{1:02d}{2:02d}{3}'.format(i.year, i.month, i.day, _hh)
+#        accum_files_list = []
+        _cur_dir = os.getcwd()
+        for d in dates:
+#            _d = datetime.datetime.strptime(i, '%Y-%m-%d')
+            _date = '{0:04d}{1:02d}{2:02d}{3}'.format(d.year, d.month, d.day, _hh)
             _file = 'gfs.t' + _hh + 'z.pgrb2.0p25.f' + _fcst_hr
             _file_str = 'file=' + _file
             _level_str = 'lev_' + _level + '=on'
@@ -161,14 +182,155 @@ class GFSDownloadTask(object):
             if not os.path.exists(_download_dir):
                 os.makedirs(_download_dir)
             os.chdir(_download_dir)
-            for i in range(6, 390, 6):
+            # every six hours from 6 to 240, then every 12 hours
+            _step = 6
+            i = _step
+            while i <= _max_hrs:
                 _fcst_hr_str = '{0:03d}'.format(i)
                 _file = 'gfs.t' + _hh + 'z.pgrb2.0p25.f' + _fcst_hr_str
                 _file_str = 'file=' + _file
                 url = base_url + _file_str + '&' + _level_str + '&' + _var_str + '&' + _extent_str + '&' + _dir_str
-                if overwrite or not os.path.exists(_file + '.grb'):
-                    urllib.urlretrieve(url, _file + '.grb')
-                    files_list.append(_file + '.grb')
+                _fname = _file + '.grb'
+                if overwrite or not os.path.exists(_fname):
+                    try:
+                        urllib.urlretrieve(url, _fname)
+                    except urllib.ContentTooShortError, e:
+                        print "Content too short!! Didn't download " + _file
+                        continue
+                    files_list.append(_fname)
+
+                if i == 240:
+                    # change step to 12 hrs
+                    _step = 12
+                i = i + _step
+
+        os.chdir(_cur_dir) # change back to working directory
+        return files_list #, accum_files_list
+
+
+@GFSTasksImpl.register_subclass('accumulate')
+class GFSAccumulateTask(object):
+    """ Initialise MODISDownloadTask object.
+
+    Implementation class for downloading MODIS products.
+
+    """
+    def __init__(self, params, vampire_defaults):
+        logger.debug('Initialising GFS accumulate task')
+        self.params = params
+        self.vp = vampire_defaults
+        return
+
+    def process(self):
+        logger.debug("Accumulating GFS data")
+        try:
+            data_dir = self.params['data_dir']
+        except Exception, e:
+            raise ConfigFileError("No data directory 'data_dir' specified.", e)
+        try:
+            output_dir = self.params['output_dir']
+        except Exception, e:
+            raise ConfigFileError("No output directory 'output_dir' specified.", e)
+        _accumulate_days = None
+        _dates = None
+        _data_pattern = None
+        _output_pattern = None
+        _overwrite = False
+        if 'number_of_days' in self.params:
+            _accumulate_days = self.params['number_of_days']
+        if 'dates' in self.params:
+            _dates = self.params['dates']
+        if 'data_pattern' in self.params:
+            _data_pattern = self.params['data_pattern']
+        if 'output_pattern' in self.params:
+            _output_pattern = self.params['output_pattern']
+        if 'overwrite' in self.params:
+            _overwrite = self.params['overwrite']
+        # accumulate downloaded data
+        _accum_files_list = self.accumulate_data(data_dir=data_dir, data_pattern=_data_pattern,
+                                                 output_dir=output_dir, output_pattern=_output_pattern,
+                                                 num_days=_accumulate_days, dates=_dates, overwrite=_overwrite)
+        return None
+
+    def _accumulate_data(self, files_list, output_dir, output_file):
+        _output = os.path.join(output_dir, output_file)
+        calculate_statistics.calc_sum(file_list=files_list, sum_file=_output)
         return files_list
 
+    def accumulate_data(self, data_dir=None, data_pattern=None, output_dir=None, output_pattern=None,
+                        num_days=None, dates=None, overwrite=False):
+        """ Accumulate GFS precipitation data for given interval and accumulate to given number of days if specified
 
+        Download GFS precipitation data for given interval. Will download all available data unless start
+        and/or end dates are provided.
+
+        Parameters
+        ----------
+        output_dir : str
+            Filename of raster file
+        interval : str
+            Filename of vector file
+        dates : str
+            Name of field labelling the zones within vector file
+        start_date : str
+            Filename of output table (.dbf or .csv)
+        end_date : str
+            F
+        overwrite : boolean
+
+        Returns
+        -------
+        None
+            Returns None
+
+        """
+        logger.info('entering accumulate_data')
+        files_list = []
+        _dates = []
+        if dates is None:
+            # get date from data directory name
+            _dir_s = os.path.basename(data_dir)[:-2]
+            _date = datetime.datetime.strptime(_dir_s, '%Y%m%d')
+            _dates.append(_date)
+        else:
+            _dates = dates
+
+        for d in _dates:
+            # find all files
+            _allfiles = vampire.directory_utils.get_matching_files(data_dir, data_pattern)
+            _cur_day = 0
+            _cur_hr = 0
+            _cur_accum_str = ''
+            _accum_window_start = 0
+            _accum_window_end = 0
+            _day_ptrs = []
+
+            _pattern = re.compile(data_pattern)
+
+            for idx, fname in enumerate(_allfiles):
+                # get forecast hour from filename
+                _base_fname = os.path.basename(fname)
+                _result = _pattern.match(_base_fname)
+                if _result:
+                    _forecast_hr = _result.group('forecast_hr')
+                    if int(_forecast_hr) % 24 == 0:
+                        # end of day
+                        _cur_day = _cur_day + 1
+                        _day_ptrs.append(idx)
+                        if _cur_day >= num_days:
+                            # accumulate last num_days
+                            _output_pattern = output_pattern.replace('{forecast_day}', ''.join(map(str,
+                                                                                                   range(_cur_day-num_days+1,
+                                                                                                         _cur_day+1))))
+                            _output_pattern = _output_pattern.replace('{year}', '{0}'.format(d.year))
+                            _output_pattern = _output_pattern.replace('{month}', '{0:0>2}'.format(d.month))
+                            _output_pattern = _output_pattern.replace('{day}', '{0:0>2}'.format(d.day))
+                            _new_filename = vampire.filename_utils.generate_output_filename(_base_fname, data_pattern, _output_pattern)
+                            if not os.path.exists(os.path.join(output_dir, _new_filename)) or overwrite:
+                                self._accumulate_data(_allfiles[_accum_window_start:_accum_window_end+1], output_dir, _new_filename)
+                            _accum_window_start = _day_ptrs[_cur_day-num_days]+1
+                            files_list.append(_new_filename)
+                    _accum_window_end = _accum_window_end + 1
+
+
+        return files_list
