@@ -77,6 +77,18 @@ run:
                     if 'publish' in params and params['publish'] == True:
                         pfile.write(_popn_impact.generate_publish_config())
                         pfile.write(_area_impact.generate_publish_config())
+
+                elif params['product'] == 'flood_forecast':
+                    _area_impact = BaseImpactProduct.BaseImpactProduct.create(impact_type='flood_impact_area',
+                                                                              country=params['country'],
+                                                                              valid_from_date=_product.valid_from_date,
+                                                                              valid_to_date=_product.valid_to_date
+                                                                              )
+                    pfile.write(_area_impact.generate_config(hazard_file=_product.product_file,
+                                                             hazard_dir=_product.product_dir,
+                                                             hazard_pattern=_product.product_pattern))
+
+
             if 'publish' in params and params['publish'] == True:
                 pfile.write(_product.generate_publish_config())
 
