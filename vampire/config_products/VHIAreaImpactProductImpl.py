@@ -130,7 +130,8 @@ class VHIAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
         cfg_string = """
     # calculate area impact (ha)
     - process: impact
-      type: area"""
+      type: area
+      hazard_type: vhi"""
         if hazard_file is not None:
             cfg_string += """
       hazard_file: {hazard_file}""".format(hazard_file=hazard_file)
