@@ -2,6 +2,7 @@ import vampire.VampireDefaults as VampireDefaults
 import RainfallAnomalyTaskImpl
 import SPITaskImpl
 import DaysSinceLastRainTaskImpl
+import FloodAlertTaskImpl
 import VCITaskImpl
 import TCITaskImpl
 import VHITaskImpl
@@ -130,6 +131,22 @@ class VHITask(object):
     def __init__(self, params, vampire_defaults):
         logger.debug('Initialising MODIS download task')
         self.impl = VHITaskImpl.VHITaskImpl(params, vampire_defaults)
+        return
+
+    def process(self):
+        self.impl.process()
+        return None
+
+@ClimateAnalysisTasksImpl.register_subclass('flood_alert')
+class FloodAlertTask(object):
+    """ Initialise FloodAlertTask object.
+
+    Implementation class for predicting flood products.
+
+    """
+    def __init__(self, params, vampire_defaults):
+        logger.debug('Initialising Flood Alert task')
+        self.impl = FloodAlertTaskImpl.FloodAlertTaskImpl(params, vampire_defaults)
         return
 
     def process(self):
