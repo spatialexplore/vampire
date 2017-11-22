@@ -8,10 +8,11 @@ import MODISEVILongtermAverageProductImpl
 import MODISLSTLongtermAverageProductImpl
 import CHIRPSLongtermAverageProductImpl
 import DaysSinceLastRainProductImpl
+import FloodForecastProductImpl
 import logging
 logger = logging.getLogger(__name__)
 
-class BaseProduct():
+class BaseProduct(object):
     subclasses = {}
 
     @classmethod
@@ -241,5 +242,36 @@ class DaysSinceLastRainProduct(BaseProduct):
                                          threshold=threshold, max_days=max_days, download=download,
                                          crop=crop, crop_dir=crop_dir)
 
+
+@BaseProduct.register_subclass('flood_forecast')
+class FloodForecastProduct(BaseProduct):
+    # ...
+    def __init__(self, country, product_date, interval, vampire_defaults):
+        self.impl = FloodForecastProductImpl.FloodForecastProductImpl(country, product_date, interval, vampire_defaults)
+        return
+
+    @property
+    def valid_from_date(self):
+        return self.impl.valid_from_date
+    @property
+    def valid_to_date(self):
+        return self.impl.valid_to_date
+    @property
+    def product_file(self):
+        return self.impl.product_file
+    @property
+    def product_dir(self):
+        return self.impl.product_dir
+    @property
+    def product_pattern(self):
+        return self.impl.product_pattern
+
+    def generate_header(self):
+        return self.impl.generate_header()
+
+    def generate_config(self, data_dir=None, output_dir=None, file_pattern=None,
+                        days=None):
+        return self.impl.generate_config(data_dir=data_dir, output_dir=output_dir, file_pattern=file_pattern,
+                                         accumulate_days=days)
 
 
