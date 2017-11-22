@@ -217,11 +217,12 @@ class MODISDownloadTask(BaseTaskImpl.BaseTaskImpl):
             print "Cannot find mrt_dir"
             raise
         try:
-            if platform == 'Windows':
+            _platform = platform.system()
+            if _platform == 'Windows':
                 subprocess.check_call([os.path.join(mrt_path,'mrtmosaic.exe'),
                                        '-i', file_list, '-o', output_filename,
                                        '-s', subset])
-            elif platform == 'Linux':
+            elif _platform == 'Linux':
                 subprocess.check_call([os.path.join(mrt_path,'mrtmosaic'),
                                        '-i', file_list, '-o', output_filename,
                                        '-s', subset])
