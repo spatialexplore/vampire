@@ -14,9 +14,9 @@ except ImportError:
     import calculate_statistics_os as calculate_statistics
 
 class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
-    """ Initialise RainfallAnomalyTaskImpl object.
+    """ Initialise AreaImpactTaskImpl object.
 
-    Abstract implementation class for processing rainfall anomaly.
+    Abstract implementation class for calculating hazard impact by area.
 
     """
     def __init__(self, params, vampire_defaults):
@@ -26,6 +26,11 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
 
     def process(self):
         logger.debug("Compute area of event impact")
+
+        if 'hazard_type' in self.params:
+            _hazard_var = self.params['hazard_type']
+        else:
+            raise BaseTaskImpl.ConfigFileError('No hazard type "hazard_type" set', None)
 
         if 'start_date' in self.params:
             _start_date = self.params['start_date']
@@ -74,10 +79,11 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
         else:
             _threshold = None
 
+
         self.calculate_impact_area(hazard_raster=_hazard_file, hazard_dir=_hazard_dir, hazard_pattern=_hazard_pattern,
                                  boundary=_boundary_file, b_field=_boundary_field, threshold=_threshold,
                                  output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
-                                 start_date=_start_date, end_date=_end_date)
+                                 start_date=_start_date, end_date=_end_date, hazard_var=_hazard_var)
 
         return
 
@@ -101,7 +107,8 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
 
         if output_file is None:
             if output_pattern is not None:
-                _input_pattern = self.vp.get('MODIS_VHI', 'vhi_crop_pattern')
+#                _input_pattern = self.vp.get('MODIS_VHI', 'vhi_crop_pattern')
+                _input_pattern = self.vp.get('hazard_impact', '{0}_input_pattern'.format(hazard_var))
                 _output_file = filename_utils.generate_output_filename(os.path.basename(_hazard_raster),
                                                                        _input_pattern, output_pattern)
                 _output_file = os.path.join(output_dir, _output_file)
@@ -121,7 +128,8 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
                                                            zone_field=b_field, output_table=_output_file)
         # convert to hectares
         # TODO: get multiplier from defaults depending on resolution of hazard raster
-        csv_utils.calc_field(table_name=_output_file, new_field='area_aff', cal_field='COUNT', multiplier=6.25)
+        _multiplier = self.vp.get('hazard_impact', '{0}_area_multiplier'.format(hazard_var))
+        csv_utils.calc_field(table_name=_output_file, new_field='area_aff', cal_field='COUNT', multiplier=_multiplier)
         # add start and end date fields and set values
         csv_utils.add_field(table_name=_output_file, new_field='start_date', value=start_date)
         csv_utils.add_field(table_name=_output_file, new_field='end_date', value=end_date)
