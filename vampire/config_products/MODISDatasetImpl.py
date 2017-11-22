@@ -31,7 +31,10 @@ class MODISDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
         self.region = region
 
         if self.product_date is not None:
-            if self.interval.lower() == 'dekad':
+            if self.interval.lower() == 'daily':
+                self.start_date = self.product_date
+                self.end_date = self.product_date
+            elif self.interval.lower() == 'dekad':
                 self.start_date = self.product_date + datetime.timedelta(days=-10)
                 self.end_date = product_date
             elif self.interval.lower() == '8days':
