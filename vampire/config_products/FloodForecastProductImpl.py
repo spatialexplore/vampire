@@ -162,6 +162,10 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
                                                            output_file=None, output_dir=_output_dir,
                                                            output_pattern=_output_pattern, num_years=f)
 
+        self.product_pattern = self.vp.get('FLOOD_FORECAST', 'flood_forecast_pattern')
+        self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
+        self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.product_date.month))
+        self.product_pattern = self.product_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.product_date.day))
         return config
 
     def generate_flood_forecast_section(self, data_dir, file_pattern,
