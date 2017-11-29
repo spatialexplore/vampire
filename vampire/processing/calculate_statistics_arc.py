@@ -219,7 +219,8 @@ def calc_zonal_statistics(raster_file, polygon_file, zone_field, output_table):
         _output_dbf = '{0}.dbf'.format(output_table)
         _output_csv = '{0}.csv'.format(output_table)
     _output_dbf = '{0}.dbf'.format(os.path.splitext(os.path.basename(raster_file))[0])
-
+    if len(_output_dbf) > 12:
+        _output_dbf = 'temp_output.dbf'
     arcpy.env.workspace = os.path.dirname(raster_file)
     _output_filename = os.path.basename(_output_dbf)
     # now calculate zonal statistics as table
