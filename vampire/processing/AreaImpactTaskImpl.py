@@ -119,16 +119,19 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
         else:
             _output_file = output_file
 
-        # reclassify hazard raster to generate mask of all <= threshold
-        _reclass_raster = os.path.join(os.path.dirname(_output_file), 'hazard_area_reclass.tif')
-        impact_analysis.reclassify_raster(raster=_hazard_raster, threshold=_threshold, output_raster=_reclass_raster)
+        if _threshold == '':
+            _reclass_raster = _hazard_raster
+        else:
+            # reclassify hazard raster to generate mask of all <= threshold
+            _reclass_raster = os.path.join(os.path.dirname(_output_file), 'hazard_area_reclass.tif')
+            impact_analysis.reclassify_raster(raster=_hazard_raster, threshold=_threshold, output_raster=_reclass_raster)
 
         # calculate impact on boundary
         stats = calculate_statistics.calc_zonal_statistics(raster_file=_reclass_raster, polygon_file=boundary,
                                                            zone_field=b_field, output_table=_output_file)
         # convert to hectares
         # TODO: get multiplier from defaults depending on resolution of hazard raster
-        _multiplier = self.vp.get('hazard_impact', '{0}_area_multiplier'.format(hazard_var))
+        _multiplier = float(self.vp.get('hazard_impact', '{0}_area_multiplier'.format(hazard_var)))
         csv_utils.calc_field(table_name=_output_file, new_field='area_aff', cal_field='COUNT', multiplier=_multiplier)
         # add start and end date fields and set values
         csv_utils.add_field(table_name=_output_file, new_field='start_date', value=start_date)
