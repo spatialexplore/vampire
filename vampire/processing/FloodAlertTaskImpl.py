@@ -105,7 +105,7 @@ class FloodAlertTaskImpl(BaseTaskImpl.BaseTaskImpl):
             if dst_filename is None:
                 # TODO this doesn't work for flood alert file names!! Not appropriate
 
-                _dst_pattern = dst_pattern.replace('{num_years}', '{0}yrs'.format(num_years))
+                _dst_pattern = dst_pattern.replace('{num_years}', '{0:0>2}yrs'.format(num_years))
                 # get new filename from directory and pattern
                 _dst_filename = os.path.join(dst_dir, filename_utils.generate_output_filename(
                     os.path.split(f)[1], forecast_pattern, _dst_pattern))
