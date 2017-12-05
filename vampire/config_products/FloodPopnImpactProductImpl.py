@@ -1,17 +1,16 @@
 import BaseDataset
 import ImpactProductImpl
 import os
-import ast
 import datetime
 import dateutil.rrule
 import dateutil.relativedelta
 import logging
 logger = logging.getLogger(__name__)
 
-class FloodAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
-    """ Initialise FloodAreaImpactProductImpl.
+class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
+    """ Initialise FloodPopnImpactProductImpl.
 
-    Implementation class for FloodAreaImpactProduct.
+    Implementation class for FloodPopnImpactProduct.
     Initialise object parameters.
 
     Parameters
@@ -29,7 +28,7 @@ class FloodAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
 
     """
     def __init__(self, country, valid_from_date, valid_to_date, vampire_defaults):
-        super(FloodAreaImpactProductImpl, self).__init__()
+        super(FloodPopnImpactProductImpl, self).__init__()
         self.country = country
         self.valid_from_date = valid_from_date
         self.valid_to_date = valid_to_date
@@ -81,17 +80,39 @@ class FloodAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
     def generate_config(self, hazard_file, hazard_dir, hazard_pattern,
                         flood_years=None, forecast_days=None, forecast_period=None,
                         boundary_file=None, boundary_dir=None, boundary_pattern=None, boundary_field=None,
-                        output_file=None, output_dir=None, output_pattern=None, masked=False):
+                        population_file=None, output_file=None, output_dir=None, output_pattern=None, masked=False):
         config = """
-    # Calculate area impact
+    # Calculate population impact
         """
         _boundary_file = None
         _boundary_pattern = None
         _boundary_dir = None
         _boundary_field = None
+        _population_file = None
         _output_file = None
         _output_dir = None
         _output_pattern = None
+
+#         if hazard_file is not None:
+#             _hazard_file = hazard_file
+#         else:
+#             if hazard_dir is None:
+#                 _hazard_dir = self.vp.get('MODIS_VHI', 'vhi_product_dir')
+#             else:
+#                 _hazard_dir = hazard_dir
+#             if hazard_pattern is None:
+#                 _hazard_pattern = self.vp.get('MODIS_VHI', 'vhi_crop_pattern')
+#             else:
+#                 _hazard_pattern = hazard_pattern
+# #        if masked:
+# #            _hazard_dir = self.vp.get('MODIS_VHI', 'vhi_product_dir')
+# #            _hazard_pattern = self.vp.get('MODIS_VHI', 'vhi_crop_pattern')
+# #        else:
+# #            _hazard_dir = self.vp.get('MODIS_VHI', 'vhi_product_dir')
+# #            _hazard_pattern = self.vp.get('MODIS_VHI', 'vhi_pattern')
+#             _hazard_pattern = _hazard_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
+#             _hazard_pattern = _hazard_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(self.product_date.month))
+#             _hazard_pattern = _hazard_pattern.replace('(?P<day>\d{2})', '(?P<day>{0})'.format(self.product_date.day))
 
         if boundary_file is not None:
             _boundary_file = boundary_file
@@ -114,7 +135,12 @@ class FloodAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
                 self.output_pattern = output_pattern
             else:
                 self.output_dir = self.vp.get('hazard_impact', 'flood_output_dir')
-                self.output_pattern = self.vp.get('hazard_impact', 'flood_area_output_pattern')
+                self.output_pattern = self.vp.get('hazard_impact', 'flood_popn_output_pattern')
+
+        if population_file is not None:
+            _population_file = population_file
+        else:
+            _population_file = self.vp.get_country(self.country)['population_layer']
 
         if flood_years is None:
             _flood_years = ast.literal_eval(self.vp.get('FLOOD_FORECAST', 'flood_years'))
@@ -138,24 +164,24 @@ class FloodAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
                 _output_pattern = _output_pattern.replace('{forecast_period}', '{0}'.format(_cur_forecast))
                 _valid_from_date = self.valid_from_date + datetime.timedelta(i)
                 _valid_to_date = self.valid_to_date + datetime.timedelta(i+_forecast_days-1)
-                config += self._generate_area_impact_section(hazard_file=hazard_file, hazard_dir=hazard_dir,
-                                                             hazard_pattern=_hazard_pattern, boundary_file=_boundary_file,
+                config += self._generate_popn_impact_section(hazard_file=hazard_file, hazard_dir=hazard_dir,
+                                                             hazard_pattern=hazard_pattern, boundary_file=_boundary_file,
                                                              boundary_dir=_boundary_dir, boundary_pattern=_boundary_pattern,
-                                                             boundary_field=_boundary_field,
+                                                             boundary_field=_boundary_field, population_file=_population_file,
                                                              output_file=self.output_file, output_dir=self.output_dir,
-                                                             output_pattern=_output_pattern,
-                                                             start_date=_valid_from_date, end_date=_valid_to_date)
+                                                             output_pattern=self.output_pattern,
+                                                             start_date=self.valid_from_date, end_date=self.valid_to_date)
         return config
 
-    def _generate_area_impact_section(self, hazard_file, hazard_dir, hazard_pattern,
+    def _generate_popn_impact_section(self, hazard_file, hazard_dir, hazard_pattern,
                                       boundary_file, boundary_dir, boundary_pattern, boundary_field,
+                                      population_file,
                                       output_file, output_dir, output_pattern,
                                       start_date, end_date):
         cfg_string = """
-    # calculate area impact (ha)
+    # Calculate population impact (number of people)
     - process: impact
-      type: area
-      hazard_type: flood"""
+      type: population"""
         if hazard_file is not None:
             cfg_string += """
       hazard_file: {hazard_file}""".format(hazard_file=hazard_file)
@@ -170,11 +196,15 @@ class FloodAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
             cfg_string += """
       boundary_dir: {boundary_dir}
       boundary_pattern: '{boundary_pattern}'""".format(boundary_dir=boundary_dir, boundary_pattern=boundary_pattern)
+
         cfg_string += """
-      boundary_field: {boundary_field}""".format(boundary_field=boundary_field)
+      boundary_field: {boundary_field}
+      population_file: {population_file}""".format(boundary_field=boundary_field, population_file=population_file)
+
         if output_file is not None:
             cfg_string += """
-      output_file: {output_dir}""".format(output_dir=output_dir)
+      output_file: {output_dir}
+      """.format(output_dir=output_dir)
         else:
             cfg_string += """
       output_dir: {output_dir}

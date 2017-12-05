@@ -27,6 +27,11 @@ class PopulationImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
     def process(self):
         logger.debug("Compute population affected by event")
 
+        if 'hazard_type' in self.params:
+            _hazard_var = self.params['hazard_type']
+        else:
+            raise BaseTaskImpl.ConfigFileError('No hazard type "hazard_type" set', None)
+
         if 'start_date' in self.params:
             _start_date = self.params['start_date']
         else:
@@ -88,7 +93,7 @@ class PopulationImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
                                  population_raster=_population_file,
                                  boundary=_boundary_file, b_field=_boundary_field, threshold=_threshold,
                                  output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
-                                 start_date=_start_date, end_date=_end_date)
+                                 start_date=_start_date, end_date=_end_date, hazard_var=_hazard_var)
 
     def calculate_impact_popn(self, hazard_raster, hazard_dir, hazard_pattern, threshold,
                               population_raster, boundary, b_field, output_file,
@@ -110,7 +115,8 @@ class PopulationImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
 
         if output_file is None:
             if output_pattern is not None:
-                _input_pattern = self.vp.get('MODIS_VHI', 'vhi_crop_pattern')
+                _input_pattern = self.vp.get('hazard_impact', '{0}_input_pattern'.format(hazard_var))
+#                _input_pattern = self.vp.get('MODIS_VHI', 'vhi_crop_pattern')
                 _output_file = filename_utils.generate_output_filename(os.path.basename(_hazard_raster),
                                                                        _input_pattern, output_pattern)
                 _output_file = os.path.join(output_dir, _output_file)
@@ -121,9 +127,12 @@ class PopulationImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
         else:
             _output_file = output_file
 
-        # reclassify hazard raster to generate mask of all <= threshold
-        _reclass_raster = os.path.join(os.path.dirname(_output_file), 'hazard_popn_reclass.tif')
-        impact_analysis.reclassify_raster(raster=_hazard_raster, threshold=_threshold, output_raster=_reclass_raster)
+        if _threshold == '':
+            _reclass_raster = _hazard_raster
+        else:
+            # reclassify hazard raster to generate mask of all <= threshold
+            _reclass_raster = os.path.join(os.path.dirname(_output_file), 'hazard_popn_reclass.tif')
+            impact_analysis.reclassify_raster(raster=_hazard_raster, threshold=_threshold, output_raster=_reclass_raster)
 
         if population_raster is None:
             _hazard_raster = _reclass_raster
