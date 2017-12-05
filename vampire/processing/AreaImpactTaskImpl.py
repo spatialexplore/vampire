@@ -1,9 +1,11 @@
-import BaseTaskImpl
-import os
-import vampire.directory_utils as directory_utils
-import vampire.filename_utils as filename_utils
-import vampire.csv_utils as csv_utils
 import logging
+import os
+
+import BaseTaskImpl
+import csv_utils as csv_utils
+import directory_utils as directory_utils
+import filename_utils as filename_utils
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -128,7 +130,7 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
                                                            zone_field=b_field, output_table=_output_file)
         # convert to hectares
         # TODO: get multiplier from defaults depending on resolution of hazard raster
-        _multiplier = self.vp.get('hazard_impact', '{0}_area_multiplier'.format(hazard_var))
+        _multiplier = float(self.vp.get('hazard_impact', '{0}_area_multiplier'.format(hazard_var)))
         csv_utils.calc_field(table_name=_output_file, new_field='area_aff', cal_field='COUNT', multiplier=_multiplier)
         # add start and end date fields and set values
         csv_utils.add_field(table_name=_output_file, new_field='start_date', value=start_date)
