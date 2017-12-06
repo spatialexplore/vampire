@@ -1,11 +1,14 @@
-import BaseTaskImpl
-import os
-import regex
-import functools
 import datetime
-import vampire.directory_utils as directory_utils
-import vampire.filename_utils as filename_utils
+import functools
 import logging
+import os
+
+import regex
+
+import BaseTaskImpl
+import directory_utils as directory_utils
+import filename_utils as filename_utils
+
 logger = logging.getLogger(__name__)
 try:
     import precipitation_analysis_arc as precipitation_analysis
