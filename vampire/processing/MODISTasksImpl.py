@@ -1,18 +1,21 @@
-import vampire.VampireDefaults as VampireDefaults
-import BaseTaskImpl
-import vampire.directory_utils
-import vampire.filename_utils
-import pymodis.downmodis as downmodis
-import os
-import errno
 import datetime
-import dateutil.parser
+import errno
 import glob
-import gdal
 import json
+import os
 import platform
-import subprocess
 import re
+import subprocess
+
+import dateutil.parser
+import gdal
+import pymodis.downmodis as downmodis
+
+import BaseTaskImpl
+import directory_utils
+import filename_utils
+import VampireDefaults
+
 try:
     import calculate_statistics_arc as calculate_statistics
 except ImportError:
@@ -171,7 +174,7 @@ class MODISDownloadTask(BaseTaskImpl.BaseTaskImpl):
         _mrt_path = self.vp.get('directories', 'mrt_dir')
         _list_filename = os.path.join(output_dir, "file_list.txt")
         self._write_mosaic_list(_list_filename, files)
-        _new_filename = vampire.filename_utils.generate_output_filename(input_filename=os.path.basename(files[0]),
+        _new_filename = filename_utils.generate_output_filename(input_filename=os.path.basename(files[0]),
                                                                         in_pattern=self.vp.get('MODIS',
                                                                                          'modis_tile_pattern'),
                                                                         out_pattern=self.vp.get('MODIS',
@@ -292,8 +295,8 @@ class MODISExtractTask(BaseTaskImpl.BaseTaskImpl):
         _subset_name = self.vp.get('MODIS_PRODUCTS', '{0}.NDVI_Name'.format(_product))
         new_files = self._extract_subset(input_dir, output_dir, patterns,
                                          _spectral_subset, _subset_name,
-                                         #self.vampire.get('MODIS_NDVI', 'ndvi_spectral_subset'),
-                                         #self.vampire.get('MODIS_NDVI', 'ndvi_subset_name'),
+                                         #self.vampire_tmp.get('MODIS_NDVI', 'ndvi_spectral_subset'),
+                                         #self.vampire_tmp.get('MODIS_NDVI', 'ndvi_subset_name'),
                                          overwrite)
         logger.info('leaving extract_NDVI')
         return new_files
@@ -318,8 +321,8 @@ class MODISExtractTask(BaseTaskImpl.BaseTaskImpl):
         _subset_name = self.vp.get('MODIS_PRODUCTS', '{0}.EVI_Name'.format(_product))
         new_files = self._extract_subset(input_dir, output_dir, patterns,
                                          _spectral_subset, _subset_name,
-                                         #json.loads(self.vampire.get('MODIS_EVI', 'evi_spectral_subset')),
-                                         #self.vampire.get('MODIS_EVI', 'evi_subset_name'),
+                                         #json.loads(self.vampire_tmp.get('MODIS_EVI', 'evi_spectral_subset')),
+                                         #self.vampire_tmp.get('MODIS_EVI', 'evi_subset_name'),
                                          overwrite)
         logger.info('leaving extract_EVI')
         return new_files
@@ -362,7 +365,7 @@ class MODISExtractTask(BaseTaskImpl.BaseTaskImpl):
 
     def _extract_subset(self, input_dir, output_dir, patterns, subset, subset_name, overwrite = False):
         logger.info('entering _extract_subset')
-        _all_files = vampire.directory_utils.get_matching_files(input_dir, patterns[0])
+        _all_files = directory_utils.get_matching_files(input_dir, patterns[0])
         if not _all_files:
             logger.debug('Extracting subset {0}. No files found in {1} with pattern {2}'.format(
                 subset_name, input_dir, patterns[0]))
@@ -375,7 +378,7 @@ class MODISExtractTask(BaseTaskImpl.BaseTaskImpl):
         new_files = []
         for _ifl in _all_files:
             # generate parameter file
-            _nfl = vampire.filename_utils.generate_output_filename(os.path.basename(_ifl), patterns[0], patterns[1])
+            _nfl = filename_utils.generate_output_filename(os.path.basename(_ifl), patterns[0], patterns[1])
             _ofl = os.path.join(output_dir, _nfl)
             _checkfl = "{0}.{1}{2}".format(os.path.splitext(_ofl)[0], subset_name, os.path.splitext(_ofl)[1])
             if not os.path.exists(_checkfl) or overwrite == True:
@@ -524,9 +527,9 @@ class MODISCalculateAverageTask(BaseTaskImpl.BaseTaskImpl):
         nightFiles = set(os.listdir(night_dir))
         if patterns[0]:
             if not os.path.isdir(day_dir):
-                dayFiles = vampire.directory_utils.get_matching_files(os.path.dirname(day_dir), patterns[0])
+                dayFiles = directory_utils.get_matching_files(os.path.dirname(day_dir), patterns[0])
             else:
-                dayFiles = vampire.directory_utils.get_matching_files(day_dir, patterns[0])
+                dayFiles = directory_utils.get_matching_files(day_dir, patterns[0])
         else:
             dayFiles = list(os.listdir(day_dir))
         print "Day files: ", dayFiles
@@ -567,7 +570,7 @@ class MODISCalculateAverageTask(BaseTaskImpl.BaseTaskImpl):
         else:
             _output_pattern = output_pattern
         if country is None:
-            _country = self.vp.get('vampire', 'home_country')
+            _country = self.vp.get('vampire_tmp', 'home_country')
         else:
             _country = country
         if input_pattern is None:
@@ -601,12 +604,12 @@ class MODISCalculateAverageTask(BaseTaskImpl.BaseTaskImpl):
             _interval = self.vp.get('MODIS_PRODUCTS', '{0}.interval'.format(product))
 
         # if product is not None:
-        #     _interval = self.vampire.get('MODIS_PRODUCTS', '{0}.interval'.format(product))
+        #     _interval = self.vampire_tmp.get('MODIS_PRODUCTS', '{0}.interval'.format(product))
         # else:
         #     # use default - monthly
         #     _interval = interval
 
-        _all_files = vampire.directory_utils.get_matching_files(input_dir, input_pattern)
+        _all_files = directory_utils.get_matching_files(input_dir, input_pattern)
         _file_list = {}
         _yrs = []
         _doy = []
@@ -691,11 +694,11 @@ class MODISCalculateAverageTask(BaseTaskImpl.BaseTaskImpl):
             os.makedirs(output_dir)
         for d in _file_list:
             fl = _file_list[d]
-            newfl = vampire.directory_utils.unzip_file_list(fl)
+            newfl = directory_utils.unzip_file_list(fl)
             if len(fl) != 0:
                 for func in _function_list:
                     _fn_output_pattern = _output_pattern.replace('{statistic}', func.lower())
-                    newfilename = vampire.filename_utils.generate_output_filename(os.path.basename(fl[0]),
+                    newfilename = filename_utils.generate_output_filename(os.path.basename(fl[0]),
                                                                                   _input_pattern, _fn_output_pattern)
                     self._calculate_stats(newfl, newfilename, output_dir, [func])
 
@@ -705,10 +708,10 @@ class MODISCalculateAverageTask(BaseTaskImpl.BaseTaskImpl):
 #                 # for each month, calculate long term average
 #                 if m in _file_list:
 #                     fl = _file_list[m]
-#                     newfl = vampire.directory_utils.unzip_file_list(fl)
+#                     newfl = vampire_tmp.directory_utils.unzip_file_list(fl)
 #                     for func in function_list:
 #                         _fn_output_pattern = _output_pattern.replace('{statistic}', func.lower())
-#                         newfilename = vampire.filename_utils.generate_output_filename(fl, _input_pattern, _fn_output_pattern)
+#                         newfilename = vampire_tmp.filename_utils.generate_output_filename(fl, _input_pattern, _fn_output_pattern)
 # #                    newfilename = '{0}.{1}-{2}.{3}.monthly.{4}yrs'.format(_base_name, _syr, _eyr, m, _numyrs)
 #                         self._calculate_stats(newfl, newfilename, output_dir, [func])
 
