@@ -1,8 +1,10 @@
+import datetime
+import logging
+import os
+
 import BaseDataset
 import RasterProductImpl
-import datetime
-import os
-import logging
+
 logger = logging.getLogger(__name__)
 
 class TCIProductImpl(RasterProductImpl.RasterProductImpl):
