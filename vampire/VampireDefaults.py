@@ -1,12 +1,13 @@
 __author__ = 'rochelle'
 #!/usr/bin/env python
 
-import optparse, sys, os, traceback, errno
 import ast
-import re
-import json
-import ExtParser
 import logging
+import os
+import re
+
+import ExtParser
+
 
 class VampireDefaults:
 
