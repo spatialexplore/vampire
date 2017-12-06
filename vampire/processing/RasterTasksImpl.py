@@ -1,10 +1,13 @@
-import vampire.VampireDefaults as VampireDefaults
-import vampire.directory_utils
-import vampire.filename_utils
-import vampire.processing.raster_utils as raster_utils
-import BaseTaskImpl
-import os
 import logging
+import os
+
+import processing.raster_utils as raster_utils
+
+import BaseTaskImpl
+import directory_utils
+import filename_utils
+import VampireDefaults as VampireDefaults
+
 logger = logging.getLogger(__name__)
 try:
     import calculate_statistics_arc as calculate_statistics
@@ -77,7 +80,7 @@ class RasterCropTask(BaseTaskImpl.BaseTaskImpl):
         try:
             _boundary_file = self.params['boundary_file']
         except Exception, e:
-            raise BaseTaskImpl.ConfigFileError("No boundary file specified." ,e)
+            raise BaseTaskImpl.ConfigFileError("No boundary file specified.", e)
         self.crop_files(input_dir=_input_dir, output_dir=_output_dir, boundary_file=_boundary_file,
                       file_pattern=_pattern, output_pattern=_out_pattern, overwrite=_overwrite,
                       nodata=_no_data)
@@ -156,7 +159,7 @@ class RasterReprojectTask(BaseTaskImpl.BaseTaskImpl):
                          slave_file, slave_dir, slave_pattern,
                          output_file, output_dir, output_pattern):
         if master_file is None:
-            _file_list = vampire.directory_utils.get_matching_files(master_dir, master_pattern)
+            _file_list = directory_utils.get_matching_files(master_dir, master_pattern)
             if _file_list is not None:
                 _master_file = _file_list[0]
             else:
@@ -165,7 +168,7 @@ class RasterReprojectTask(BaseTaskImpl.BaseTaskImpl):
             _master_file = master_file
 
         if slave_file is None:
-            _file_list = vampire.directory_utils.get_matching_files(slave_dir, slave_pattern)
+            _file_list = directory_utils.get_matching_files(slave_dir, slave_pattern)
             if _file_list is not None:
                 _slave_file = _file_list[0]
             else:
@@ -182,7 +185,7 @@ class RasterReprojectTask(BaseTaskImpl.BaseTaskImpl):
             if output_pattern is None:
                 raise ValueError, "No output pattern provided."
             _output_dir = output_dir
-            _output_file = os.path.join(_output_dir, vampire.filename_utils.generate_output_filename(
+            _output_file = os.path.join(_output_dir, filename_utils.generate_output_filename(
                 os.path.basename(_slave_file), slave_pattern, output_pattern, False))
 
         if not os.path.isdir(_output_dir):
@@ -259,7 +262,7 @@ class RasterZonalStatisticsTask(BaseTaskImpl.BaseTaskImpl):
                               zone_field, output_dir, output_file, output_pattern):
 
         if raster_file is None:
-            _file_list = vampire.directory_utils.get_matching_files(raster_dir, raster_pattern)
+            _file_list = directory_utils.get_matching_files(raster_dir, raster_pattern)
             if _file_list is not None:
                 _raster_file = _file_list[0]
             else:
@@ -268,7 +271,7 @@ class RasterZonalStatisticsTask(BaseTaskImpl.BaseTaskImpl):
             _raster_file = raster_file
 
         if polygon_file is None:
-            _file_list = vampire.directory_utils.get_matching_files(polygon_dir, polygon_pattern)
+            _file_list = directory_utils.get_matching_files(polygon_dir, polygon_pattern)
             if _file_list is not None:
                 _polygon_file = _file_list[0]
             else:
@@ -282,7 +285,7 @@ class RasterZonalStatisticsTask(BaseTaskImpl.BaseTaskImpl):
             if output_pattern is None:
                 raise ValueError, "No output pattern provided."
             _output_dir = output_dir
-            _output_file = os.path.join(_output_dir, vampire.filename_utils.generate_output_filename(
+            _output_file = os.path.join(_output_dir, filename_utils.generate_output_filename(
                 os.path.basename(_raster_file), raster_pattern, output_pattern, False))
         else:
             _output_file = output_file
@@ -358,7 +361,7 @@ class RasterApplyMaskTask(BaseTaskImpl.BaseTaskImpl):
                           polygon_file, polygon_dir, polygon_pattern,
                           output_file, output_dir, output_pattern, nodata=False):
         if raster_file is None:
-            _file_list = vampire.directory_utils.get_matching_files(raster_dir, raster_pattern)
+            _file_list = directory_utils.get_matching_files(raster_dir, raster_pattern)
             if _file_list:
                 _raster_file = _file_list[0]
             else:
@@ -367,7 +370,7 @@ class RasterApplyMaskTask(BaseTaskImpl.BaseTaskImpl):
             _raster_file = raster_file
 
         if polygon_file is None:
-            _file_list = vampire.directory_utils.get_matching_files(polygon_dir, polygon_pattern)
+            _file_list = directory_utils.get_matching_files(polygon_dir, polygon_pattern)
             if _file_list is not None:
                 _polygon_file = _file_list[0]
             else:
@@ -381,7 +384,7 @@ class RasterApplyMaskTask(BaseTaskImpl.BaseTaskImpl):
             if output_pattern is None:
                 raise ValueError, "No output pattern provided."
             _output_dir = output_dir
-            _output_file = os.path.join(_output_dir, vampire.filename_utils.generate_output_filename(
+            _output_file = os.path.join(_output_dir, filename_utils.generate_output_filename(
                 os.path.basename(_raster_file), raster_pattern, output_pattern, False))
         else:
             _output_file = output_file
