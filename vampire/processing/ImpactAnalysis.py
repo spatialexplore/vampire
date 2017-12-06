@@ -1,13 +1,12 @@
+import logging
 import os
-import regex
-import datetime
-import dateutil
-import functools
+
 import vampire.VampireDefaults as VampireDefaults
+
+import vampire.csv_utils as csv_utils
 import vampire.directory_utils as directory_utils
 import vampire.filename_utils as filename_utils
-import vampire.csv_utils as csv_utils
-import logging
+
 logger = logging.getLogger(__name__)
 
 
