@@ -1,7 +1,9 @@
+import logging
+import os
+
 import BaseDataset
 import RasterProductImpl
-import os
-import logging
+
 logger = logging.getLogger(__name__)
 
 class VCIProductImpl(RasterProductImpl.RasterProductImpl):
