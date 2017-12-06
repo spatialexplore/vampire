@@ -1,9 +1,10 @@
-import vampire.VampireDefaults as VampireDefaults
-import BaseTaskImpl
+import logging
+
 import AreaImpactTaskImpl
 import PopulationImpactTaskImpl
 import PovertyImpactTaskImpl
-import logging
+import VampireDefaults
+
 logger = logging.getLogger(__name__)
 
 class ImpactTasksImpl():
