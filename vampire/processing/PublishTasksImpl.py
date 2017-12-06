@@ -1,8 +1,11 @@
-import vampire.VampireDefaults as VampireDefaults
-import vampire.directory_utils
-import PublishProductImpl
-import GISServer
 import logging
+
+import GISServer
+import PublishProductTasksImpl
+import directory_utils
+import database_utils
+import VampireDefaults
+
 logger = logging.getLogger(__name__)
 
 class PublishTasksImpl():
@@ -37,8 +40,8 @@ class PublishToGISServerTask(object):
         logger.debug('Initialising publish to GIS server task')
         self.params = params
         self.vp = vampire_defaults
-        self.product = PublishProductImpl.PublishProductImpl.create(self.params['product'].lower(),
-                                                                    self.params, self.vp)
+        self.product = PublishProductTasksImpl.PublishProductTasksImpl.create(self.params['product'].lower(),
+                                                                              self.params, self.vp)
         self.server = GISServer.GISServer.create(self.vp.get('vampire', 'gis_server').lower(), self.vp)
         return
 
@@ -62,8 +65,8 @@ class PublishToDatabaseTask(object):
         logger.debug('Initialising publish to database task')
         self.params = params
         self.vp = vampire_defaults
-        self.product = PublishProductImpl.PublishProductImpl.create(self.params['product'].lower(),
-                                                                    self.params, self.vp)
+        self.product = PublishProductTasksImpl.PublishProductTasksImpl.create(self.params['product'].lower(),
+                                                                              self.params, self.vp)
         return
 
     def process(self):
@@ -71,70 +74,92 @@ class PublishToDatabaseTask(object):
         return
 
     def upload_impact_to_db(self, product): #, impact_type, start_date, vp
-
-        if product == 'vhi':
-            _product_dir = self.vp.get('hazard_impact', 'vhi_output_dir')
-            if self.impact_type == 'area':
-                _filename_pattern = self.vp.get('hazard_impact', 'vhi_area_pattern')
-                _table_name = self.vp.get('database', 'impact_area_table') #'vhi_area'
-                try:
-                    _schema = self.vp.get('database', 'impact_area_schema')
-                except Exception, e:
-                    _schema = self.vp.get('database', 'default_schema')
-    #        _product_filename = os.path.join(_product_dir,
-    #                                         'lka_phy_MOD13Q1.%s.250m_16_days_vhi_area_dsd.csv' % start_date.strftime(
-    #                                             '%Y.%m.%d'))
-            elif self.impact_type == 'popn':
-                _filename_pattern = self.vp.get('hazard_impact', 'vhi_popn_pattern')
-                _table_name = self.vp.get('database', 'impact_popn_table') #'vhi_popn'
-                try:
-                    _schema = self.vp.get('database', 'impact_popn_schema')
-                except Exception, e:
-                    _schema = self.vp.get('database', 'default_schema')
-            elif self.impact_type == 'crops':
-                _filename_pattern = self.vp.get('hazard_impact', 'vhi_crops_pattern')
-                _table_name = self.vp.get('database', 'impact_crops_table') #'vhi_crops'
-                try:
-                    _schema = self.vp.get('database', 'impact_crops_schema')
-                except Exception, e:
-                    _schema = self.vp.get('database', 'default_schema')
-            elif self.impact_type == 'poverty':
-                _filename_pattern = self.vp.get('hazard_impact', 'vhi_poverty_pattern')
-                _table_name = self.vp.get('database', 'impact_poverty_table')  # 'vhi_crops'
-                try:
-                    _schema = self.vp.get('database', 'impact_poverty_schema')
-                except Exception, e:
-                    _schema = self.vp.get('database', 'default_schema')
-            else:
-                raise ValueError('Invalid impact type {0}'.format(self.impact_type))
-            _filename_pattern = _filename_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.start_date.year))
-            _filename_pattern = _filename_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.start_date.month))
-            _filename_pattern = _filename_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.start_date.day))
-            _filenames = vampire.directory_utils.get_matching_files(_product_dir, _filename_pattern)
-            if _filenames is not None:
-                _product_filename = _filenames[0]
-            else:
-                _product_filename = None
-                raise ValueError("No product filename found in upload_impact_to_db")
-
-            _database = self.vp.get('database', 'impact_db') #'prima_impact'
-            try:
-                _host = self.vp.get('database', 'impact_host') #'localhost'
-            except Exception,e:
-                _host = self.vp.get('database', 'default_host')
-            try:
-                _user = self.vp.get('database', 'impact_user') #'localhost'
-            except Exception,e:
-                _user = self.vp.get('database', 'default_user')
-            try:
-                _password = self.vp.get('database', 'impact_pw') #'localhost'
-            except Exception,e:
-                _password = self.vp.get('database', 'default_pw')
-            try:
-                _port = self.vp.get('database', 'impact_port') #'localhost'
-            except Exception,e:
-                _port = self.vp.get('database', 'default_port')
-            vampire.database_utils.insert_csv_to_table(database=_database, host=_host, port=_port, user=_user,
-                                                       password=_password, table=_table_name, schema=_schema,
-                                                       csv_file=_product_filename) #, overwrite=True)
+        try:
+            _host = self.vp.get('database', 'impact_host') #'localhost'
+        except Exception,e:
+            _host = self.vp.get('database', 'default_host')
+        try:
+            _user = self.vp.get('database', 'impact_user') #'localhost'
+        except Exception,e:
+            _user = self.vp.get('database', 'default_user')
+        try:
+            _password = self.vp.get('database', 'impact_pw') #'localhost'
+        except Exception,e:
+            _password = self.vp.get('database', 'default_pw')
+        try:
+            _port = self.vp.get('database', 'impact_port') #'localhost'
+        except Exception,e:
+            _port = self.vp.get('database', 'default_port')
+        database_utils.insert_csv_to_table(database=product.database, host=_host, port=_port, user=_user,
+                                                   password=_password, table=product.table_name, schema=product.schema,
+                                                   csv_file=product.product_filename) #, overwrite=True)
+    #     _product_dir = product.product_dir
+    #     _filename_pattern = product.filename_pattern
+    #     _table_name = product.table_name
+    #
+    #     if product == 'vhi':
+    #         _product_dir = self.vp.get('hazard_impact', 'vhi_output_dir')
+    #         if self.impact_type == 'area':
+    #             _filename_pattern = self.vp.get('hazard_impact', 'vhi_area_pattern')
+    #             _table_name = self.vp.get('database', 'impact_area_table') #'vhi_area'
+    #             try:
+    #                 _schema = self.vp.get('database', 'impact_area_schema')
+    #             except Exception, e:
+    #                 _schema = self.vp.get('database', 'default_schema')
+    # #        _product_filename = os.path.join(_product_dir,
+    # #                                         'lka_phy_MOD13Q1.%s.250m_16_days_vhi_area_dsd.csv' % start_date.strftime(
+    # #                                             '%Y.%m.%d'))
+    #         elif self.impact_type == 'popn':
+    #             _filename_pattern = self.vp.get('hazard_impact', 'vhi_popn_pattern')
+    #             _table_name = self.vp.get('database', 'impact_popn_table') #'vhi_popn'
+    #             try:
+    #                 _schema = self.vp.get('database', 'impact_popn_schema')
+    #             except Exception, e:
+    #                 _schema = self.vp.get('database', 'default_schema')
+    #         elif self.impact_type == 'crops':
+    #             _filename_pattern = self.vp.get('hazard_impact', 'vhi_crops_pattern')
+    #             _table_name = self.vp.get('database', 'impact_crops_table') #'vhi_crops'
+    #             try:
+    #                 _schema = self.vp.get('database', 'impact_crops_schema')
+    #             except Exception, e:
+    #                 _schema = self.vp.get('database', 'default_schema')
+    #         elif self.impact_type == 'poverty':
+    #             _filename_pattern = self.vp.get('hazard_impact', 'vhi_poverty_pattern')
+    #             _table_name = self.vp.get('database', 'impact_poverty_table')  # 'vhi_crops'
+    #             try:
+    #                 _schema = self.vp.get('database', 'impact_poverty_schema')
+    #             except Exception, e:
+    #                 _schema = self.vp.get('database', 'default_schema')
+    #         else:
+    #             raise ValueError('Invalid impact type {0}'.format(self.impact_type))
+    #         _filename_pattern = _filename_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.start_date.year))
+    #         _filename_pattern = _filename_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.start_date.month))
+    #         _filename_pattern = _filename_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.start_date.day))
+    #         _filenames = directory_utils.get_matching_files(_product_dir, _filename_pattern)
+    #         if _filenames is not None:
+    #             _product_filename = _filenames[0]
+    #         else:
+    #             _product_filename = None
+    #             raise ValueError("No product filename found in upload_impact_to_db")
+    #
+    #         _database = self.vp.get('database', 'impact_db') #'prima_impact'
+    #         try:
+    #             _host = self.vp.get('database', 'impact_host') #'localhost'
+    #         except Exception,e:
+    #             _host = self.vp.get('database', 'default_host')
+    #         try:
+    #             _user = self.vp.get('database', 'impact_user') #'localhost'
+    #         except Exception,e:
+    #             _user = self.vp.get('database', 'default_user')
+    #         try:
+    #             _password = self.vp.get('database', 'impact_pw') #'localhost'
+    #         except Exception,e:
+    #             _password = self.vp.get('database', 'default_pw')
+    #         try:
+    #             _port = self.vp.get('database', 'impact_port') #'localhost'
+    #         except Exception,e:
+    #             _port = self.vp.get('database', 'default_port')
+    #         database_utils.insert_csv_to_table(database=_database, host=_host, port=_port, user=_user,
+    #                                                    password=_password, table=_table_name, schema=_schema,
+    #                                                    csv_file=_product_filename) #, overwrite=True)
         return None
