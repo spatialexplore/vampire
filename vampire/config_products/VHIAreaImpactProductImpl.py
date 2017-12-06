@@ -1,10 +1,8 @@
-import BaseDataset
-import ImpactProductImpl
-import os
 import datetime
-import dateutil.rrule
-import dateutil.relativedelta
 import logging
+
+import ImpactProductImpl
+
 logger = logging.getLogger(__name__)
 
 class VHIAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
@@ -29,6 +27,7 @@ class VHIAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
     """
     def __init__(self, country, valid_from_date, valid_to_date, vampire_defaults):
         super(VHIAreaImpactProductImpl, self).__init__()
+        self.product_name = 'vhi_impact_area'
         self.country = country
         self.valid_from_date = valid_from_date
         self.valid_to_date = valid_to_date
@@ -121,6 +120,11 @@ class VHIAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
                                                      output_file=self.output_file, output_dir=self.output_dir,
                                                      output_pattern=self.output_pattern,
                                                      start_date=self.valid_from_date, end_date=self.valid_to_date)
+        self.publish_pattern = self.vp.get('hazard_impact', 'vhi_area_pattern')
+        self.publish_pattern = self.publish_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.valid_from_date.year))
+        self.publish_pattern = self.publish_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.valid_from_date.month))
+        self.publish_pattern = self.publish_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.valid_from_date.day))
+
         return config
 
     def _generate_area_impact_section(self, hazard_file, hazard_dir, hazard_pattern,
@@ -150,7 +154,7 @@ class VHIAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
       boundary_field: {boundary_field}""".format(boundary_field=boundary_field)
         if output_file is not None:
             cfg_string += """
-      output_file: {output_dir}""".format(output_dir=output_dir)
+      output_file: {output_file}""".format(output_file=output_file)
         else:
             cfg_string += """
       output_dir: {output_dir}
