@@ -42,7 +42,7 @@ class ArcGISServerImpl(object):
     def publish(self, product):
         try:
 
-            if self.vp.get('geodatabase', 'storingConfig') == 'file':
+            if self.vp.get('geodatabase', 'storingConfig').lower() == 'file':
                 logger.debug("using file geodatabase")
                 # create gdb directory if it doesn't exist
                 self.check_data_dir(self.vp.get('geodatabase', 'gdbpath'))
@@ -82,7 +82,7 @@ class ArcGISServerImpl(object):
                 self.create_mosaic_dataset(_gdb_name, product.product_name)
                 logger.debug("Mosaic Dataset {0} created".format(_mosaic_db))
             # add product raster to mosaic dataset
-            self.add_raster_to_MDS(_mosaic_db, product.product_dir)
+            self.add_raster_to_MDS(_mosaic_db, product.product_filename)
             # add start and end date fields to mosaic dataset if necessary
             self.add_date_field(_mosaic_db)
             #  compute statistics
@@ -107,7 +107,7 @@ class ArcGISServerImpl(object):
             _service_desc = os.path.join(_ws, '{0}.sd'.format(product.product_name))
             self.create_image_SD_draft(product, _layer, _service_desc_draft,
                                        product.product_name, _connection_file)
-            self.insert_RTF_file(product.product_name, _service_desc_draft)
+            self.insert_RTF_file(product, _service_desc_draft)
             if not os.path.exists(_service_desc):
                 self.analyze_SD_draft(_service_desc_draft, _service_desc)
             else:
