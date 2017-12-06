@@ -1,13 +1,15 @@
-import vampire.VampireDefaults as VampireDefaults
-import RainfallAnomalyTaskImpl
-import SPITaskImpl
+import logging
+
+import VampireDefaults as VampireDefaults
+
 import DaysSinceLastRainTaskImpl
 import FloodAlertTaskImpl
-import VCITaskImpl
+import RainfallAnomalyTaskImpl
+import SPITaskImpl
 import TCITaskImpl
+import VCITaskImpl
 import VHITaskImpl
 
-import logging
 logger = logging.getLogger(__name__)
 
 class ConfigFileError(ValueError):
