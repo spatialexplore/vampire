@@ -1,16 +1,14 @@
-import errno
-import time
-import optparse
-import sys
 import datetime
+import errno
+import optparse
 import os
+import sys
+import time
 import traceback
-import MODISConfigFactory
-import CHIRPSConfigFactory
-import ImpactConfigFactory
-import PublishConfigFactory
-import config_products.BaseProduct as BaseProduct
+
 import config_products.BaseImpactProduct as BaseImpactProduct
+import config_products.BaseProduct as BaseProduct
+
 
 def generate_config_file(output_file, params):
     if os.path.exists(output_file):
