@@ -1,10 +1,12 @@
-import vampire.VampireDefaults as VampireDefaults
-import ArcGISServerImpl
-import datetime
+import logging
 import os
 import shutil
+
 import psycopg2
-import logging
+import VampireDefaults
+
+import ArcGISServerImpl
+
 logger = logging.getLogger(__name__)
 
 class GISServer():
@@ -18,7 +20,7 @@ class GISServer():
         return decorator
 
     @classmethod
-    def create(cls, server_type, params, vampire_defaults=None):
+    def create(cls, server_type, vampire_defaults=None):
         if server_type not in cls.subclasses:
             raise ValueError('Bad server type {}'.format(server_type))
         if vampire_defaults is None:
@@ -26,7 +28,7 @@ class GISServer():
         else:
             vp = vampire_defaults
 
-        return cls.subclasses[server_type](params, vp)
+        return cls.subclasses[server_type](vp)
 
 @GISServer.register_subclass('geoserver')
 class Geoserver(object):
