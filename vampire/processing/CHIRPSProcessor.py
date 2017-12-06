@@ -1,12 +1,15 @@
 __author__ = 'rochelle'
 
-import vampire.VampireDefaults
-import vampire.directory_utils
-import ftputil
-import os
-import re
 import datetime
 import logging
+import os
+import re
+
+import ftputil
+
+import vampire.directory_utils
+import vampire.VampireDefaults
+
 logger = logging.getLogger(__name__)
 
 try:
