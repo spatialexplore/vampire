@@ -1,22 +1,20 @@
-import vampire.VampireDefaults as VampireDefaults
-import vampire.directory_utils
-import vampire.filename_utils
-import BaseTaskImpl
-import gdal
-import os
-import json
-import math
-import re
-import osr
-import platform
-import subprocess
+import cookielib
 import datetime
+import json
+import os
+import urllib2
+
 import dateutil
 import dateutil.relativedelta
-import urllib2
-import cookielib
-import h5py
-import netCDF4
+import gdal
+import osr
+
+import BaseTaskImpl
+import directory_utils
+import filename_utils
+import VampireDefaults
+
+#import h5py
 import logging
 logger = logging.getLogger(__name__)
 try:
