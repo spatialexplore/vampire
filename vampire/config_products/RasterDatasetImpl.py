@@ -93,3 +93,54 @@ class RasterDatasetImpl(object):
             cfg_string += """
           """
         return cfg_string
+
+    """ Generate crop process section for raster datasets.
+
+    Generate VAMPIRE config file process for raster dataset cropping.
+
+    Parameters
+    ----------
+    input_dir : string
+        Path for raster file.
+    output_dir : string
+        Path for output of cropped file.
+    file_pattern : string
+        Pattern to match to find input file.
+    output_pattern : string
+        Pattern to use with input file pattern to generate output filename.
+    boundary_file : string
+        Path to boundary file to be used to clip the raster.
+    no_data : boolean
+        Flag indicating whether areas clipped out of the raster should be set to No Data.
+
+    Returns
+    -------
+    string
+        Returns string containing the configuration file process.
+
+    """
+    def generate_mosaic_section(self, input_dir, output_dir, file_pattern, output_pattern, mosaic_method='MAXIMUM',
+                              no_data=False):
+        file_string = """
+    # mosaic data
+    - process: Raster
+      type: mosaic
+      input_dir: {input_dir}
+      output_dir: {output_dir}
+      file_pattern: '{file_pattern}'
+      output_pattern: '{output_pattern}'
+      mosaic_method: {mosaic_method}""".format(
+                           input_dir=input_dir,
+                           output_dir=output_dir,
+                           file_pattern=file_pattern,
+                           output_pattern=output_pattern,
+                           mosaic_method=mosaic_method
+                           )
+        if no_data:
+            file_string += """
+      no_data:
+      """
+        else:
+            file_string +="""
+      """
+        return file_string
