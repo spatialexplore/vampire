@@ -1,6 +1,7 @@
 import BaseDataset
 import ImpactProductImpl
 import os
+import ast
 import datetime
 import dateutil.rrule
 import dateutil.relativedelta
@@ -154,23 +155,22 @@ class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
             _forecast_period = int(self.vp.get('FLOOD_FORECAST', 'forecast_period'))
         else:
             _forecast_period = forecast_period
-        for f in _flood_years:
-            _num_forecasts = _forecast_period - _forecast_days +1
-            for i in range(1, _num_forecasts+1):
-                _cur_forecast = ''.join(map(str, range(i, i+_forecast_days)))
-                _hazard_pattern = hazard_pattern.replace('(?P<num_years>\d{2,4})', '{0:0>2}'.format(f))
-                _hazard_pattern = _hazard_pattern.replace('(?P<forecast_period>fd\d{3})', 'fd{0}'.format(_cur_forecast))
-                _output_pattern = self.output_pattern.replace('{num_years}', '{0:0>2}'.format(f))
-                _output_pattern = _output_pattern.replace('{forecast_period}', '{0}'.format(_cur_forecast))
-                _valid_from_date = self.valid_from_date + datetime.timedelta(i)
-                _valid_to_date = self.valid_to_date + datetime.timedelta(i+_forecast_days-1)
-                config += self._generate_popn_impact_section(hazard_file=hazard_file, hazard_dir=hazard_dir,
-                                                             hazard_pattern=hazard_pattern, boundary_file=_boundary_file,
-                                                             boundary_dir=_boundary_dir, boundary_pattern=_boundary_pattern,
-                                                             boundary_field=_boundary_field, population_file=_population_file,
-                                                             output_file=self.output_file, output_dir=self.output_dir,
-                                                             output_pattern=self.output_pattern,
-                                                             start_date=self.valid_from_date, end_date=self.valid_to_date)
+        _num_forecasts = _forecast_period - _forecast_days +1
+        for i in range(1, _num_forecasts+1):
+            _cur_forecast = ''.join(map(str, range(i, i+_forecast_days)))
+#            _hazard_pattern = hazard_pattern.replace('(?P<num_years>\d{2,4})', '{0:0>2}'.format(f))
+            _hazard_pattern = hazard_pattern.replace('(?P<forecast_period>fd\d{3})', 'fd{0}'.format(_cur_forecast))
+#            _output_pattern = self.output_pattern.replace('{num_years}', '{0:0>2}'.format(f))
+            _output_pattern = self.output_pattern.replace('{forecast_period}', '{0}'.format(_cur_forecast))
+            _valid_from_date = self.valid_from_date + datetime.timedelta(i)
+            _valid_to_date = self.valid_to_date + datetime.timedelta(i+_forecast_days-1)
+            config += self._generate_popn_impact_section(hazard_file=hazard_file, hazard_dir=hazard_dir,
+                                                         hazard_pattern=_hazard_pattern, boundary_file=_boundary_file,
+                                                         boundary_dir=_boundary_dir, boundary_pattern=_boundary_pattern,
+                                                         boundary_field=_boundary_field, population_file=_population_file,
+                                                         output_file=self.output_file, output_dir=self.output_dir,
+                                                         output_pattern=_output_pattern,
+                                                         start_date=_valid_from_date, end_date=_valid_to_date)
         return config
 
     def _generate_popn_impact_section(self, hazard_file, hazard_dir, hazard_pattern,
@@ -181,7 +181,8 @@ class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
         cfg_string = """
     # Calculate population impact (number of people)
     - process: impact
-      type: population"""
+      type: population
+      hazard_type: flood"""
         if hazard_file is not None:
             cfg_string += """
       hazard_file: {hazard_file}""".format(hazard_file=hazard_file)
@@ -199,7 +200,8 @@ class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
 
         cfg_string += """
       boundary_field: {boundary_field}
-      population_file: {population_file}""".format(boundary_field=boundary_field, population_file=population_file)
+      population_file: {population_file}
+      hazard_threshold: 0""".format(boundary_field=boundary_field, population_file=population_file)
 
         if output_file is not None:
             cfg_string += """
