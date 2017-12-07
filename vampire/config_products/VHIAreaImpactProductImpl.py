@@ -1,8 +1,11 @@
-import datetime
-import logging
-
+import BaseDataset
 import ImpactProductImpl
-
+import RasterDatasetImpl
+import os
+import datetime
+import dateutil.rrule
+import dateutil.relativedelta
+import logging
 logger = logging.getLogger(__name__)
 
 class VHIAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
@@ -78,10 +81,11 @@ class VHIAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
     """
     def generate_config(self, hazard_file, hazard_dir, hazard_pattern,
                         boundary_file=None, boundary_dir=None, boundary_pattern=None, boundary_field=None,
-                        output_file=None, output_dir=None, output_pattern=None, masked=False):
+                        output_file=None, output_dir=None, output_pattern=None):
         config = """
     # Calculate area impact
         """
+
         _boundary_file = None
         _boundary_pattern = None
         _boundary_dir = None
