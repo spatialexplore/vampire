@@ -227,6 +227,35 @@ def calc_zonal_statistics(raster_file, polygon_file, zone_field, output_table):
     arcpy.sa.ZonalStatisticsAsTable(in_zone_data=layer, zone_field=zone_field,
                                     in_value_raster=raster_file,out_table=_output_dbf,
                                     ignore_nodata="DATA", statistics_type="ALL")
+    if arcpy.Exists(layer):
+        arcpy.Delete_management(layer)
     # convert to .csv
     vampire.csv_utils.convert_dbf_to_csv(os.path.join(os.path.dirname(raster_file), _output_dbf), _output_csv)
+
+    return None
+
+def mosaic_rasters(raster_file_list, output_dir, output_file, mosaic_method):
+    """ Mosaic the list of files using the specified method and save to output_file.
+
+    Parameters
+    ----------
+    raster_file : str
+        Filename of raster file
+    polygon_file : str
+        Filename of vector file
+    zone_field : str
+        Name of field labelling the zones within vector file
+    output_table : str
+        Filename of output table (.dbf or .csv)
+
+    Returns
+    -------
+    None
+        Returns None
+
+    """
+    arcpy.CheckOutExtension("Spatial")
+    arcpy.MosaicToNewRaster_management(input_rasters=raster_file_list, output_location=output_dir,
+                                       raster_dataset_name_with_extension=output_file, mosaic_method=mosaic_method,
+                                       number_of_bands=1)
     return None
