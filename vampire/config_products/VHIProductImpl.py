@@ -1,5 +1,5 @@
 import logging
-
+import os
 import BaseProduct
 import RasterDatasetImpl
 import RasterProductImpl
@@ -222,7 +222,9 @@ class VHIProductImpl(RasterProductImpl.RasterProductImpl):
                                                 no_data=False)
         self.product_dir = _output_dir
         self.product_pattern = self.vp.get('MODIS_VHI', 'vhi_crop_pattern')
-
+        self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
+        self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.product_date.month))
+        self.product_pattern = self.product_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.product_date.day))
         return config
 
 
