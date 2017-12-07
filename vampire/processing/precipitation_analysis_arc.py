@@ -193,9 +193,13 @@ def _calc_num_days_since(rasters, dslw_fn, dsld_fn, max_days):
     _dsld_output.save(dsld_fn)
     return 0
 
-def calc_flood_alert(forecast_filename, threshold_filename, dst_filename):
+def calc_flood_alert(forecast_filename, threshold_filename, dst_filename, value=1):
     _forecast_raster = arcpy.sa.Raster(forecast_filename)
     _threshold_raster = arcpy.sa.Raster(threshold_filename)
-    dst = arcpy.sa.GreaterThanEqual(_forecast_raster, _threshold_raster)
+    arcpy.env.cellSize = "MINOF"
+    dst = arcpy.sa.GreaterThanEqual(_forecast_raster, _threshold_raster) * int(value)
+    # if value != 1:
+    #     dst2 = arcpy.sa.Times(dst, value)
+    #     dst = dst2
     dst.save(dst_filename)
     return 0
