@@ -160,10 +160,11 @@ def csv_to_choropleth_format(input_filename, output_filename, area_field, value_
         wr.writerows(_new_csv)
     return output_filename
 
+import json
 def convert_dbf_to_csv(input_dbf, output_csv):
     with open(output_csv, 'wb') as csv_file:
         _dbf_file = dbfpy.dbf.Dbf(input_dbf)
-        _out_csv = csv.writer(csv_file)
+        _out_csv = csv.writer(csv_file, quotechar="'", quoting=csv.QUOTE_NONNUMERIC)
         _header = []
         for field in _dbf_file.header.fields:
             _header.append(field.name)
@@ -171,6 +172,13 @@ def convert_dbf_to_csv(input_dbf, output_csv):
         for rec in _dbf_file:
             _out_csv.writerow(rec.fieldData)
         _dbf_file.close()
+    # with open(output_csv, 'rb') as incsv:
+    #     _csv_reader = csv.reader(incsv)
+    #     with open(os.path.join(os.path.dirname(output_csv), "test.csv"), 'wb') as ocsv:
+    #         _out_writer = csv.writer(ocsv, quotechar='', quoting=csv.QUOTE_NONE)
+    #         for row in _csv_reader:
+    #             _row = [s.replace("'", '"') if type(s) is str else s for s in row]
+    #             _out_writer.writerows(row)
     return None
 
 def merge_files(file1, file2, output_file, file1_field, file2_field):
