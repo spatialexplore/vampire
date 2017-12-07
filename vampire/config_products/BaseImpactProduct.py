@@ -2,6 +2,7 @@ import VampireDefaults
 import VHIPopnImpactProductImpl
 import VHIAreaImpactProductImpl
 import FloodAreaImpactProductImpl
+import FloodPopnImpactProductImpl
 import logging
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ class VHIPopnImpactProduct(BaseImpactProduct):
                         population_file=None, output_file=None, output_dir=None, output_pattern=None, masked=False):
         return self.impl.generate_config(hazard_file, hazard_dir, hazard_pattern,
                         boundary_file, boundary_dir, boundary_pattern, boundary_field,
-                        population_file, output_file, output_dir, output_pattern, masked)
+                        population_file, output_file, output_dir, output_pattern)
 
     def generate_publish_config(self):
         return self.impl.generate_publish_config()
@@ -71,7 +72,7 @@ class VHIAreaImpactProduct(BaseImpactProduct):
 
     def generate_config(self, hazard_file, hazard_dir, hazard_pattern,
                         boundary_file=None, boundary_dir=None, boundary_pattern=None, boundary_field=None,
-                        output_file=None, output_dir=None, output_pattern=None):
+                        output_file=None, output_dir=None, output_pattern=None, masked=False):
         return self.impl.generate_config(hazard_file, hazard_dir, hazard_pattern,
                         boundary_file, boundary_dir, boundary_pattern, boundary_field,
                         output_file, output_dir, output_pattern)
@@ -79,7 +80,7 @@ class VHIAreaImpactProduct(BaseImpactProduct):
     def generate_publish_config(self):
         return self.impl.generate_publish_config()
 
-@BaseImpactProduct.register_subclass('flood_impact_area')
+@BaseImpactProduct.register_subclass('flood_forecast_impact_area')
 class FloodAreaImpactProduct(BaseImpactProduct):
     # ...
     def __init__(self, country, product_date, interval, vampire_defaults):
@@ -91,10 +92,34 @@ class FloodAreaImpactProduct(BaseImpactProduct):
 
     def generate_config(self, hazard_file, hazard_dir, hazard_pattern,
                         boundary_file=None, boundary_dir=None, boundary_pattern=None, boundary_field=None,
-                        output_file=None, output_dir=None, output_pattern=None):
+                        output_file=None, output_dir=None, output_pattern=None, masked=False):
         return self.impl.generate_config(hazard_file, hazard_dir, hazard_pattern,
                         boundary_file, boundary_dir, boundary_pattern, boundary_field,
                         output_file, output_dir, output_pattern)
+
+    def generate_publish_config(self):
+        return self.impl.generate_publish_config()
+
+@BaseImpactProduct.register_subclass('flood_forecast_impact_popn')
+class FloodPopnImpactProduct(BaseImpactProduct):
+    # ...
+    def __init__(self, country, valid_from_date, valid_to_date, vampire_defaults):
+        self.impl = FloodPopnImpactProductImpl.FloodPopnImpactProductImpl(country, valid_from_date, valid_to_date, vampire_defaults)
+        return
+
+    @property
+    def valid_from_date(self):
+        return self.impl.valid_from_date()
+    @property
+    def valid_to_date(self):
+        return self.impl.valid_to_date()
+
+    def generate_config(self, hazard_file=None, hazard_dir=None, hazard_pattern=None,
+                        boundary_file=None, boundary_dir=None, boundary_pattern=None, boundary_field=None,
+                        population_file=None, output_file=None, output_dir=None, output_pattern=None, masked=False):
+        return self.impl.generate_config(hazard_file, hazard_dir, hazard_pattern,
+                        boundary_file, boundary_dir, boundary_pattern, boundary_field,
+                        population_file, output_file, output_dir, output_pattern)
 
     def generate_publish_config(self):
         return self.impl.generate_publish_config()
