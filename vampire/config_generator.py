@@ -54,41 +54,34 @@ run:
             if 'mask' in params and params['mask'] == True:
                 pfile.write(_product.generate_mask_config())
 
+            _area_impact = None
+            _popn_impact = None
+
             if 'impact' in params and params['impact'] == True:
-                if params['product'] == 'vhi':
-                    _area_impact = BaseImpactProduct.BaseImpactProduct.create(impact_type='vhi_impact_area',
-                                                                              country=params['country'],
-                                                                              valid_from_date=_product.valid_from_date,
-                                                                              valid_to_date=_product.valid_to_date
-                                                                              )
-                    pfile.write(_area_impact.generate_config(hazard_file=_product.product_file,
-                                                             hazard_dir=_product.product_dir,
-                                                             hazard_pattern=_product.product_pattern))
-                    _popn_impact = BaseImpactProduct.BaseImpactProduct.create(impact_type='vhi_impact_popn',
-                                                                              country=params['country'],
-                                                                              valid_from_date=_product.valid_from_date,
-                                                                              valid_to_date=_product.valid_to_date
-                                                                              )
-                    pfile.write(_popn_impact.generate_config(hazard_file=_product.product_file,
-                                                             hazard_dir=_product.product_dir,
-                                                             hazard_pattern=_product.product_pattern))
-                    if 'publish' in params and params['publish'] == True:
-                        pfile.write(_popn_impact.generate_publish_config())
-                        pfile.write(_area_impact.generate_publish_config())
-
-                elif params['product'] == 'flood_forecast':
-                    _area_impact = BaseImpactProduct.BaseImpactProduct.create(impact_type='flood_impact_area',
-                                                                              country=params['country'],
-                                                                              valid_from_date=_product.valid_from_date,
-                                                                              valid_to_date=_product.valid_to_date
-                                                                              )
-                    pfile.write(_area_impact.generate_config(hazard_file=_product.product_file,
-                                                             hazard_dir=_product.product_dir,
-                                                             hazard_pattern=_product.product_pattern))
-
+                _area_impact = BaseImpactProduct.BaseImpactProduct.create(impact_type='{0}_impact_area'.format(params['product']),
+                                                                          country=params['country'],
+                                                                          valid_from_date=_product.valid_from_date,
+                                                                          valid_to_date=_product.valid_to_date
+                                                                          )
+                pfile.write(_area_impact.generate_config(hazard_file=_product.product_file,
+                                                         hazard_dir=_product.product_dir,
+                                                         hazard_pattern=_product.product_pattern))
+                _popn_impact = BaseImpactProduct.BaseImpactProduct.create(impact_type='{0}_impact_popn'.format(params['product']),
+                                                                          country=params['country'],
+                                                                          valid_from_date=_product.valid_from_date,
+                                                                          valid_to_date=_product.valid_to_date
+                                                                          )
+                pfile.write(_popn_impact.generate_config(hazard_file=_product.product_file,
+                                                         hazard_dir=_product.product_dir,
+                                                         hazard_pattern=_product.product_pattern))
 
             if 'publish' in params and params['publish'] == True:
                 pfile.write(_product.generate_publish_config())
+                if _area_impact is not None:
+                    pfile.write(_area_impact.generate_publish_config())
+                if _popn_impact is not None:
+                    pfile.write(_popn_impact.generate_publish_config())
+
 
 #            if params['product'] == 'vhi':
 #                if 'mask' in params:
