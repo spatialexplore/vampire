@@ -1,8 +1,9 @@
-import BaseDataset
-import RasterProductImpl
-import os
 import ast
 import logging
+
+import BaseDataset
+import RasterProductImpl
+
 logger = logging.getLogger(__name__)
 
 class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):

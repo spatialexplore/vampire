@@ -1,10 +1,8 @@
-import BaseDataset
-import ImpactProductImpl
-import os
 import datetime
-import dateutil.rrule
-import dateutil.relativedelta
 import logging
+
+import ImpactProductImpl
+
 logger = logging.getLogger(__name__)
 
 class VHIPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
@@ -29,6 +27,7 @@ class VHIPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
     """
     def __init__(self, country, valid_from_date, valid_to_date, vampire_defaults):
         super(VHIPopnImpactProductImpl, self).__init__()
+        self.product_name = 'vhi_impact_popn'
         self.country = country
         self.valid_from_date = valid_from_date
         self.valid_to_date = valid_to_date
@@ -148,6 +147,10 @@ class VHIPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
                                                      output_file=self.output_file, output_dir=self.output_dir,
                                                      output_pattern=self.output_pattern,
                                                      start_date=self.valid_from_date, end_date=self.valid_to_date)
+        self.publish_pattern = self.vp.get('hazard_impact', 'vhi_popn_pattern')
+        self.publish_pattern = self.publish_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.valid_from_date.year))
+        self.publish_pattern = self.publish_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.valid_from_date.month))
+        self.publish_pattern = self.publish_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.valid_from_date.day))
         return config
 
     def _generate_popn_impact_section(self, hazard_file, hazard_dir, hazard_pattern,
@@ -158,7 +161,8 @@ class VHIPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
         cfg_string = """
     # Calculate population impact (number of people)
     - process: impact
-      type: population"""
+      type: population
+      hazard_type: vhi"""
         if hazard_file is not None:
             cfg_string += """
       hazard_file: {hazard_file}""".format(hazard_file=hazard_file)

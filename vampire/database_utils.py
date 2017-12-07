@@ -1,20 +1,10 @@
-import sys
-import pandas
-import sqlalchemy
-import psycopg2
-import itertools
 import ast
-import csv
-import datetime
-import dateutil
-import time
-import optparse
-import traceback
-import os
-import shutil
-import vampire.config_generator
-import vampire.ConfigProcessor
-import vampire.VampireDefaults
+import itertools
+
+import pandas
+import psycopg2
+import sqlalchemy
+
 
 def check_table_exists(database, host, user, password, table_name):
     # create connection to database
@@ -70,7 +60,7 @@ def write_cursor(csvFile, fieldnames):
 def insert_csv_to_table(database, host, port, user, password, schema, table, csv_file, overwrite=False, index=True):
     _url = 'postgresql://{}:{}@{}:{}/{}'.format(user, password, host, port, database)
     pd = pandas.read_csv(csv_file)
-    print pd
+#    print pd
     engine = sqlalchemy.create_engine(_url)
     # check if table exists first
     if check_table_exists(database=database, host=host, user=user, password=password, table_name=table):

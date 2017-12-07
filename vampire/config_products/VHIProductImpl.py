@@ -1,8 +1,9 @@
-import RasterProductImpl
+import logging
+
 import BaseProduct
 import RasterDatasetImpl
-import os
-import logging
+import RasterProductImpl
+
 logger = logging.getLogger(__name__)
 
 class VHIProductImpl(RasterProductImpl.RasterProductImpl):
@@ -27,6 +28,7 @@ class VHIProductImpl(RasterProductImpl.RasterProductImpl):
     """
     def __init__(self, country, product_date, interval, vampire_defaults):
         super(VHIProductImpl, self).__init__()
+        self.product_name = 'vhi'
         self.country = country
         self.interval = interval
         self.product_date = product_date
@@ -220,6 +222,7 @@ class VHIProductImpl(RasterProductImpl.RasterProductImpl):
                                                 no_data=False)
         self.product_dir = _output_dir
         self.product_pattern = self.vp.get('MODIS_VHI', 'vhi_crop_pattern')
+
         return config
 
 

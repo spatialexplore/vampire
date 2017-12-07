@@ -1,12 +1,14 @@
-import vampire.VampireDefaults as VampireDefaults
-import vampire.directory_utils
-import vampire.filename_utils
-import urllib
+import ast
+import datetime
+import logging
 import os
 import re
-import datetime
-import ast
-import logging
+import urllib
+
+import directory_utils
+import filename_utils
+import VampireDefaults
+
 logger = logging.getLogger(__name__)
 try:
     import calculate_statistics_arc as calculate_statistics
@@ -297,7 +299,7 @@ class GFSAccumulateTask(object):
 
         for d in _dates:
             # find all files
-            _allfiles = vampire.directory_utils.get_matching_files(data_dir, data_pattern)
+            _allfiles = directory_utils.get_matching_files(data_dir, data_pattern)
             _cur_day = 0
             _cur_hr = 0
             _cur_accum_str = ''
@@ -325,7 +327,7 @@ class GFSAccumulateTask(object):
                             _output_pattern = _output_pattern.replace('{year}', '{0}'.format(d.year))
                             _output_pattern = _output_pattern.replace('{month}', '{0:0>2}'.format(d.month))
                             _output_pattern = _output_pattern.replace('{day}', '{0:0>2}'.format(d.day))
-                            _new_filename = vampire.filename_utils.generate_output_filename(_base_fname, data_pattern, _output_pattern)
+                            _new_filename = filename_utils.generate_output_filename(_base_fname, data_pattern, _output_pattern)
                             if not os.path.exists(os.path.join(output_dir, _new_filename)) or overwrite:
                                 self._accumulate_data(_allfiles[_accum_window_start:_accum_window_end+1], output_dir, _new_filename)
                             _accum_window_start = _day_ptrs[_cur_day-num_days]+1

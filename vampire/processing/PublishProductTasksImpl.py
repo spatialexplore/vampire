@@ -1,10 +1,13 @@
-import vampire.VampireDefaults as VampireDefaults
 import datetime
 import logging
+import directory_utils
+
+import VampireDefaults
+
 logger = logging.getLogger(__name__)
 
 
-class PublishProductImpl(object):
+class PublishProductTasksImpl(object):
     subclasses = {}
 
     @classmethod
@@ -34,9 +37,6 @@ class PublishableProduct(object):
         self.ingestion_date = None
         self.valid_from_date = None
         self.valid_to_date = None
-        self.summary = None
-        self.tags = None
-        self.template_file = None
         return
 
     @property
@@ -88,6 +88,24 @@ class PublishableProduct(object):
     def valid_to_date(self, op):
         self.__valid_to_date = op
 
+
+    def publish(self):
+
+        return
+
+class PublishableRasterProduct(PublishableProduct):
+
+    def __init__(self, params, vampire_defaults):
+        logger.debug('Initialising PublishableRasterProduct')
+        super(PublishableRasterProduct, self).__init__()
+        self.params = params
+        self.vp = vampire_defaults
+        self.product_filename = None
+        self.summary = None
+        self.tags = None
+        self.template_file = None
+        return
+
     @property
     def summary(self):
         return self.__summary
@@ -109,12 +127,60 @@ class PublishableProduct(object):
     def template_file(self, op):
         self.__template_file = op
 
-    def publish(self):
+    @property
+    def product_filename(self):
+        return self.__product_filename
+    @product_filename.setter
+    def product_filename(self, op):
+        self.__product_filename = op
 
+
+class PublishableTabularProduct(PublishableProduct):
+
+    def __init__(self, params, vampire_defaults):
+        logger.debug('Initialising PublishableRasterProduct')
+        super(PublishableTabularProduct, self).__init__()
+        self.params = params
+        self.vp = vampire_defaults
+        self.database = None
+        self.table_name = None
+        self.schema = None
+        self.product_filename = None
         return
 
-@PublishProductImpl.register_subclass('rainfall_anomaly')
-class PublishRainfallAnomalyProduct(PublishableProduct):
+    @property
+    def database(self):
+        return self.__database
+    @database.setter
+    def database(self, op):
+        self.__database = op
+
+    @property
+    def table_name(self):
+        return self.__table_name
+    @table_name.setter
+    def table_name(self, op):
+        self.__table_name = op
+
+    @property
+    def schema(self):
+        return self.__schema
+    @schema.setter
+    def schema(self, op):
+        self.__schema = op
+
+    @property
+    def product_filename(self):
+        return self.__product_filename
+    @product_filename.setter
+    def product_filename(self, op):
+        self.__product_filename = op
+
+
+
+
+@PublishProductTasksImpl.register_subclass('rainfall_anomaly')
+class PublishRainfallAnomalyProduct(PublishableRasterProduct):
     """ Initialise MODISDownloadTask object.
 
     Implementation class for downloading MODIS products.
@@ -122,9 +188,7 @@ class PublishRainfallAnomalyProduct(PublishableProduct):
     """
     def __init__(self, params, vampire_defaults):
         logger.debug('Initialising MODIS download task')
-        super(PublishRainfallAnomalyProduct, self).__init__()
-        self.params = params
-        self.vp = vampire_defaults
+        super(PublishRainfallAnomalyProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vp.get('CHIRPS_Rainfall_Anomaly', 'output_dir')
         self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
@@ -132,7 +196,7 @@ class PublishRainfallAnomalyProduct(PublishableProduct):
         self.summary = '{0} {1}'.format(self.vp.get('CHIRPS_Rainfall_Anomaly', 'default_interval'.capitalize()),
                                         self.vp.get('CHIRPS_Rainfall_Anomaly', 'summary'))
         self.tags = '{0}, {1}'.format(self.vp.get('CHIRPS_Rainfall_Anomaly', 'tags'),
-                                      self.vp.get_country(self.vp.get('vampire', 'home_country')))
+                                      self.vp.get_country(self.vp.get('vampire_tmp', 'home_country')))
         self.template_file = self.vp.get('CHIRPS_Rainfall_Anomaly', 'template_file')
         if self.product_date.day < 11:
             _dekad = 1
@@ -147,8 +211,8 @@ class PublishRainfallAnomalyProduct(PublishableProduct):
         self.ingestion_date = self.product_date - datetime.timedelta(days=int(self.vampire.get('CHIRPS_Rainfall_Anomaly', 'interval')))
         return
 
-@PublishProductImpl.register_subclass('vhi')
-class PublishVHIProduct(PublishableProduct):
+@PublishProductTasksImpl.register_subclass('vhi')
+class PublishVHIProduct(PublishableRasterProduct):
     """ Initialise MODISDownloadTask object.
 
     Implementation class for downloading MODIS products.
@@ -156,26 +220,29 @@ class PublishVHIProduct(PublishableProduct):
     """
     def __init__(self, params, vampire_defaults):
         logger.debug('Initialising MODIS download task')
-        super(PublishVHIProduct, self).__init__()
-        self.params = params
-        self.vp = vampire_defaults
-        self.product_dir = self.vampire.get('MODIS_VHI', 'vhi_product_dir')
+        super(PublishVHIProduct, self).__init__(params, vampire_defaults)
+        self.product_dir = self.vp.get('MODIS_VHI', 'vhi_product_dir')
         self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.summary = '{0} {1}'.format(self.vp.get('MODIS_VHI', 'interval'.capitalize()),
                                         self.vp.get('MODIS_VHI', 'summary'))
         self.tags = '{0}, {1}'.format(self.vp.get('MODIS_VHI', 'tags'),
-                                      self.vp.get_country(self.vp.get('vampire', 'home_country')))
+                                      self.vp.get_country_name(self.vp.get('vampire', 'home_country')))
         self.template_file = self.vp.get('MODIS_VHI', 'template_file')
-        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
-        self.product_name = 'vhi'
-        self.destination_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y%m%d')
-        self.ingestion_date = self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
+        _product_pattern = self.vp.get('MODIS_VHI', 'vhi_pattern')
+        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
+        self.product_filename = _product_files[0]
+#        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
+        self.product_name = self.vp.get('MODIS_VHI', 'product_name')
+        self.destination_filename = self.product_filename
+        self.ingestion_date = self.valid_from_date
+            #self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
         return
 
-@PublishProductImpl.register_subclass('spi')
-class PublishSPIProduct(PublishableProduct):
+@PublishProductTasksImpl.register_subclass('spi')
+class PublishSPIProduct(PublishableRasterProduct):
     """ Initialise MODISDownloadTask object.
 
     Implementation class for downloading MODIS products.
@@ -183,9 +250,7 @@ class PublishSPIProduct(PublishableProduct):
     """
     def __init__(self, params, vampire_defaults):
         logger.debug('Initialising MODIS download task')
-        super(PublishSPIProduct, self).__init__()
-        self.params = params
-        self.vp = vampire_defaults
+        super(PublishSPIProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vp.get('CHIRPS_SPI', 'output_dir')
         self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
@@ -193,7 +258,7 @@ class PublishSPIProduct(PublishableProduct):
         self.summary = '{0} {1}'.format(self.vp.get('CHIRPS_SPI', 'default_interval'.capitalize()),
                                         self.vp.get('CHIRPS_SPI', 'summary'))
         self.tags = '{0}, {1}'.format(self.vp.get('CHIRPS_SPI', 'tags'),
-                                      self.vp.get_country(self.vp.get('vampire', 'home_country')))
+                                      self.vp.get_country(self.vp.get('vampire_tmp', 'home_country')))
         self.template_file = self.vp.get('CHIRPS_SPI', 'template_file')
         if self.product_date.day < 11:
             _dekad = 1
@@ -208,8 +273,8 @@ class PublishSPIProduct(PublishableProduct):
         self.ingestion_date = self.product_date - datetime.timedelta(days=int(self.vampire.get('CHIRPS_SPI', 'interval')))
         return
 
-@PublishProductImpl.register_subclass('vhi_masked')
-class PublishMaskedVHIProduct(PublishableProduct):
+@PublishProductTasksImpl.register_subclass('vhi_masked')
+class PublishMaskedVHIProduct(PublishableRasterProduct):
     """ Initialise MODISDownloadTask object.
 
     Implementation class for downloading MODIS products.
@@ -217,9 +282,7 @@ class PublishMaskedVHIProduct(PublishableProduct):
     """
     def __init__(self, params, vampire_defaults):
         logger.debug('Initialising MODIS download task')
-        super(PublishMaskedVHIProduct, self).__init__()
-        self.params = params
-        self.vp = vampire_defaults
+        super(PublishMaskedVHIProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vampire.get('MODIS_VHI', 'vhi_product_dir')
         self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
@@ -227,7 +290,7 @@ class PublishMaskedVHIProduct(PublishableProduct):
         self.summary = '{0} {1}'.format(self.vp.get('MODIS_VHI', 'interval'.capitalize()),
                                         self.vp.get('MODIS_VHI', 'summary'))
         self.tags = '{0}, {1}'.format(self.vp.get('MODIS_VHI', 'tags'),
-                                      self.vp.get_country(self.vp.get('vampire', 'home_country')))
+                                      self.vp.get_country(self.vp.get('vampire_tmp', 'home_country')))
         self.template_file = self.vp.get('MODIS_VHI', 'template_file')
         self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif' % self.product_date.strftime('%Y.%m.%d')
         self.product_name = 'vhi_mask'
@@ -235,8 +298,8 @@ class PublishMaskedVHIProduct(PublishableProduct):
         self.ingestion_date = self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
         return
 
-@PublishProductImpl.register_subclass('vhi_area_impact')
-class PublishAreaImpactProduct(PublishableProduct):
+@PublishProductTasksImpl.register_subclass('vhi_impact_area')
+class PublishVHIAreaImpactProduct(PublishableTabularProduct):
     """ Initialise MODISDownloadTask object.
 
     Implementation class for downloading MODIS products.
@@ -244,17 +307,58 @@ class PublishAreaImpactProduct(PublishableProduct):
     """
     def __init__(self, params, vampire_defaults):
         logger.debug('Initialising Area Impact product.')
-        super(PublishAreaImpactProduct, self).__init__()
+        super(PublishVHIAreaImpactProduct, self).__init__(params, vampire_defaults)
         self.params = params
         self.vp = vampire_defaults
-        self.product_dir = self.vampire.get('hazard_impact', 'vhi_output_dir')
+        self.product_dir = self.vp.get('hazard_impact', 'vhi_output_dir')
         self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
-        self.summary = None
-        self.template_file = None
-        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif' % self.product_date.strftime('%Y.%m.%d')
-        self.product_name = 'vhi_mask'
-        self.destination_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_masked.tif' % self.product_date.strftime('%Y%m%d')
-        self.ingestion_date = self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
+        self.database = self.vp.get('database', 'impact_db')
+        self.table_name = self.vp.get('database', 'impact_area_table')
+        try:
+            self.schema = self.vp.get('database', 'impact_area_schema')
+        except Exception, e:
+            self.schema = self.vp.get('database', 'default_schema')
+        _product_pattern = self.vp.get('hazard_impact', 'vhi_area_pattern')
+        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
+
+        self.product_filename = _product_files[0]
+        self.product_name = 'vhi_impact_area'
+        self.destination_filename = self.product_filename
+        self.ingestion_date = self.valid_from_date
+        return
+
+@PublishProductTasksImpl.register_subclass('vhi_impact_popn')
+class PublishVHIPopnImpactProduct(PublishableTabularProduct):
+    """ Initialise MODISDownloadTask object.
+
+    Implementation class for downloading MODIS products.
+
+    """
+    def __init__(self, params, vampire_defaults):
+        logger.debug('Initialising Popn Impact product.')
+        super(PublishVHIPopnImpactProduct, self).__init__(params, vampire_defaults)
+#        self.params = params
+#        self.vp = vampire_defaults
+        self.product_dir = self.vp.get('hazard_impact', 'vhi_output_dir')
+        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.valid_from_date = self.params['start_date']
+        self.valid_to_date = self.params['end_date']
+        self.database = self.vp.get('database', 'impact_db')
+        self.table_name = self.vp.get('database', 'impact_popn_table')
+        try:
+            self.schema = self.vp.get('database', 'impact_popn_schema')
+        except Exception, e:
+            self.schema = self.vp.get('database', 'default_schema')
+        _product_pattern = self.vp.get('hazard_impact', 'vhi_popn_pattern')
+        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
+
+        self.product_filename = _product_files[0]
+            #'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif' % self.product_date.strftime('%Y.%m.%d')
+        self.product_name = 'vhi_impact_popn'
+        self.destination_filename = self.product_filename
+        self.ingestion_date = self.valid_from_date
         return

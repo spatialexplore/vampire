@@ -9,11 +9,13 @@ class ImpactProductImpl(object):
     """
     def __init__(self):
         logger.debug('Initialising Impact Product')
+        self.product_name = None
         self.valid_from_date = None
         self.valid_to_date = None
         self.output_file = None
         self.output_dir = None
         self.output_pattern = None
+        self.publish_pattern = None
         return
 
     @property
@@ -22,6 +24,13 @@ class ImpactProductImpl(object):
     @output_file.setter
     def output_file(self, of):
         self.__output_file = of
+
+    @property
+    def product_name(self):
+        return self.__product_name
+    @product_name.setter
+    def product_name(self, pn):
+        self.__product_name = pn
 
     @property
     def output_dir(self):
@@ -36,6 +45,13 @@ class ImpactProductImpl(object):
     @output_pattern.setter
     def output_pattern(self, op):
         self.__output_pattern = op
+
+    @property
+    def publish_pattern(self):
+        return self.__publish_pattern
+    @publish_pattern.setter
+    def publish_pattern(self, op):
+        self.__publish_pattern = op
 
     @property
     def valid_from_date(self):
@@ -56,8 +72,9 @@ class ImpactProductImpl(object):
     # Publish product to Database
     - process: Publish
       type: database
+      product: {product}
       start_date: {start_date}
-      end_date: {end_date}""".format(start_date=self.valid_from_date.strftime("%d/%m/%Y"),
+      end_date: {end_date}""".format(product=self.product_name, start_date=self.valid_from_date.strftime("%d/%m/%Y"),
                                      end_date=self.valid_to_date.strftime("%d/%m/%Y"))
         if self.output_file is not None:
             cfg_string += """
@@ -66,6 +83,6 @@ class ImpactProductImpl(object):
             cfg_string += """
       input_dir: {input_dir}
       input_pattern: '{input_pattern}'
-        """.format(input_dir=self.output_dir, input_pattern=self.output_pattern)
+        """.format(input_dir=self.output_dir, input_pattern=self.publish_pattern)
 
         return cfg_string

@@ -1,13 +1,16 @@
-import vampire.VampireDefaults as VampireDefaults
-import MODISTasksImpl
-import CHIRPSTasksImpl
-import IMERGTasksImpl
-import GFSTasksImpl
-import RasterTasksImpl
-import ClimateAnalysisTasksImpl
-import ImpactTasksImpl
-import PublishTasksImpl
 import logging
+
+import VampireDefaults as VampireDefaults
+
+import CHIRPSTasksImpl
+import ClimateAnalysisTasksImpl
+import GFSTasksImpl
+import IMERGTasksImpl
+import ImpactTasksImpl
+import MODISTasksImpl
+import PublishTasksImpl
+import RasterTasksImpl
+
 logger = logging.getLogger(__name__)
 
 class TaskProcessor():

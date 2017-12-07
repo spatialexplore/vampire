@@ -1,11 +1,13 @@
+import logging
 import os
 import subprocess
-import vampire.directory_utils as directory_utils
-import vampire.filename_utils as filename_utils
+
 import gdal
-import rasterio
 import numpy as np
-import logging
+
+import directory_utils as directory_utils
+import filename_utils as filename_utils
+
 logger = logging.getLogger(__name__)
 
 def clip_raster_to_shp(shpfile, in_raster, out_raster, gdal_path, nodata=True):

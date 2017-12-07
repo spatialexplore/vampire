@@ -1,11 +1,14 @@
-import vampire.VampireDefaults as VampireDefaults
-import vampire.directory_utils
-import BaseTaskImpl
-import ftputil
-import os
-import re
 import datetime
 import logging
+import os
+import re
+
+import ftputil
+
+import BaseTaskImpl
+import directory_utils
+import VampireDefaults
+
 logger = logging.getLogger(__name__)
 try:
     import calculate_statistics_arc as calculate_statistics

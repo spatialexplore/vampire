@@ -1,9 +1,10 @@
-import BaseTaskImpl
-import os
-import vampire.directory_utils as directory_utils
-import vampire.filename_utils as filename_utils
-import vampire.csv_utils as csv_utils
 import logging
+import os
+
+import BaseTaskImpl
+import directory_utils as directory_utils
+import filename_utils as filename_utils
+
 logger = logging.getLogger(__name__)
 
 try:

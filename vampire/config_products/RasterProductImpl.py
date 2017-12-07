@@ -11,10 +11,18 @@ class RasterProductImpl(object):
         logger.debug('Initialising Raster Product')
         self.valid_from_date = None
         self.valid_to_date = None
+        self.product_name = None
         self.product_file = None
         self.product_dir = None
         self.product_pattern = None
         return
+
+    @property
+    def product_name(self):
+        return self.__product_name
+    @product_name.setter
+    def product_name(self, of):
+        self.__product_name = of
 
     @property
     def product_file(self):
@@ -56,9 +64,10 @@ class RasterProductImpl(object):
     # Publish product to GIS Server
     - process: Publish
       type: gis_server
+      product: {product}
       start_date: {start_date}
-      end_date: {end_date}""".format(start_date=self.valid_from_date.strftime("%d/%m/%Y"),
-                                     end_date=self.valid_to_date.strftime("%d/%m/%Y"))
+      end_date: {end_date}""".format(product=self.product_name, start_date=self.valid_from_date().strftime("%d/%m/%Y"),
+                                     end_date=self.valid_to_date().strftime("%d/%m/%Y"))
         if self.product_file is not None:
             cfg_string += """
       input_file: {input_file}""".format(input_file=self.product_file)
