@@ -85,6 +85,9 @@ class FloodAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
         config = """
     # Calculate area impact
         """
+        _hazard_pattern = None
+        _hazard_dir = None
+        _hazard_file = None
         _boundary_file = None
         _boundary_pattern = None
         _boundary_dir = None
@@ -92,6 +95,18 @@ class FloodAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
         _output_file = None
         _output_dir = None
         _output_pattern = None
+
+        # if hazard_file is not None:
+        #     _hazard_file = hazard_file
+        # else:
+        #     if hazard_pattern is not None:
+        #         _hazard_pattern = hazard_pattern
+        #     else:
+        #         _hazard_pattern = self.vp.get('FLOOD_FORECAST', 'flood_forecast_pattern')
+        #     if hazard_dir is not None:
+        #         _hazard_dir = hazard_dir
+        #     else:
+        #         _hazard_dir = self.vp.get('FLOOD_FORECAST', 'product_dir')
 
         if boundary_file is not None:
             _boundary_file = boundary_file
@@ -128,23 +143,23 @@ class FloodAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
             _forecast_period = int(self.vp.get('FLOOD_FORECAST', 'forecast_period'))
         else:
             _forecast_period = forecast_period
-        for f in _flood_years:
-            _num_forecasts = _forecast_period - _forecast_days +1
-            for i in range(1, _num_forecasts+1):
-                _cur_forecast = ''.join(map(str, range(i, i+_forecast_days)))
-                _hazard_pattern = hazard_pattern.replace('(?P<num_years>\d{2,4})', '{0:0>2}'.format(f))
-                _hazard_pattern = _hazard_pattern.replace('(?P<forecast_period>fd\d{3})', 'fd{0}'.format(_cur_forecast))
-                _output_pattern = self.output_pattern.replace('{num_years}', '{0:0>2}'.format(f))
-                _output_pattern = _output_pattern.replace('{forecast_period}', '{0}'.format(_cur_forecast))
-                _valid_from_date = self.valid_from_date + datetime.timedelta(i)
-                _valid_to_date = self.valid_to_date + datetime.timedelta(i+_forecast_days-1)
-                config += self._generate_area_impact_section(hazard_file=hazard_file, hazard_dir=hazard_dir,
-                                                             hazard_pattern=_hazard_pattern, boundary_file=_boundary_file,
-                                                             boundary_dir=_boundary_dir, boundary_pattern=_boundary_pattern,
-                                                             boundary_field=_boundary_field,
-                                                             output_file=self.output_file, output_dir=self.output_dir,
-                                                             output_pattern=_output_pattern,
-                                                             start_date=_valid_from_date, end_date=_valid_to_date)
+#        for f in _flood_years:
+        _num_forecasts = _forecast_period - _forecast_days +1
+        for i in range(1, _num_forecasts+1):
+            _cur_forecast = ''.join(map(str, range(i, i+_forecast_days)))
+#            _hazard_pattern = hazard_pattern.replace('(?P<num_years>\d{2,4})', '{0:0>2}'.format(f))
+            _hazard_pattern = hazard_pattern.replace('(?P<forecast_period>fd\d{3})', 'fd{0}'.format(_cur_forecast))
+#           _output_pattern = self.output_pattern.replace('{num_years}', '{0:0>2}'.format(f))
+            _output_pattern = self.output_pattern.replace('{forecast_period}', '{0}'.format(_cur_forecast))
+            _valid_from_date = self.valid_from_date + datetime.timedelta(i)
+            _valid_to_date = self.valid_to_date + datetime.timedelta(i+_forecast_days-1)
+            config += self._generate_area_impact_section(hazard_file=hazard_file, hazard_dir=hazard_dir,
+                                                         hazard_pattern=_hazard_pattern, boundary_file=_boundary_file,
+                                                         boundary_dir=_boundary_dir, boundary_pattern=_boundary_pattern,
+                                                         boundary_field=_boundary_field,
+                                                         output_file=self.output_file, output_dir=self.output_dir,
+                                                         output_pattern=_output_pattern,
+                                                         start_date=_valid_from_date, end_date=_valid_to_date)
         return config
 
     def _generate_area_impact_section(self, hazard_file, hazard_dir, hazard_pattern,
