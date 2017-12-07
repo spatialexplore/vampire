@@ -4,6 +4,7 @@ import logging
 
 import BaseDataset
 import RasterProductImpl
+import RasterDatasetImpl
 
 logger = logging.getLogger(__name__)
 
