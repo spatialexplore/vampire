@@ -1,4 +1,5 @@
 import ast
+import os
 import logging
 
 import BaseDataset
@@ -104,6 +105,9 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
             _days = ast.literal_eval(self.vp.get('FLOOD_FORECAST', 'forecast_days'))
         else:
             _days = accumulate_days
+
+        _num_forecasts = ast.literal_eval(self.vp.get('FLOOD_FORECAST', 'forecast_period')) - _days +1
+
         config = """
     ## Processing chain begin - Compute Flood Forecast\n"""
         _cfg_section, _output_dir = self.gfs_dataset.generate_config(data_dir=None, download=True, crop=True, accumulate_days=_days)
@@ -167,6 +171,29 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
         self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
         self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.product_date.month))
         self.product_pattern = self.product_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.product_date.day))
+
+        for i in range(0, _num_forecasts):
+            # mosaic all the flood return periods for this set of days
+            _mosaic_pattern = ''
+            _forecast_days = ''.join(map(str, range(i+1,i+_num_forecasts)))
+            _mosaic_output_pattern = self.vp.get('FLOOD_FORECAST', 'output_mosaic_pattern')
+            _mosaic_output_pattern = _mosaic_output_pattern.replace('{forecast_day}', '{0}'.format(_forecast_days))
+
+            for y in _flood_years:
+                _forecast_pattern = self.product_pattern
+                _forecast_pattern = _forecast_pattern.replace('(?P<num_years>\d{2,4})', '{0:0>2}'.format(y))
+                _forecast_pattern = _forecast_pattern.replace('(?P<forecast_period>fd\d{3})',
+                                                              'fd{0}'.format(_forecast_days))
+                _mosaic_pattern = '{0}|{1}'.format(_mosaic_pattern, _forecast_pattern)
+            _mosaic_pattern = _mosaic_pattern[1:]  # remove initial '|'
+            _raster = RasterDatasetImpl.RasterDatasetImpl()
+            config += _raster.generate_mosaic_section(input_dir=_output_dir, file_pattern=_mosaic_pattern,
+                                                      output_dir=_output_dir, output_pattern=_mosaic_output_pattern)
+        self.product_pattern = self.vp.get('FLOOD_FORECAST', 'flood_mosaic_pattern')
+        self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
+        self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.product_date.month))
+        self.product_pattern = self.product_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.product_date.day))
+
         return config
 
     def generate_flood_forecast_section(self, data_dir, file_pattern,
@@ -194,7 +221,8 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
         else:
             cfg_string += """
       output_dir: {output_dir}
-      output_pattern: '{output_pattern}'""".format(output_dir=output_dir, output_pattern=output_pattern)
+      output_pattern: '{output_pattern}'
+      """.format(output_dir=output_dir, output_pattern=output_pattern)
 
         return cfg_string
 
