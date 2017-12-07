@@ -141,8 +141,9 @@ class PopulationImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
         else:
             # calculate population from hazard raster and population raster intersection
             _hazard_raster = os.path.join(os.path.dirname(_output_file), 'hazard_popn.tif')
-            impact_analysis.multiply_by_mask(raster=population_raster, mask=_reclass_raster,
-                                             output_raster=_hazard_raster)
+            impact_analysis.create_mask(raster=population_raster, mask=_reclass_raster, output_raster=_hazard_raster)
+#            impact_analysis.multiply_by_mask(raster=population_raster, mask=_reclass_raster,
+#                                             output_raster=_hazard_raster)
         # calculate impact on boundary
         calculate_statistics.calc_zonal_statistics(raster_file=_hazard_raster, polygon_file=boundary,
                                                    zone_field=b_field, output_table=_output_file)
