@@ -394,3 +394,60 @@ class RasterApplyMaskTask(BaseTaskImpl.BaseTaskImpl):
                                        output_file=_output_file, gdal_path=_gdal_path, nodata=nodata)
 
         return None
+
+@RasterTasksImpl.register_subclass('mosaic')
+class RasterMosaicTask(BaseTaskImpl.BaseTaskImpl):
+    """ Initialise RasterMosaicTask object.
+
+    Implementation class for generating a mosaic from a list of rasters.
+
+    """
+    def __init__(self, params, vampire_defaults):
+        super(RasterMosaicTask, self).__init__(params, vampire_defaults)
+        logger.debug('Initialising raster mosaic task')
+        self.params = params
+        self.vp = vampire_defaults
+        return
+
+    def process(self):
+        logger.debug("Mosaic list of rasters")
+        _input_dir = None
+        _file_pattern = None
+        _output_dir = None
+        _output_pattern = None
+        _mosaic_method = None
+
+        if 'input_dir' in self.params:
+            _input_dir = self.params['input_dir']
+        else:
+            raise BaseTaskImpl.ConfigFileError("No input directory 'input_dir' specified.", None)
+        if 'file_pattern' in self.params:
+            _file_pattern = self.params['file_pattern']
+        else:
+            raise BaseTaskImpl.ConfigFileError("No file pattern 'file_pattern' specified.", None)
+        if 'output_dir' in self.params:
+            _output_dir = self.params['output_dir']
+        else:
+            raise BaseTaskImpl.ConfigFileError("No output directory 'output_dir' specified.", None)
+        if 'output_pattern' in self.params:
+            _output_pattern = self.params['output_pattern']
+        else:
+            raise BaseTaskImpl.ConfigFileError("No output pattern 'output_pattern' specified.", None)
+        if 'mosaic_method' in self.params:
+            _mosaic_method = self.params['mosaic_method']
+        else:
+            _mosaic_method = 'MAXIMUM'
+
+        _file_list = directory_utils.get_matching_files(_input_dir, _file_pattern)
+        if not _file_list:
+           raise ValueError, "No matching raster file found."
+
+        _base_name = os.path.basename(_file_list[0])
+        _output_file = filename_utils.generate_output_filename(_base_name, _file_pattern,
+                                                                       _output_pattern, False)
+
+        _file_str = ','.join(map(str, _file_list))
+        calculate_statistics.mosaic_rasters(_file_list, _output_dir, _output_file, _mosaic_method)
+
+        return None
+
