@@ -79,6 +79,17 @@ def multiply_by_mask(raster, mask, output_raster):
     out_ras.save(output_raster)
     return None
 
+def create_mask(raster, mask, output_raster):
+    _mask = arcpy.Raster(mask)
+    _raster = arcpy.Raster(raster)
+    _new_mask = arcpy.sa.SetNull(mask, mask, "VALUE = 0")
+    out_ras = arcpy.sa.ExtractByMask(_raster, _new_mask)
+    out_ras.save(output_raster)
+    del _mask
+    del _raster
+    del _new_mask
+    return None
+
 def shapefile_to_table(input, output):
     if os.path.splitext(output)[1] != '.dbf':
         _output = '{0}{1}'.format(os.path.splitext(os.path.basename(output))[0], '.dbf')
