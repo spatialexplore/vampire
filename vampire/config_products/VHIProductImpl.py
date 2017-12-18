@@ -214,9 +214,15 @@ class VHIProductImpl(RasterProductImpl.RasterProductImpl):
             _boundary_file = self.vp.get_country(self.country)['crop_boundary']
         else:
             _boundary_file = boundary_file
+        if _boundary_file == '':
+            _boundary_file = None
+        _boundary_raster = self.vp.get_country(self.country)['crop_boundary_raster']
+        if _boundary_raster == '':
+            _boundary_raster = None
         _raster = RasterDatasetImpl.RasterDatasetImpl()
         config += _raster.generate_mask_section(input_file=self.product_file, input_dir=self.product_dir,
                                                 input_pattern=self.product_pattern,
+                                                boundary_raster=_boundary_raster,
                                                 output_file=_output_file, output_dir=_output_dir,
                                                 output_pattern=_output_pattern, boundary_file=_boundary_file,
                                                 no_data=False)
