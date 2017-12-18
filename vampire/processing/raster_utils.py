@@ -203,6 +203,20 @@ def reproject_cut ( slave, box=None, t_srs=None, s_srs=None, res=None ):
     dst_ds = None  # Flush to disk
     return dst_filename
 
+def mask_by_raster(raster_file, mask_file, output_file, nodata=None):
+    try:
+        import arcpy
+        _cellsize = arcpy.env.cellSize
+        arcpy.env.cellSize = "MINOF"
+        _raster = arcpy.sa.Raster(raster_file)
+        _mask_file = arcpy.sa.Raster(mask_file)
+        _output = arcpy.sa.Times(_raster, _mask_file)
+        _output.save(output_file)
+        arcpy.env.cellSize = _cellsize
+    except ImportError:
+        raise ValueError("Error, mask by raster not implemented yet" )
+
+
 def mask_by_shapefile(raster_file, polygon_file, output_file, gdal_path, nodata=None):
     try:
         logger.debug("%s", polygon_file)
