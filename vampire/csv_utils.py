@@ -32,6 +32,7 @@ def calc_field(table_name, new_field, cal_field, multiplier=1.0, type='DOUBLE'):
             _header_row.append(new_field)
             # convert all to lower case for comparison
             _lower_header = [x.lower() for x in _header_row]
+            _lower_header = [x.replace("\'", "") for x in _lower_header]
             _calc_index = 0
             try:
                 _calc_index = _lower_header.index(cal_field.lower())
