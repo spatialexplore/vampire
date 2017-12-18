@@ -34,12 +34,14 @@ def calc_VCI(cur_filename, evi_max_filename, evi_min_filename, dst_filename):
 def calc_VHI(vci_filename, tci_filename, dst_filename):
      # calculate Vegetation Health Index
     # VHI = 0.5 x (VCI + TCI)
+    _cellsize = arcpy.env.cellSize
     arcpy.env.cellSize = "MINOF"
     vci_Raster = arcpy.Raster(vci_filename)
     tci_Raster = arcpy.Raster(tci_filename)
     dst_f = arcpy.sa.Plus(vci_Raster, tci_Raster)
     dst = arcpy.sa.Times(dst_f, 0.5)
     dst.save(dst_filename)
+    arcpy.env.cellSize = _cellsize
     return None
 
 
