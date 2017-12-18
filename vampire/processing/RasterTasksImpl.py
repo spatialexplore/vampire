@@ -318,6 +318,9 @@ class RasterApplyMaskTask(BaseTaskImpl.BaseTaskImpl):
         _raster_pattern = None
         _polygon_dir = None
         _polygon_pattern = None
+        _boundary_raster = None
+        _boundary_raster_dir = None
+        _boundary_raster_pattern = None
         _output_file = None
         _output_dir = None
         _output_pattern = None
@@ -333,11 +336,18 @@ class RasterApplyMaskTask(BaseTaskImpl.BaseTaskImpl):
         if 'polygon_file' in self.params:
             _polygon_filename = self.params['polygon_file']
         else:
-            if not 'polygon_dir' in self.params:
-                raise BaseTaskImpl.ConfigFileError("No polygon file 'polygon_file' or pattern 'polygon_pattern'/directory 'polygon_dir' specified.", None)
-            else:
+            if 'polygon_dir' in self.params:
                 _polygon_dir = self.params['polygon_dir']
                 _polygon_pattern = self.params['polygon_pattern']
+            else:
+                if 'boundary_raster' in self.params:
+                    _boundary_raster = self.params['boundary_raster']
+                else:
+                    if 'boundary_dir' in self.params:
+                        _boundary_raster_dir = self.params['boundary_raster_dir']
+                        _boundary_raster_pattern = self.params['boundary_raster_pattern']
+                    else:
+                        raise BaseTaskImpl.ConfigFileError("No polygon file or raster boundary specified")
 
         if 'output_file' in self.params:
             _output_file = self.params['output_file']
@@ -352,10 +362,17 @@ class RasterApplyMaskTask(BaseTaskImpl.BaseTaskImpl):
         else:
             _no_data = False
 
-        self.mask_by_shapefile(raster_file=_raster_filename, raster_dir=_raster_dir, raster_pattern=_raster_pattern,
-                             polygon_file=_polygon_filename, polygon_dir=_polygon_dir, polygon_pattern=_polygon_pattern,
-                             output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
-                             nodata=_no_data)
+        if _boundary_raster is not None:
+            self.mask_by_raster(raster_file=_raster_filename, raster_dir=_raster_dir, raster_pattern=_raster_pattern,
+                                boundary_raster=_boundary_raster, boundary_raster_dir=_boundary_raster_dir,
+                                boundary_raster_pattern=_boundary_raster_pattern,
+                                output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
+                                nodata=_no_data)
+        else:
+            self.mask_by_shapefile(raster_file=_raster_filename, raster_dir=_raster_dir, raster_pattern=_raster_pattern,
+                                 polygon_file=_polygon_filename, polygon_dir=_polygon_dir, polygon_pattern=_polygon_pattern,
+                                 output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
+                                 nodata=_no_data)
 
     def mask_by_shapefile(self, raster_file, raster_dir, raster_pattern,
                           polygon_file, polygon_dir, polygon_pattern,
@@ -374,7 +391,7 @@ class RasterApplyMaskTask(BaseTaskImpl.BaseTaskImpl):
             if _file_list is not None:
                 _polygon_file = _file_list[0]
             else:
-                raise ValueError, "No matching polygon file found."
+                raise ValueError, "No matching polygon file or polygon dir/pattern found."
         else:
             _polygon_file = polygon_file
 
@@ -390,10 +407,46 @@ class RasterApplyMaskTask(BaseTaskImpl.BaseTaskImpl):
             _output_file = output_file
         _gdal_path = self.vp.get('directories', 'gdal_dir')
 
+
         raster_utils.mask_by_shapefile(raster_file=_raster_file, polygon_file=_polygon_file,
                                        output_file=_output_file, gdal_path=_gdal_path, nodata=nodata)
 
         return None
+
+    def mask_by_raster(self, raster_file, raster_dir, raster_pattern, boundary_raster, boundary_raster_dir,
+                       boundary_raster_pattern, output_file, output_dir, output_pattern, nodata=False):
+        if raster_file is None:
+            _file_list = directory_utils.get_matching_files(raster_dir, raster_pattern)
+            if _file_list:
+                _raster_file = _file_list[0]
+            else:
+                raise ValueError, "No matching raster file found."
+        else:
+            _raster_file = raster_file
+
+        if boundary_raster is None:
+            _file_list = directory_utils.get_matching_files(boundary_raster_dir, boundary_raster_pattern)
+            if _file_list is not None:
+                _boundary_raster = _file_list[0]
+            else:
+                raise ValueError, "No matching raster boundary file or boundary dir/pattern found."
+        else:
+            _boundary_raster = boundary_raster
+
+        if output_file is None:
+            if output_dir is None:
+                raise ValueError, "No output directory provided."
+            if output_pattern is None:
+                raise ValueError, "No output pattern provided."
+            _output_dir = output_dir
+            _output_file = os.path.join(_output_dir, filename_utils.generate_output_filename(
+                os.path.basename(_raster_file), raster_pattern, output_pattern, False))
+        else:
+            _output_file = output_file
+
+        raster_utils.mask_by_raster(raster_file=_raster_file, mask_file=_boundary_raster, output_file=_output_file)
+        return None
+
 
 @RasterTasksImpl.register_subclass('mosaic')
 class RasterMosaicTask(BaseTaskImpl.BaseTaskImpl):
