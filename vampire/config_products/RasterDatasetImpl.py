@@ -63,7 +63,7 @@ class RasterDatasetImpl(object):
         return file_string
 
     def generate_mask_section(self, input_file, input_dir, input_pattern, output_file, output_dir, output_pattern,
-                              boundary_file, no_data=False):
+                              boundary_file, boundary_raster, no_data=False):
         cfg_string = """
     # Mask data with boundary
     - process: Raster
@@ -75,8 +75,12 @@ class RasterDatasetImpl(object):
             cfg_string += """
       raster_dir: {input_dir}
       raster_pattern: '{file_pattern}'""".format(input_dir=input_dir, file_pattern=input_pattern)
-        cfg_string += """
+        if boundary_file is not None:
+            cfg_string += """
       polygon_file: {boundary_file}""".format(boundary_file=boundary_file)
+        elif boundary_raster is not None:
+            cfg_string += """
+      boundary_raster: {boundary_raster}""".format(boundary_raster=boundary_raster)
         if output_file is not None:
             cfg_string += """
       output_file: {output_file}""".format(output_file=output_file)
