@@ -89,6 +89,8 @@ def days_since_last_rain(raster_list, dslw_filename, dsld_filename, num_wet_days
 
 # Reclassify raster to 1 if >= 0.5mm rainfall, 0 otherwise (wet days)
 def _reclassify_wet_day(in_raster, out_raster, threshold):
+    _extent = arcpy.env.extent
+    _cellsize = arcpy.env.cellSize
     arcpy.env.extent="MAXOF"
     arcpy.env.cellSize="MAXOF"
     ras = arcpy.sa.Raster(in_raster)
@@ -113,6 +115,8 @@ def _reclassify_wet_day(in_raster, out_raster, threshold):
 ##    out_con = Con(Raster(in_raster) >= threshold, 1.0, 0.0)
 ###    out_con = Con(ras, 1, 0, "VALUE >= 0.5")
 ##    out_con.save(out_raster)
+    arcpy.env.cellSize = _cellsize
+    arcpy.env.extent = _extent
     return None
 
 
@@ -196,10 +200,12 @@ def _calc_num_days_since(rasters, dslw_fn, dsld_fn, max_days):
 def calc_flood_alert(forecast_filename, threshold_filename, dst_filename, value=1):
     _forecast_raster = arcpy.sa.Raster(forecast_filename)
     _threshold_raster = arcpy.sa.Raster(threshold_filename)
+    _cellsize = arcpy.env.cellSize
     arcpy.env.cellSize = "MINOF"
     dst = arcpy.sa.GreaterThanEqual(_forecast_raster, _threshold_raster) * int(value)
     # if value != 1:
     #     dst2 = arcpy.sa.Times(dst, value)
     #     dst = dst2
     dst.save(dst_filename)
+    arcpy.env.cellSize = _cellsize
     return 0
