@@ -274,4 +274,6 @@ class FloodForecastProduct(BaseProduct):
         return self.impl.generate_config(data_dir=data_dir, output_dir=output_dir, file_pattern=file_pattern,
                                          accumulate_days=days)
 
+    def generate_publish_config(self):
+        return self.impl.generate_publish_config()
 
