@@ -1,4 +1,5 @@
 import logging
+import datetime
 logger = logging.getLogger(__name__)
 
 class RasterProductImpl(object):
@@ -60,14 +61,23 @@ class RasterProductImpl(object):
         self.__valid_to_date = ed
 
     def generate_publish_config(self):
+        if type(self.valid_from_date) != datetime.datetime:
+            _valid_from_date = self.valid_from_date()
+        else:
+            _valid_from_date = self.valid_from_date
+        if type(self.valid_to_date) != datetime.datetime:
+            _valid_to_date = self.valid_to_date()
+        else:
+            _valid_to_date = self.valid_to_date
+
         cfg_string = """
     # Publish product to GIS Server
     - process: Publish
       type: gis_server
       product: {product}
       start_date: {start_date}
-      end_date: {end_date}""".format(product=self.product_name, start_date=self.valid_from_date().strftime("%d/%m/%Y"),
-                                     end_date=self.valid_to_date().strftime("%d/%m/%Y"))
+      end_date: {end_date}""".format(product=self.product_name, start_date=_valid_from_date.strftime("%d/%m/%Y"),
+                                     end_date=_valid_to_date.strftime("%d/%m/%Y"))
         if self.product_file is not None:
             cfg_string += """
       input_file: {input_file}""".format(input_file=self.product_file)
