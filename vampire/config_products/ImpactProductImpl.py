@@ -1,4 +1,5 @@
 import logging
+import datetime
 logger = logging.getLogger(__name__)
 
 class ImpactProductImpl(object):
@@ -55,14 +56,18 @@ class ImpactProductImpl(object):
 
     @property
     def valid_from_date(self):
-        return self.__valid_from_date()
+        if type(self.__valid_from_date) != datetime.datetime:
+            return self.__valid_from_date()
+        return self.__valid_from_date
     @valid_from_date.setter
     def valid_from_date(self, sd):
         self.__valid_from_date = sd
 
     @property
     def valid_to_date(self):
-        return self.__valid_to_date()
+        if type(self.__valid_to_date) != datetime.datetime:
+            return self.__valid_to_date()
+        return self.__valid_to_date
     @valid_to_date.setter
     def valid_to_date(self, ed):
         self.__valid_to_date = ed
