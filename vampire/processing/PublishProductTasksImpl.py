@@ -362,3 +362,67 @@ class PublishVHIPopnImpactProduct(PublishableTabularProduct):
         self.destination_filename = self.product_filename
         self.ingestion_date = self.valid_from_date
         return
+
+@PublishProductTasksImpl.register_subclass('flood_impact_area')
+class PublishFloodAreaImpactProduct(PublishableTabularProduct):
+    """ Initialise MODISDownloadTask object.
+
+    Implementation class for downloading MODIS products.
+
+    """
+    def __init__(self, params, vampire_defaults):
+        logger.debug('Initialize Publish Flood Area Impact product.')
+        super(PublishFloodAreaImpactProduct, self).__init__(params, vampire_defaults)
+        self.params = params
+        self.vp = vampire_defaults
+        self.product_dir = self.vp.get('hazard_impact', 'flood_output_dir')
+        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.valid_from_date = self.params['start_date']
+        self.valid_to_date = self.params['end_date']
+        self.database = self.vp.get('database', 'impact_db')
+        self.table_name = self.vp.get('database', 'impact_area_table')
+        try:
+            self.schema = self.vp.get('database', 'impact_area_schema')
+        except Exception, e:
+            self.schema = self.vp.get('database', 'default_schema')
+        _product_pattern = self.vp.get('hazard_impact', 'flood_area_pattern')
+        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
+
+        self.product_filename = _product_files[0]
+        self.product_name = 'flood_impact_area'
+        self.destination_filename = self.product_filename
+        self.ingestion_date = self.valid_from_date
+        return
+
+@PublishProductTasksImpl.register_subclass('flood_impact_popn')
+class PublishFloodPopnImpactProduct(PublishableTabularProduct):
+    """ Initialise MODISDownloadTask object.
+
+    Implementation class for downloading MODIS products.
+
+    """
+    def __init__(self, params, vampire_defaults):
+        logger.debug('Initialize Publish Flood Population Impact product.')
+        super(PublishFloodPopnImpactProduct, self).__init__(params, vampire_defaults)
+        self.params = params
+        self.vp = vampire_defaults
+        self.product_dir = self.vp.get('hazard_impact', 'flood_output_dir')
+        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.valid_from_date = self.params['start_date']
+        self.valid_to_date = self.params['end_date']
+        self.database = self.vp.get('database', 'impact_db')
+        self.table_name = self.vp.get('database', 'flood_impact_popn_table')
+        try:
+            self.schema = self.vp.get('database', 'impact_popn_schema')
+        except Exception, e:
+            self.schema = self.vp.get('database', 'default_schema')
+        _product_pattern = self.vp.get('hazard_impact', 'flood_popn_pattern')
+        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
+
+        self.product_filename = _product_files[0]
+        self.product_name = 'flood_impact_popn'
+        self.destination_filename = self.product_filename
+        self.ingestion_date = self.valid_from_date
+        return
