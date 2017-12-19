@@ -30,6 +30,7 @@ class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
     """
     def __init__(self, country, valid_from_date, valid_to_date, vampire_defaults):
         super(FloodPopnImpactProductImpl, self).__init__()
+        self.product_name = 'flood_impact_area'
         self.country = country
         self.valid_from_date = valid_from_date
         self.valid_to_date = valid_to_date
@@ -221,3 +222,22 @@ class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
         """
         return cfg_string
 
+    def generate_publish_config(self):
+        cfg_string = """"""
+        _days = ast.literal_eval(self.vp.get('FLOOD_FORECAST', 'forecast_days'))
+        _num_forecasts = ast.literal_eval(self.vp.get('FLOOD_FORECAST', 'forecast_period')) - _days +1
+        _product_pattern = self.product_pattern
+        _valid_from = self.valid_from_date
+        _valid_to = self.valid_to_date()
+
+        for i in range(0, _num_forecasts):
+            _forecast_days = ''.join(map(str, range(i+1,i+_num_forecasts)))
+            self.product_pattern = self.product_pattern.replace('(?P<forecast_period>fd\d{3})',
+                                                              'fd{0}'.format(_forecast_days))
+            self.valid_from_date = _valid_from() + datetime.timedelta(days=i+1)
+            self.valid_to_date = self.valid_from_date
+            cfg_string += super(FloodPopnImpactProductImpl, self).generate_publish_config()
+            self.product_pattern = _product_pattern
+            self.valid_from_date = _valid_from
+            self.valid_to_date = _valid_to
+        return cfg_string

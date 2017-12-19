@@ -1,6 +1,7 @@
 import ast
 import os
 import logging
+import datetime
 
 import BaseDataset
 import RasterProductImpl
@@ -30,6 +31,7 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
     """
     def __init__(self, country, product_date, interval, vampire_defaults):
         super(FloodForecastProductImpl, self).__init__()
+        self.product_name = 'flood_forecast'
         self.country = country
         self.interval = interval
         self.product_date = product_date
@@ -228,3 +230,22 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
         return cfg_string
 
 
+    def generate_publish_config(self):
+        cfg_string = """"""
+        _days = ast.literal_eval(self.vp.get('FLOOD_FORECAST', 'forecast_days'))
+        _num_forecasts = ast.literal_eval(self.vp.get('FLOOD_FORECAST', 'forecast_period')) - _days +1
+        _product_pattern = self.product_pattern
+        _valid_from = self.valid_from_date
+        _valid_to = self.valid_to_date()
+
+        for i in range(0, _num_forecasts):
+            _forecast_days = ''.join(map(str, range(i+1,i+_num_forecasts)))
+            self.product_pattern = self.product_pattern.replace('(?P<forecast_period>fd\d{3})',
+                                                              'fd{0}'.format(_forecast_days))
+            self.valid_from_date = _valid_from() + datetime.timedelta(days=i+1)
+            self.valid_to_date = self.valid_from_date
+            cfg_string += super(FloodForecastProductImpl, self).generate_publish_config()
+            self.product_pattern = _product_pattern
+            self.valid_from_date = _valid_from
+            self.valid_to_date = _valid_to
+        return cfg_string
