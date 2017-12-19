@@ -161,6 +161,10 @@ class FloodAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
                                                          output_file=self.output_file, output_dir=self.output_dir,
                                                          output_pattern=_output_pattern,
                                                          start_date=_valid_from_date, end_date=_valid_to_date)
+        self.publish_pattern = self.vp.get('hazard_impact', 'flood_area_pattern')
+        self.publish_pattern = self.publish_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.valid_from_date.year))
+        self.publish_pattern = self.publish_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.valid_from_date.month))
+        self.publish_pattern = self.publish_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.valid_from_date.day))
         return config
 
     def _generate_area_impact_section(self, hazard_file, hazard_dir, hazard_pattern,
@@ -209,18 +213,18 @@ class FloodAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
         cfg_string = """"""
         _days = ast.literal_eval(self.vp.get('FLOOD_FORECAST', 'forecast_days'))
         _num_forecasts = ast.literal_eval(self.vp.get('FLOOD_FORECAST', 'forecast_period')) - _days +1
-        _product_pattern = self.product_pattern
+        _publish_pattern = self.publish_pattern
         _valid_from = self.valid_from_date
-        _valid_to = self.valid_to_date()
+        _valid_to = self.valid_to_date
 
         for i in range(0, _num_forecasts):
             _forecast_days = ''.join(map(str, range(i+1,i+_num_forecasts)))
-            self.product_pattern = self.product_pattern.replace('(?P<forecast_period>fd\d{3})',
+            self.publish_pattern = self.publish_pattern.replace('(?P<forecast_period>fd\d{3})',
                                                               'fd{0}'.format(_forecast_days))
-            self.valid_from_date = _valid_from() + datetime.timedelta(days=i+1)
+            self.valid_from_date = _valid_from + datetime.timedelta(days=i+1)
             self.valid_to_date = self.valid_from_date
             cfg_string += super(FloodAreaImpactProductImpl, self).generate_publish_config()
-            self.product_pattern = _product_pattern
+            self.publish_pattern = _publish_pattern
             self.valid_from_date = _valid_from
             self.valid_to_date = _valid_to
         return cfg_string
