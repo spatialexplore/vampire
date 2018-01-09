@@ -1,5 +1,4 @@
 import VampireDefaults
-import GeoserverManager
 
 try:
     import gis_server_arc as gisserver
