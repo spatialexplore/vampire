@@ -1,8 +1,11 @@
-import GISServerManager
-import psycopg2
 import datetime
 import os
 import shutil
+
+import psycopg2
+
+import GISServerManager
+
 
 class GeoserverManager(GISServerManager.GISServerManager):
 
