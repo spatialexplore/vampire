@@ -2,7 +2,7 @@ import arcpy
 import dbfpy.dbf
 import csv
 import os
-import vampire.csv_utils
+import csv_utils
 import logging
 logger = logging.getLogger(__name__)
 
@@ -250,7 +250,7 @@ def calc_zonal_statistics(raster_file, polygon_file, zone_field, output_table):
     if arcpy.Exists(layer):
         arcpy.Delete_management(layer)
     # convert to .csv
-    vampire.csv_utils.convert_dbf_to_csv(os.path.join(os.path.dirname(raster_file), _output_dbf), _output_csv)
+    csv_utils.convert_dbf_to_csv(os.path.join(os.path.dirname(raster_file), _output_dbf), _output_csv)
 
     return None
 
