@@ -1,12 +1,15 @@
 __author__ = 'rochelle'
 #!/usr/bin/env python
 
-import datetime, time, calendar
-import dateutil.rrule
-import optparse, sys, os, traceback, errno
-import ast
-import re
+import datetime
+import optparse
+import os
+import sys
+import time
+import traceback
+
 import VampireDefaults
+
 
 class ConfigFactory:
     'Base Class for configuration file generation'
@@ -48,7 +51,7 @@ run:
 #         input_extension: .tiff
 #         output_prefix: idn_cli_chirps-v2.0
 #         output_ext: .tif
-# """.format(temp_dir=self.vampire.get('directories', 'temp_dir'))
+# """.format(temp_dir=self.vampire_tmp.get('directories', 'temp_dir'))
 #         return file_string
 #
 #     def generate_chirps_download(self, interval, data_dir, start_date=None, end_date=None):
