@@ -22,6 +22,33 @@ def add_field(table_name, new_field, value, type='DATE'):
             wr.writerows(_new_csv)
     return None
 
+def copy_field(table_name, new_field, copy_field):
+    base,ext = os.path.splitext(table_name)
+    if ext == '.csv':
+        _new_csv = []
+        with open(table_name, 'rb') as cf:
+            _reader = csv.reader(cf)
+            _header_row = next(_reader)
+            _header_row.append(new_field)
+            _lower_header = [x.lower() for x in _header_row]
+            _lower_header = [x.replace("\'", "") for x in _lower_header]
+            _calc_index = 0
+            try:
+                _calc_index = _lower_header.index(copy_field.lower())
+            except ValueError, e:
+                print '{0} not found in file header row.'.format(copy_field)
+                return None
+            for row in _reader:
+                _new_row = row
+                _new_row.append(row[_calc_index])
+#                print _new_row
+                _new_csv.append(_new_row)
+        with open(table_name, 'wb') as wf:
+            wr = csv.writer(wf)
+            wr.writerow(_header_row)
+            wr.writerows(_new_csv)
+    return None
+
 def calc_field(table_name, new_field, cal_field, multiplier=1.0, type='DOUBLE'):
     base,ext = os.path.splitext(table_name)
     if ext == '.csv':
@@ -165,7 +192,8 @@ import json
 def convert_dbf_to_csv(input_dbf, output_csv):
     with open(output_csv, 'wb') as csv_file:
         _dbf_file = dbfpy.dbf.Dbf(input_dbf)
-        _out_csv = csv.writer(csv_file, quotechar="'", quoting=csv.QUOTE_NONNUMERIC)
+#        _out_csv = csv.writer(csv_file, quotechar="'", quoting=csv.QUOTE_NONNUMERIC)
+        _out_csv = csv.writer(csv_file, quotechar='', quoting=csv.QUOTE_NONE)
         _header = []
         for field in _dbf_file.header.fields:
             _header.append(field.name)
