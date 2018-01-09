@@ -298,6 +298,38 @@ class PublishMaskedVHIProduct(PublishableRasterProduct):
         self.ingestion_date = self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
         return
 
+@PublishProductTasksImpl.register_subclass('flood_forecast')
+class PublishFloodForecastProduct(PublishableRasterProduct):
+    """ Initialise MODISDownloadTask object.
+
+    Implementation class for downloading MODIS products.
+
+    """
+    def __init__(self, params, vampire_defaults):
+        logger.debug('Initialising MODIS download task')
+        super(PublishFloodForecastProduct, self).__init__(params, vampire_defaults)
+        self.product_dir = self.vp.get('FLOOD_FORECAST', 'product_dir')
+        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.valid_from_date = self.params['start_date']
+        self.valid_to_date = self.params['end_date']
+        self.summary = '{0} {1}'.format(self.vp.get('FLOOD_FORECAST', 'interval'.capitalize()),
+                                        self.vp.get('FLOOD_FORECAST', 'summary'))
+        self.tags = '{0}, {1}'.format(self.vp.get('FLOOD_FORECAST', 'tags'),
+                                      self.vp.get_country_name(self.vp.get('vampire', 'home_country')))
+        self.template_file = self.vp.get('FLOOD_FORECAST', 'template_file')
+        _product_pattern = self.params['input_pattern']
+        # _product_pattern = self.vp.get('FLOOD_FORECAST', 'flood_mosaic_pattern')
+        # _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+#        _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
+        _product_files = directory_utils.get_matching_files(self.params['input_dir'], _product_pattern)
+        self.product_filename = _product_files[0]
+#        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
+        self.product_name = self.vp.get('FLOOD_FORECAST', 'product_name')
+        self.destination_filename = self.product_filename
+        self.ingestion_date = self.valid_from_date
+            #self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
+        return
+
 @PublishProductTasksImpl.register_subclass('vhi_impact_area')
 class PublishVHIAreaImpactProduct(PublishableTabularProduct):
     """ Initialise MODISDownloadTask object.
@@ -380,14 +412,17 @@ class PublishFloodAreaImpactProduct(PublishableTabularProduct):
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.database = self.vp.get('database', 'impact_db')
-        self.table_name = self.vp.get('database', 'impact_area_table')
+        if 'table' in params:
+            self.table_name = params['table']
+        else:
+            self.table_name = self.vp.get('database', 'flood_impact_area_table')
         try:
             self.schema = self.vp.get('database', 'impact_area_schema')
         except Exception, e:
             self.schema = self.vp.get('database', 'default_schema')
-        _product_pattern = self.vp.get('hazard_impact', 'flood_area_pattern')
-        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
-        _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
+        _product_pattern = self.params['input_pattern'] #self.vp.get('hazard_impact', 'flood_area_pattern')
+#        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_files = directory_utils.get_matching_files(self.params['input_dir'], _product_pattern)
 
         self.product_filename = _product_files[0]
         self.product_name = 'flood_impact_area'
@@ -412,13 +447,16 @@ class PublishFloodPopnImpactProduct(PublishableTabularProduct):
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.database = self.vp.get('database', 'impact_db')
-        self.table_name = self.vp.get('database', 'flood_impact_popn_table')
+        if 'table' in params:
+            self.table_name = params['table']
+        else:
+            self.table_name = self.vp.get('database', 'flood_impact_popn_table')
         try:
             self.schema = self.vp.get('database', 'impact_popn_schema')
         except Exception, e:
             self.schema = self.vp.get('database', 'default_schema')
-        _product_pattern = self.vp.get('hazard_impact', 'flood_popn_pattern')
-        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_pattern = self.params['input_pattern'] #self.vp.get('hazard_impact', 'flood_popn_pattern')
+#        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
         _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
 
         self.product_filename = _product_files[0]
