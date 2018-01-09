@@ -1,6 +1,6 @@
 import VampireDefaults
-import vampire.database_utils
-import vampire.directory_utils
+import database_utils
+import directory_utils
 
 class DatabaseManager:
     'Base Class for managing uploading of products to database'
