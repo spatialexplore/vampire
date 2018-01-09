@@ -139,4 +139,5 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
         csv_utils.add_field(table_name=_output_file, new_field='start_date', value=start_date)
         csv_utils.add_field(table_name=_output_file, new_field='end_date', value=end_date)
 
+        csv_utils.copy_field(table_name=_output_file, new_field='kabupaten_id', copy_field=b_field)
         return None
