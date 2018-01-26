@@ -324,7 +324,9 @@ class PublishFloodForecastProduct(PublishableRasterProduct):
         _product_files = directory_utils.get_matching_files(self.params['input_dir'], _product_pattern)
         self.product_filename = _product_files[0]
 #        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
+
         self.product_name = self.vp.get('FLOOD_FORECAST', 'product_name')
+        self.publish_name = self.params['publish_name']
         self.destination_filename = self.product_filename
         self.ingestion_date = self.valid_from_date
             #self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
