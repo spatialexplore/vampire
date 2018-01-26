@@ -60,10 +60,13 @@ def calculate_crop_impact(hazard_raster, threshold, hazard_var,
 
     return None
 
-def reclassify_raster(raster, threshold, output_raster):
+def reclassify_raster(raster, threshold, output_raster, threshold_direction='GREATER_THAN'):
     in_true_constant = 1
     in_false_constant = 0
-    where_clause = 'VALUE > {0}'.format(threshold)
+    if threshold_direction == 'LESS_THAN':
+        where_clause = 'VALUE < {0}'.format(threshold)
+    else:
+        where_clause = 'VALUE > {0}'.format(threshold)
 
 #    # Execute Con
 #    out_con = arcpy.sa.Con(in_conditional_raster=raster, in_true_raster_or_constant=in_true_constant,
