@@ -16,6 +16,7 @@ class RasterProductImpl(object):
         self.product_file = None
         self.product_dir = None
         self.product_pattern = None
+        self.publish_name = None
         return
 
     @property
@@ -60,6 +61,13 @@ class RasterProductImpl(object):
     def valid_to_date(self, ed):
         self.__valid_to_date = ed
 
+    @property
+    def publish_name(self):
+        return self.__publish_name
+    @publish_name.setter
+    def publish_name(self, pn):
+        self.__publish_name = pn
+
     def generate_publish_config(self):
         if type(self.valid_from_date) != datetime.datetime:
             _valid_from_date = self.valid_from_date()
@@ -78,6 +86,9 @@ class RasterProductImpl(object):
       start_date: {start_date}
       end_date: {end_date}""".format(product=self.product_name, start_date=_valid_from_date.strftime("%d/%m/%Y"),
                                      end_date=_valid_to_date.strftime("%d/%m/%Y"))
+        if self.publish_name is not None:
+            cfg_string += """
+      publish_name: {publish_name}""".format(publish_name=self.publish_name)
         if self.product_file is not None:
             cfg_string += """
       input_file: {input_file}""".format(input_file=self.product_file)
@@ -86,5 +97,4 @@ class RasterProductImpl(object):
       input_dir: {input_dir}
       input_pattern: '{input_pattern}'
         """.format(input_dir=self.product_dir, input_pattern=self.product_pattern)
-
         return cfg_string
