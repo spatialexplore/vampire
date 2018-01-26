@@ -48,8 +48,12 @@ class ArcGISServerImpl(object):
                 self.check_data_dir(self.vp.get('geodatabase', 'gdbpath'))
                 # create file geodatabase if it doesn't exist
                 _gdb_name = self.check_file_GDB(product.product_name, self.vp.get('geodatabase', 'gdbpath'))
-                _mosaic_db = os.path.join(_gdb_name, '{0}'.format(product.product_name))
-                _ags_name = product.product_name
+                if product.publish_name is not None:
+                    _publish_name = product.publish_name
+                else:
+                    _publish_name = product.product_name
+                _mosaic_db = os.path.join(_gdb_name, '{0}'.format(product.publish_name))
+                _ags_name = _publish_name
                 _layer = _mosaic_db
             elif self.vp.get('geodatabase', 'storingConfig') == 'ent':
                 logger.debug("Using enterprise geodatabase")
@@ -79,7 +83,7 @@ class ArcGISServerImpl(object):
             if arcpy.Exists(_mosaic_db):
                 logger.debug("Mosaic dataset {0} already exists".format(_mosaic_db))
             else:
-                self.create_mosaic_dataset(_gdb_name, product.product_name)
+                self.create_mosaic_dataset(_gdb_name, _mosaic_db)
                 logger.debug("Mosaic Dataset {0} created".format(_mosaic_db))
             # add product raster to mosaic dataset
             self.add_raster_to_MDS(_mosaic_db, product.product_filename)
@@ -96,17 +100,17 @@ class ArcGISServerImpl(object):
 #                    fc1 = os.path.join(directory, x+'.gdb')
 #                    fc = os.path.join(fc1, x)
             if arcpy.Exists(_layer):
-                logger.debug("data {0} is available".format(product.product_name))
+                logger.debug("data {0} is available".format(_publish_name))
             else:
-                logger.debug("data {0} is not available".format(product.product_name))
-            _connection_file = os.path.join(_ws, '{0}.ags'.format(product.product_name))
-            arcpy.AddDataStoreItem(_connection_file, "FOLDER", product.product_name,
+                logger.debug("data {0} is not available".format(_publish_name))
+            _connection_file = os.path.join(_ws, '{0}.ags'.format(_publish_name))
+            arcpy.AddDataStoreItem(_connection_file, "FOLDER", _publish_name,
                                    self.vp.get('geodatabase', 'gdbpath'), self.vp.get('geodatabase', 'gdbpath'))
-            arcpy.ValidateDataStoreItem(_connection_file, "FOLDER", product.product_name)
-            _service_desc_draft = os.path.join(_ws, '{0}.sddraft'.format(product.product_name))
-            _service_desc = os.path.join(_ws, '{0}.sd'.format(product.product_name))
+            arcpy.ValidateDataStoreItem(_connection_file, "FOLDER", _publish_name)
+            _service_desc_draft = os.path.join(_ws, '{0}.sddraft'.format(_publish_name))
+            _service_desc = os.path.join(_ws, '{0}.sd'.format(_publish_name))
             self.create_image_SD_draft(product, _layer, _service_desc_draft,
-                                       product.product_name, _connection_file)
+                                       _publish_name, _connection_file)
             self.insert_RTF_file(product, _service_desc_draft)
             if not os.path.exists(_service_desc):
                 self.analyze_SD_draft(_service_desc_draft, _service_desc)
@@ -224,8 +228,11 @@ class ArcGISServerImpl(object):
 
     def update_mosaic_statistics(self, mosaic_dataset):
         logger.debug('updating mosaic statistics')
-        arcpy.SetMosaicDatasetProperties_management(mosaic_dataset, use_time="ENABLED", start_time_field="start_date",
-                                                    end_time_field="end_date",)
+        try:
+            arcpy.SetMosaicDatasetProperties_management(mosaic_dataset, use_time="ENABLED", start_time_field='start_date',
+                                                        end_time_field='end_date')
+        except Exception, e:
+            logger.debug('Set Mosaic Dataset Properties failed for {0}'.format(mosaic_dataset))
         arcpy.management.CalculateStatistics(mosaic_dataset)
         arcpy.management.BuildPyramidsandStatistics(mosaic_dataset, 'INCLUDE_SUBDIRECTORIES', 'BUILD_PYRAMIDS',
                                                     'CALCULATE_STATISTICS')
