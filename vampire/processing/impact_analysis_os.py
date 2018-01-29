@@ -1,19 +1,19 @@
-import rasterio
-import rasterio.mask
-import rasterstats
-import gdal
+import csv
+import logging
+import os
+
 import fiona
 import geopandas
-import pandas
 import numpy as np
-import dbfpy.dbf
-import raster_utils
-import os
-import csv
 import ogr
-import vampire.csv_utils as csv_utils
+import pandas
+import rasterio
+import rasterio.mask
+
 import calculate_statistics_os as calculate_statistics
-import logging
+import raster_utils
+import csv_utils as csv_utils
+
 logger = logging.getLogger(__name__)
 
 def calculate_poverty_impact(self, popn_impact_file, popn_impact_field, popn_match_field,
@@ -170,7 +170,7 @@ def shapefile_to_table(input_file, output_file):
     del _csv_writer, _layer, _ds
     _csv_file.close()
     #    arcpy.TableToTable_conversion(input, os.path.dirname(output), os.path.splitext(_output)[0])
-#    vampire.csv_utils.convert_dbf_to_csv(os.path.join(os.path.dirname(output), _output), _output_csv)
+#    vampire_tmp.csv_utils.convert_dbf_to_csv(os.path.join(os.path.dirname(output), _output), _output_csv)
     return None
 
 def intersect_boundaries(boundary_list, boundary_output):
