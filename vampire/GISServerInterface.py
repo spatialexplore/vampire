@@ -1,5 +1,6 @@
-import VampireDefaults
 import GeoserverManager
+import VampireDefaults
+
 try:
     import ArcGISServerManager
 except ImportError:
