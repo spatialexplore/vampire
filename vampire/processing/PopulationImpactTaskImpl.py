@@ -90,21 +90,32 @@ class PopulationImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
             _threshold = self.params['hazard_threshold']
         else:
             _threshold = None
+        if 'threshold_direction' in self.params:
+            _threshold_direction = self.params['threshold_direction']
+        else:
+            _threshold_direction = None
 
         self.calculate_impact_popn(hazard_raster=_hazard_file, hazard_dir=_hazard_dir, hazard_pattern=_hazard_pattern,
                                  population_raster=_population_file,
                                  boundary=_boundary_file, b_field=_boundary_field, threshold=_threshold,
                                  output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
-                                 start_date=_start_date, end_date=_end_date, hazard_var=_hazard_var)
+                                 start_date=_start_date, end_date=_end_date, threshold_direction=_threshold_direction,
+                                   hazard_var=_hazard_var)
+        return
 
     def calculate_impact_popn(self, hazard_raster, hazard_dir, hazard_pattern, threshold,
                               population_raster, boundary, b_field, output_file,
-                              output_dir, output_pattern, start_date, end_date, hazard_var='vhi'):
+                              output_dir, output_pattern, start_date, end_date, threshold_direction, hazard_var='vhi'):
         if threshold is None:
             # get threshold from VampireDefaults
             _threshold = self.vp.get('hazard_impact', '{0}_threshold'.format(hazard_var))
         else:
             _threshold = threshold
+
+        if threshold_direction is None:
+            _threshold_direction = self.vp.get('hazard_impact', '{0}_threshold_direction'.format(hazard_var))
+        else:
+            _threshold_direction = threshold_direction
 
         if hazard_raster is None:
             if hazard_pattern is not None:
@@ -132,9 +143,12 @@ class PopulationImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
         if _threshold == '':
             _reclass_raster = _hazard_raster
         else:
+            if _threshold_direction == '':
+                _threshold_direction = 'GREATER_THAN'
             # reclassify hazard raster to generate mask of all <= threshold
             _reclass_raster = os.path.join(os.path.dirname(_output_file), 'hazard_popn_reclass.tif')
-            impact_analysis.reclassify_raster(raster=_hazard_raster, threshold=_threshold, output_raster=_reclass_raster)
+            impact_analysis.reclassify_raster(raster=_hazard_raster, threshold=_threshold, output_raster=_reclass_raster,
+                                              threshold_direction=_threshold_direction)
 
         if population_raster is None:
             _hazard_raster = _reclass_raster
