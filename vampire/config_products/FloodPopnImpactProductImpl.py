@@ -206,7 +206,8 @@ class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
         cfg_string += """
       boundary_field: {boundary_field}
       population_file: {population_file}
-      hazard_threshold: 0""".format(boundary_field=boundary_field, population_file=population_file)
+      hazard_threshold: 1
+      threshold_direction: LESS_THAN""".format(boundary_field=boundary_field, population_file=population_file)
 
         if output_file is not None:
             cfg_string += """
