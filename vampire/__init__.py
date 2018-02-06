@@ -1,7 +1,9 @@
-from vampire import ConfigFactory
-from vampire import MODISConfigFactory
-from vampire import CHIRPSConfigFactory
 from vampire import VampireDefaults
 from vampire import ConfigProcessor
-from processing import CHIRPSProcessor
+from vampire import GISServerInterface
+from vampire import GISServerManager
+from vampire import GeoserverManager
+from vampire import ArcGISServerManager
+from vampire import DatabaseManager
+from config_products import BaseProduct
 
