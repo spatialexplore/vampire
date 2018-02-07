@@ -250,7 +250,7 @@ class IMERGExtractTask(BaseTaskImpl.BaseTaskImpl):
 
     def _extract_subset(self, input_dir, output_dir, patterns, subset, subset_name, overwrite = False):
         logger.info('entering _extract_subset')
-        _all_files = vampire.directory_utils.get_matching_files(input_dir, patterns[0])
+        _all_files = directory_utils.get_matching_files(input_dir, patterns[0])
         if not _all_files:
             logger.debug('Extracting subset {0}. No files found in {1} with pattern {2}'.format(
                 subset_name, input_dir, patterns[0]))
@@ -265,7 +265,7 @@ class IMERGExtractTask(BaseTaskImpl.BaseTaskImpl):
         _sr.ImportFromEPSG(4326)
         for _ifl in _all_files:
             # generate output file
-            _nfl = vampire.filename_utils.generate_output_filename(os.path.basename(_ifl), patterns[0], patterns[1])
+            _nfl = filename_utils.generate_output_filename(os.path.basename(_ifl), patterns[0], patterns[1])
             _ofl = os.path.join(output_dir, _nfl)
             if not os.path.exists(_ofl) or overwrite == True:
                 try:
