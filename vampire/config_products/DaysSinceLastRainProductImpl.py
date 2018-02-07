@@ -6,26 +6,29 @@ import logging
 logger = logging.getLogger(__name__)
 
 class DaysSinceLastRainProductImpl(RasterProductImpl.RasterProductImpl):
-    """ Initialise DaysSinceLastRainProductImpl.
+    """ Days Since Last Rain config file process generation.
 
-    Implementation class for DaysSinceLastRainProduct.
-    Initialise object parameters.
-
-    Parameters
-    ----------
-    country : string
-        Region of dataset - country name or 'global'.
-    product_date : datetime
-        Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding
-        the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,
-        the product_date refers to the start of the season (3 month period).
-    interval : string
-        Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal
-    vampire_defaults : object
-        VAMPIREDefaults object containing VAMPIRE system default values.
+    Data handling for generating config file entries for Days Since Last Rain data product.
 
     """
+
     def __init__(self, country, product_date, interval, vampire_defaults):
+        """ Initialise DaysSinceLastRainProductImpl.
+
+        Implementation class for DaysSinceLastRainProduct.
+        Initialise object parameters.
+
+        :param country: Region of dataset - country name or 'global'.
+        :type country: string
+        :param product_date: Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding
+            the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,
+            the product_date refers to the start of the season (3 month period).
+        :type product_date:  datetime
+        :param interval: Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal
+        :type interval: string
+        :param vampire_defaults: VAMPIREDefaults object containing VAMPIRE system default values.
+        :type vampire_defaults: VampireDefaults object
+        """
         super(DaysSinceLastRainProductImpl, self).__init__()
         self.country = country
         self.interval = interval
@@ -43,64 +46,42 @@ class DaysSinceLastRainProductImpl(RasterProductImpl.RasterProductImpl):
         self.valid_to_date = self.dataset.end_date()
         return
 
-    """ Generate VAMPIRE config file header for datasets.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    string
-        Returns config file header section.
-
-    """
     def generate_header(self):
+        """ Generate VAMPIRE config file header for Days Since Last Rain.
+
+        :return: Returns config file header section.
+        :rtype: string
+        """
         config = self.dataset.generate_header()
         return config
 
 
-    """ Generate a config file process for the standardised precipitation index (SPI) product.
-
-    Generate VAMPIRE config file processes for the product including download and crop if specified.
-
-    Parameters
-    ----------
-    output_dir : string
-        Path for product output. If the output_dir is None, the VAMPIRE default SPI product directory
-        will be used.
-    cur_file : string
-        Path for current precipitation file. Default is None. If None, cur_dir and cur_pattern will be used to find
-        the file.
-    cur_dir : string
-        Directory path for current precipitation file. Default is None. If cur_file is set, cur_dir is not used.
-    cur_pattern : string
-        Regular expression pattern for finding current precipitation file. Default is None. If cur_file is set,
-        cur_pattern is not used.
-    lta_file : string
-        Path for long-term average precipitation file. Default is None. If None, lta_dir and lta_pattern will be
-        used to find the file.
-    lta_dir : string
-        Directory path for long-term average precipitation file. Default is None. If lta_file is set, lta_dir is not
-        used.
-    lta_pattern : string
-        Regular expression pattern for finding long-term average precipitation file. Default is None. If lta_file is
-        set, lta_pattern is not used.
-    output_file : string
-        Directory path for output rainfall anomaly file. Default is None. If output_file is set, output_dir is not used.
-    output_pattern : string
-        Pattern for specifying output filename. Used in conjuction with cur_pattern. Default is None. If output_file is
-        set, output_pattern is not used.
-
-    Returns
-    -------
-    string
-        Returns string containing the configuration file process.
-
-    """
     def generate_config(self, data_dir=None, output_dir=None, file_pattern=None,
                         threshold=None, max_days=None, download=True, crop=True, crop_dir=None):
+        """ Generate a config file process for the Days Since Last Rain product.
 
+        Generate VAMPIRE config file processes for the product including download and crop if specified.
+
+        :param data_dir: Directory path for precipitation files. Default is None.
+        :type data_dir: string
+        :param output_dir: Path for product output. If the output_dir is None, the VAMPIRE default Days Since Last Rain product directory will be used.
+        :type output_dir: string
+        :param file_pattern: Regular expression pattern for finding current precipitation file. Default is None.
+        :type file_pattern: string
+        :param threshold: Rainfall threshold value.
+        :type threshold: float
+        :param max_days: Number of days to evaluate for days since last rain.
+        :type max_days: int
+        :param download: Flag indicating whether data should be downloaded.
+        :type download: bool
+        :param crop: Flag indicating whether data should be cropped to a boundary.
+        :type crop: bool
+        :param crop_dir: Directory for output of cropped files.
+        :type crop_dir: string
+
+        :return: Returns string containing the configuration file process.
+        :rtype: string
+        """
         if self.country.lower() == 'global':
             crop = False
         cfg_string = """
@@ -132,6 +113,13 @@ class DaysSinceLastRainProductImpl(RasterProductImpl.RasterProductImpl):
             _output_dir = self.vp.get('Days_Since_Last_Rain', 'output_dir')
         if not os.path.dirname(_output_dir):
             os.makedirs(_output_dir)
+
+        self.product_file = None
+        self.product_dir = _output_dir
+        self.product_pattern = self.vp.get('Days_Since_Last_Rain', 'regional_dslr_pattern')
+        self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
+        self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.product_date.month))
+        self.product_pattern = self.product_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.product_date.day))
 
         cfg_string += """
     # compute days since last rainfall
