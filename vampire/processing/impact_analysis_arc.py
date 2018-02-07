@@ -60,21 +60,42 @@ def calculate_crop_impact(hazard_raster, threshold, hazard_var,
 
     return None
 
-def reclassify_raster(raster, threshold, output_raster, threshold_direction='GREATER_THAN'):
+def reclassify_raster(raster, threshold, output_raster, threshold_direction='LESS_THAN'):
     in_true_constant = 1
     in_false_constant = 0
+    rast = arcpy.Raster(raster)
     if threshold_direction == 'LESS_THAN':
-        where_clause = 'VALUE < {0}'.format(threshold)
+        out_ras = arcpy.sa.Con(rast<float(threshold), 1)
+    elif threshold_direction == 'EQUALS':
+        out_ras = arcpy.sa.Con(rast==float(threshold), 1)
     else:
-        where_clause = 'VALUE > {0}'.format(threshold)
+        out_ras = arcpy.sa.Con(rast>float(threshold), 1)
 
-#    # Execute Con
-#    out_con = arcpy.sa.Con(in_conditional_raster=raster, in_true_raster_or_constant=in_true_constant,
-#                           in_false_raster_or_constant=in_false_constant, where_clause=where_clause)
-#    out_con.save(output_raster)
-    out_ras = arcpy.sa.SetNull(in_conditional_raster=raster, in_false_raster_or_constant=1, where_clause=where_clause)
+
+#     valid = True
+#     if threshold_direction == 'LESS_THAN':
+#         where_clause = 'VALUE < {0}'.format(threshold)
+#         if rast.maximum < threshold:
+#             # no values returned
+#             valid = False
+#     else:
+#         where_clause = 'VALUE > {0}'.format(threshold)
+#         if rast.minimum > threshold:
+#             # all values would be set to null
+#             valid = False
+#
+# #    # Execute Con
+# #    out_con = arcpy.sa.Con(in_conditional_raster=raster, in_true_raster_or_constant=in_true_constant,
+# #                           in_false_raster_or_constant=in_false_constant, where_clause=where_clause)
+# #    out_con.save(output_raster)
+#     if valid:
+#         out_ras = arcpy.sa.SetNull(in_conditional_raster=raster, in_false_raster_or_constant=1, where_clause=where_clause)
+#     else:
+#         out_ras = arcpy.sa.Con(rast>float(threshold), 1)
     arcpy.SetRasterProperties_management(out_ras, "GENERIC", nodata=None)
     out_ras.save(output_raster)
+    del rast
+
     return None
 
 def multiply_by_mask(raster, mask, output_raster):
@@ -85,7 +106,8 @@ def multiply_by_mask(raster, mask, output_raster):
 def create_mask(raster, mask, output_raster):
     _mask = arcpy.Raster(mask)
     _raster = arcpy.Raster(raster)
-    _new_mask = arcpy.sa.SetNull(mask, mask, "VALUE = 0")
+    _new_mask = arcpy.sa.Con(_mask<>0, _mask)
+#    _new_mask = arcpy.sa.SetNull(mask, mask, "VALUE = 0")
     out_ras = arcpy.sa.ExtractByMask(_raster, _new_mask)
     out_ras.save(output_raster)
     del _mask
