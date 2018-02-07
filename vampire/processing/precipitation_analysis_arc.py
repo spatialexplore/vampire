@@ -173,14 +173,14 @@ def _calc_num_days_since(rasters, dslw_fn, dsld_fn, max_days):
     _days_since_last_wet = _highest_position_wet - 1
     _days_since_last_dry = _highest_position_dry - 1
 
-    _days_since_last_dry.save("S:\\WFP2\\PRISM\\data\\Temp\\dsld.tif")
-    _days_since_last_wet.save("S:\\WFP2\\PRISM\\data\\Temp\\dslw.tif")
+#    _days_since_last_dry.save("S:\\WFP2\\PRISM\\data\\Temp\\dsld.tif")
+#    _days_since_last_wet.save("S:\\WFP2\\PRISM\\data\\Temp\\dslw.tif")
 
-    _no_data_mask.save("S:\\WFP2\\PRISM\\data\\Temp\\noDataMask.tif")
+#    _no_data_mask.save("S:\\WFP2\\PRISM\\data\\Temp\\noDataMask.tif")
     _dry_mask = arcpy.sa.Con(arcpy.sa.IsNull(_dry_mask), -999, _dry_mask)
     _wet_mask = arcpy.sa.Con(arcpy.sa.IsNull(_wet_mask), -999, _wet_mask)
-    _wet_mask.save("S:\\WFP2\\PRISM\\data\\Temp\\wetMask.tif")
-    _dry_mask.save("S:\\WFP2\\PRISM\\data\\Temp\\dryMask.tif")
+#    _wet_mask.save("S:\\WFP2\\PRISM\\data\\Temp\\wetMask.tif")
+#    _dry_mask.save("S:\\WFP2\\PRISM\\data\\Temp\\dryMask.tif")
 #    outHighestPosition.save("S:/WFP/CHIRPS/Daily/2015/p25/lwd/hp.tif")
     # reset NoData
     _dslw_no_data = arcpy.sa.SetNull(_no_data_mask, _days_since_last_wet, "VALUE >= 1")
