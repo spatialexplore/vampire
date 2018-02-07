@@ -5,26 +5,30 @@ import logging
 logger = logging.getLogger(__name__)
 
 class CHIRPSLongtermAverageProductImpl(RasterProductImpl.RasterProductImpl):
-    """ Initialise MODISEVILongtermAverageProductImpl.
+    """ CHIRPS long-term average.
 
-    Implementation class for MODISEVILongtermAverageProduct.
-    Initialise object parameters.
-
-    Parameters
-    ----------
-    country : string
-        Region of dataset - country name or 'global'.
-    product_date : datetime
-        Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding
-        the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,
-        the product_date refers to the start of the season (3 month period).
-    interval : string
-        Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal
-    vampire_defaults : object
-        VAMPIREDefaults object containing VAMPIRE system default values.
+    Data handling for generating CHIRPS long-term averages.
 
     """
+
     def __init__(self, country, product_date, interval, vampire_defaults):
+        """ Initialise MODISEVILongtermAverageProductImpl.
+
+        Implementation class for MODISEVILongtermAverageProduct.
+        Initialise object parameters.
+
+        :param country: Region of dataset - country name or 'global'.
+        :type country: string
+        :param product_date: Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding
+            the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,
+            the product_date refers to the start of the season (3 month period).
+        :type product_date: datetime
+        :param interval: Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal
+        :type interval: string
+        :param vampire_defaults:
+        :type vampire_defaults: VampireDefaults
+        :param region: Default is None.
+        """
         super(CHIRPSLongtermAverageProductImpl, self).__init__()
         self.country = country
         self.interval = interval
@@ -39,63 +43,40 @@ class CHIRPSLongtermAverageProductImpl(RasterProductImpl.RasterProductImpl):
                                                              vampire_defaults=self.vp, region=self.country)
         return
 
-    """ Generate VAMPIRE config file header for CHIRPS datasets.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    string
-        Returns config file header section.
-
-    """
     def generate_header(self):
+        """ Generate VAMPIRE config file header for CHIRPS long-term average datasets.
+
+        :return: Returns config file header section.
+        :rtype: string
+        """
         config = self.chirps_dataset.generate_header()
         return config
 
 
-    """ Generate a config file process for the rainfall anomaly product.
-
-    Generate VAMPIRE config file processes for the product including download and crop if specified.
-
-    Parameters
-    ----------
-    output_dir : string
-        Path for product output. If the output_dir is None, the VAMPIRE default rainfall anomaly product directory
-        will be used.
-    cur_file : string
-        Path for current precipitation file. Default is None. If None, cur_dir and cur_pattern will be used to find
-        the file.
-    cur_dir : string
-        Directory path for current precipitation file. Default is None. If cur_file is set, cur_dir is not used.
-    cur_pattern : string
-        Regular expression pattern for finding current precipitation file. Default is None. If cur_file is set,
-        cur_pattern is not used.
-    lta_file : string
-        Path for long-term average precipitation file. Default is None. If None, lta_dir and lta_pattern will be
-        used to find the file.
-    lta_dir : string
-        Directory path for long-term average precipitation file. Default is None. If lta_file is set, lta_dir is not
-        used.
-    lta_pattern : string
-        Regular expression pattern for finding long-term average precipitation file. Default is None. If lta_file is
-        set, lta_pattern is not used.
-    output_file : string
-        Directory path for output rainfall anomaly file. Default is None. If output_file is set, output_dir is not used.
-    output_pattern : string
-        Pattern for specifying output filename. Used in conjuction with cur_pattern. Default is None. If output_file is
-        set, output_pattern is not used.
-
-    Returns
-    -------
-    string
-        Returns string containing the configuration file process.
-
-    """
     def generate_config(self, input_dir=None, output_dir=None, input_pattern=None,
                         output_pattern=None, functions=None, download=True):
+        """ Generate a config file process for CHIRPS long-term average product.
+
+        Generate VAMPIRE config file processes to generate long-term averages from CHIRPS data.
+
+        Parameters
+        ----------
+        :param input_dir: Directory path for CHIRPS precipitation files. Default is None.
+        :type input_dir: string
+        :param output_dir: Path for product output. If the output_dir is None, the VAMPIRE default rainfall anomaly product directory will be used.
+        :type output_dir: string
+        :param input_pattern: Regular expression pattern for finding CHIRPS precipitation files. Default is None.
+        :type input_pattern: string
+        :param output_pattern: Pattern for specifying output filename. Used in conjuction with input_pattern. Default is None.
+        :type output_pattern: string
+        :param functions: List of functions to calculate. Valid options include 'AVG', 'MIN', 'MAX', 'STD'.
+        :type functions: list of string
+        :param download: Flag indicating whether data should be downloaded or not.
+        :type download: bool
+
+        :return: Returns string containing the configuration file process.
+        :rtype: string
+        """
         config = """
     ## Processing chain begin - Compute CHIRPS long-term average\n"""
         if download:
@@ -128,6 +109,26 @@ class CHIRPSLongtermAverageProductImpl(RasterProductImpl.RasterProductImpl):
         return config
 
     def generate_longterm_average_section(self, input_dir, output_dir, input_pattern, output_pattern, functions):
+        """ Generate config file string for CHIRPS long-term average product.
+
+        Generate VAMPIRE config file string to generate long-term averages from CHIRPS data.
+
+        Parameters
+        ----------
+        :param input_dir: Directory path for CHIRPS precipitation files. Default is None.
+        :type input_dir: string
+        :param output_dir: Path for product output. If the output_dir is None, the VAMPIRE default rainfall anomaly product directory will be used.
+        :type output_dir: string
+        :param input_pattern: Regular expression pattern for finding CHIRPS precipitation files. Default is None.
+        :type input_pattern: string
+        :param output_pattern: Pattern for specifying output filename. Used in conjuction with input_pattern. Default is None.
+        :type output_pattern: string
+        :param functions: List of functions to calculate. Valid options include 'AVG', 'MIN', 'MAX', 'STD'.
+        :type functions: list of string
+
+        :return: Returns string containing the configuration file process.
+        :rtype: string
+        """
         cfg_string = """
     - process: CHIRPS
       type: longterm_average

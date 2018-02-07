@@ -10,26 +10,32 @@ import RasterDatasetImpl
 logger = logging.getLogger(__name__)
 
 class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
-    """ Initialise FloodForecastProductImpl.
+    """ Implementation of Flood Area Impact config file process generation.
 
-    Implementation class for FloodForecastProduct.
-    Initialise object parameters.
-
-    Parameters
-    ----------
-    country : string
-        Region of dataset - country name or 'global'.
-    product_date : datetime
-        Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding
-        the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,
-        the product_date refers to the start of the season (3 month period).
-    interval : string
-        Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal
-    vampire_defaults : object
-        VAMPIREDefaults object containing VAMPIRE system default values.
+    Implementation class for generating config file entries for Area impact of Flood Forecasting data product.
 
     """
+
     def __init__(self, country, product_date, interval, vampire_defaults):
+        """ Initialise FloodForecastProductImpl.
+
+        Implementation class for FloodForecastProduct.
+        Initialise object parameters.
+
+        Parameters
+        ----------
+        country : string
+            Region of dataset - country name or 'global'.
+        product_date : datetime
+            Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding
+            the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,
+            the product_date refers to the start of the season (3 month period).
+        interval : string
+            Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal
+        vampire_defaults : object
+            VAMPIREDefaults object containing VAMPIRE system default values.
+
+        """
         super(FloodForecastProductImpl, self).__init__()
         self.product_name = 'flood_forecast'
         self.country = country
@@ -53,46 +59,9 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
         return
 
     def generate_header(self):
+        """ Generate details related to Flood Forecast that go in the config file header. """
         return ''
 
-    """ Generate a config file process for the flood forecast product.
-
-    Generate VAMPIRE config file processes for the product including download and crop if specified.
-
-    Parameters
-    ----------
-    output_dir : string
-        Path for product output. If the output_dir is None, the VAMPIRE default SPI product directory
-        will be used.
-    cur_file : string
-        Path for current precipitation file. Default is None. If None, cur_dir and cur_pattern will be used to find
-        the file.
-    cur_dir : string
-        Directory path for current precipitation file. Default is None. If cur_file is set, cur_dir is not used.
-    cur_pattern : string
-        Regular expression pattern for finding current precipitation file. Default is None. If cur_file is set,
-        cur_pattern is not used.
-    lta_file : string
-        Path for long-term average precipitation file. Default is None. If None, lta_dir and lta_pattern will be
-        used to find the file.
-    lta_dir : string
-        Directory path for long-term average precipitation file. Default is None. If lta_file is set, lta_dir is not
-        used.
-    lta_pattern : string
-        Regular expression pattern for finding long-term average precipitation file. Default is None. If lta_file is
-        set, lta_pattern is not used.
-    output_file : string
-        Directory path for output rainfall anomaly file. Default is None. If output_file is set, output_dir is not used.
-    output_pattern : string
-        Pattern for specifying output filename. Used in conjuction with cur_pattern. Default is None. If output_file is
-        set, output_pattern is not used.
-
-    Returns
-    -------
-    string
-        Returns string containing the configuration file process.
-
-    """
     def generate_config(self,
                         data_dir=None,
                         file_pattern=None,
@@ -105,6 +74,33 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
                         output_dir=None,
                         output_pattern=None
                         ):
+        """ Generate config file section for generating Flood Forecasts.
+
+        Generate config file entries required to create Flood Forecasts for the specified country, date and interval.
+
+        :param data_dir: Directory where the GFS files for the product date are located.
+        :type data_dir: string
+        :param file_pattern: Regular expression pattern to used to find the GFS file for the product date.
+        :type file_pattern: string
+        :param threshold_file:
+        :type threshold_file: string
+        :param threshold_dir:
+        :type threshold_dir: string
+        :param threshold_pattern:
+        :type threshold_pattern: string
+        :param accumulate_days: Number of days to forecast for.
+        :type accumulate_days: int
+        :param flood_years:
+        :type flood_years: int
+        :param output_file:
+        :type output_file: string
+        :param output_dir: Directory to save the Flood Forecast output files.
+        :type output_dir: string
+        :param output_pattern:
+        :type output_pattern: string
+        :return: Config file sections required for generating Flood Forecasts.
+        :rtype: string
+        """
         if accumulate_days is None:
             _days = ast.literal_eval(self.vp.get('FLOOD_FORECAST', 'forecast_days'))
         else:
@@ -232,6 +228,13 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
 
 
     def generate_publish_config(self):
+        """ Generate config section to publish Flood Forecast data product.
+
+        Generates configuration file section to publish the Flood Forecast output file to a GIS server.
+
+        :return: Config file sections required for publishing Flood Forecasts.
+        :rtype: string
+        """
         cfg_string = """"""
         _days = ast.literal_eval(self.vp.get('FLOOD_FORECAST', 'forecast_days'))
         _num_forecasts = ast.literal_eval(self.vp.get('FLOOD_FORECAST', 'forecast_period')) - _days +1
@@ -250,4 +253,5 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
             self.product_pattern = _product_pattern
             self.valid_from_date = _valid_from
             self.valid_to_date = _valid_to
+
         return cfg_string

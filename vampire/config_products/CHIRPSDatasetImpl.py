@@ -1,3 +1,7 @@
+""" CHIRPS data handling.
+
+    Provides classes for downloading and processing CHIRPS data.
+"""
 import RasterDatasetImpl
 import datetime
 import dateutil.rrule
@@ -7,21 +11,28 @@ import logging
 logger = logging.getLogger(__name__)
 
 class CHIRPSDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
-    """ Initialise CHIRPSDatasetImpl object.
+    """ CHIRPS data
 
-    Implementation class for CHIRPSDataset.
-    Initialise object parameters and calculate start and end dates for dataset using product_date and interval.
+    Data handling for CHIRPS data
 
-    Parameters
-    ----------
-    interval : string
-        Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal
-    product_date : datetime
-        Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding
-        the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,
-        the product_date refers to the start of the season (3 month period).
     """
+
     def __init__(self, interval, product_date, vampire_defaults, region=None):
+        """ Initialise CHIRPSDatasetImpl object.
+
+        Implementation class for CHIRPSDataset.
+        Initialise object parameters and calculate start and end dates for dataset using product_date and interval.
+
+        :param interval: Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal
+        :type interval: string
+        :param product_date: Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding
+            the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,
+            the product_date refers to the start of the season (3 month period).
+        :type product_date: datetime
+        :param vampire_defaults:
+        :type vampire_defaults: VampireDefaults
+        :param region: Default is None.
+        """
         logger.debug('Initialising CHIRPS dataset')
         super(CHIRPSDatasetImpl, self).__init__()
         self.interval = interval
@@ -50,6 +61,7 @@ class CHIRPSDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
 
     @property
     def start_date(self):
+        """ Get and set start date of dataset. """
         return self.__start_date
     @start_date.setter
     def start_date(self, sd):
@@ -57,35 +69,29 @@ class CHIRPSDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
 
     @property
     def end_date(self):
+        """ Get and set end date of dataset. """
         return self.__end_date
     @end_date.setter
     def end_date(self, ed):
         self.__end_date = ed
 
-
-    """ Generate a config file process for the dataset.
-
-    Generate VAMPIRE config file process(es) for the dataset including download and crop if specified.
-
-    Parameters
-    ----------
-    data_dir : string
-        Path for downloaded data. The data will be stored in this path under a directory with the interval name. If the
-        data_dir is None, the VAMPIRE default download directory will be used.
-    download : boolean
-        Flag indicating whether data should be downloaded. Default is True.
-    crop : boolean
-        Flag indicating whether data should be cropped to region. Default is True.
-    crop_dir : string
-        Path where cropped data will be stored. If None, the region code will be appended to the download data path.
-
-    Returns
-    -------
-    string
-        Returns string containing the configuration file process.
-
-    """
     def generate_config(self, data_dir=None, download=True, crop=True, crop_dir=None):
+        """ Generate a config file process for the dataset.
+
+        Generate VAMPIRE config file process(es) for the dataset including download and crop if specified.
+
+        :param data_dir: Path for downloaded data. The data will be stored in this path under a directory with the interval name. If the
+            data_dir is None, the VAMPIRE default download directory will be used.
+        :type data_dir: string
+        :param download: Flag indicating whether data should be downloaded. Default is True.
+        :type download: bool
+        :param crop: Flag indicating whether data should be cropped to region. Default is True.
+        :type crop: bool
+        :param crop_dir: Path where cropped data will be stored. If None, the region code will be appended to the download data path.
+        :type crop_dir: string
+
+        :return: string containing the configuration file process.
+        """
         logger.debug('CHIRPSDataset generate_config')
         config = ''
         if data_dir is None:
@@ -120,19 +126,11 @@ class CHIRPSDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
         return config, _output_dir
 
 
-    """ Generate VAMPIRE config file header for CHIRPS datasets.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    string
-        Returns config file header section.
-
-    """
     def generate_header(self):
+        """ Generate VAMPIRE config file header for CHIRPS datasets.
+
+            :return: string containing config file header section.
+        """
         config = """
 temp: {temp_dir}
 
@@ -145,23 +143,16 @@ CHIRPS:
 """.format(temp_dir=self.vp.get('directories', 'temp_dir'))
         return config
 
-    """ Generate download process section for CHIRPS dataset.
-
-    Generate VAMPIRE config file process for CHIRPS dataset download.
-
-    Parameters
-    ----------
-    data_dir : string
-        Path for downloaded data. The data will be stored in this path under a directory with the interval name. If the
-        data_dir is None, the VAMPIRE default download directory will be used.
-
-    Returns
-    -------
-    string
-        Returns string containing the configuration file process.
-
-    """
     def _generate_download_section(self, data_dir):
+        """ Generate download process section for CHIRPS dataset.
+
+        Generate VAMPIRE config file section for CHIRPS dataset download.
+
+        :param data_dir: Path for downloaded data. The data will be stored in this path under a directory with the interval name. If the
+            data_dir is None, the VAMPIRE default download directory will be used.
+        :type data_dir: string
+        :return: string containing config file download section.
+        """
         config = """
     # download CHIRPS precipitation data
     - process: CHIRPS
