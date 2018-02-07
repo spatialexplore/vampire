@@ -80,16 +80,21 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
             _threshold = self.params['hazard_threshold']
         else:
             _threshold = None
+        if 'threshold_direction' in self.params:
+            _threshold_direction = self.params['threshold_direction']
+        else:
+            _threshold_direction = None
 
 
         self.calculate_impact_area(hazard_raster=_hazard_file, hazard_dir=_hazard_dir, hazard_pattern=_hazard_pattern,
-                                 boundary=_boundary_file, b_field=_boundary_field, threshold=_threshold,
-                                 output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
-                                 start_date=_start_date, end_date=_end_date, hazard_var=_hazard_var)
+                                   boundary=_boundary_file, b_field=_boundary_field, threshold=_threshold,
+                                   threshold_direction=_threshold_direction,
+                                   output_file=_output_file, output_dir=_output_dir, output_pattern=_output_pattern,
+                                   start_date=_start_date, end_date=_end_date, hazard_var=_hazard_var)
 
         return
 
-    def calculate_impact_area(self, hazard_raster, hazard_dir, hazard_pattern, threshold,
+    def calculate_impact_area(self, hazard_raster, hazard_dir, hazard_pattern, threshold, threshold_direction,
                               boundary, b_field, output_file, output_dir, output_pattern, start_date, end_date,
                               hazard_var='vhi'):
         if threshold is None:
@@ -97,6 +102,10 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
             _threshold = self.vp.get('hazard_impact', '{0}_threshold'.format(hazard_var))
         else:
             _threshold = threshold
+        if threshold_direction is None:
+            _threshold_direction = self.vp.get('hazard_impact', '{0}_threshold_direction'.format(hazard_var))
+        else:
+            _threshold_direction = threshold_direction
 
         if hazard_raster is None:
             if hazard_pattern is not None:
@@ -124,9 +133,12 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
         if _threshold == '':
             _reclass_raster = _hazard_raster
         else:
+            if _threshold_direction == '':
+                _threshold_direction = 'LESS_THAN'
             # reclassify hazard raster to generate mask of all <= threshold
             _reclass_raster = os.path.join(os.path.dirname(_output_file), 'hazard_area_reclass.tif')
-            impact_analysis.reclassify_raster(raster=_hazard_raster, threshold=_threshold, output_raster=_reclass_raster)
+            impact_analysis.reclassify_raster(raster=_hazard_raster, threshold=_threshold,
+                                              threshold_direction=_threshold_direction, output_raster=_reclass_raster)
 
         # calculate impact on boundary
         stats = calculate_statistics.calc_zonal_statistics(raster_file=_reclass_raster, polygon_file=boundary,
@@ -134,7 +146,8 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
         # convert to hectares
         # TODO: get multiplier from defaults depending on resolution of hazard raster
         _multiplier = float(self.vp.get('hazard_impact', '{0}_area_multiplier'.format(hazard_var)))
-        csv_utils.calc_field(table_name=_output_file, new_field='area_aff', cal_field='COUNT', multiplier=_multiplier)
+#        csv_utils.calc_field(table_name=_output_file, new_field='area_aff', cal_field='COUNT', multiplier=_multiplier)
+        csv_utils.calc_field(table_name=_output_file, new_field='area_aff', cal_field='SUM', multiplier=_multiplier)
         # add start and end date fields and set values
         csv_utils.add_field(table_name=_output_file, new_field='start_date', value=start_date)
         csv_utils.add_field(table_name=_output_file, new_field='end_date', value=end_date)
