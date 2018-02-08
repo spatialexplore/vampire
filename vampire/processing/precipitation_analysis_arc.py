@@ -49,6 +49,7 @@ def days_since_last_rain(raster_list, dslw_filename, dsld_filename, num_wet_days
 ##    rasters_list = arcpy.ListRasters()
     _count = 0
     _new_ras = None
+    raster_list.sort(reverse=True)
     for ras in raster_list:
         # only look at last 'max_days' rasters
         if _count < max_days:
@@ -63,7 +64,7 @@ def days_since_last_rain(raster_list, dslw_filename, dsld_filename, num_wet_days
         else:
             break
     logger.debug("successfully reclassified rasters")
-    _reclass_rasters.sort(reverse=True)
+#    _reclass_rasters.sort(reverse=True)
     logger.debug(_reclass_rasters)
 
     # calculate last wet day
