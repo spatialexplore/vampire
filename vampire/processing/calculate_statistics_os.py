@@ -113,7 +113,7 @@ def calc_max(file_list, max_file):
         dst_a = np.ma.dstack(arrayList)
         dst_r = np.ma.max(dst_a, axis=2)
         with rasterio.open(max_file, 'w', **profile) as dst:
-            dst.write(dst_r.astype(profile.dtype), 1)
+            dst.write(dst_r.astype(rasterio.float64), 1)
 #            print "saved maximum in: ", max_file
     return None
 
@@ -180,6 +180,7 @@ def calc_sum(file_list, sum_file):
             with rasterio.open(f) as cur_r:
                 if first:
                     profile = cur_r.profile.copy()
+                    profile.update(driver='GTiff', dtype=rasterio.float32)
                     first = False
                 cur_a = cur_r.read(1, masked=True)
                 arrayList.append(cur_a)
@@ -265,3 +266,31 @@ def calc_zonal_statistics(raster_file, polygon_file, zone_field, output_table):
         wr.writerows(_stats_list)
 
     return stats
+
+def mosaic_rasters(raster_file_list, output_dir, output_file, mosaic_method):
+    """ Mosaic the list of files using the specified method and save to output_file.
+
+    Parameters
+    ----------
+    raster_file : str
+        Filename of raster file
+    polygon_file : str
+        Filename of vector file
+    zone_field : str
+        Name of field labelling the zones within vector file
+    output_table : str
+        Filename of output table (.dbf or .csv)
+
+    Returns
+    -------
+    None
+        Returns None
+
+    """
+    if mosaic_method == 'MAXIMUM':
+        calc_max(raster_file_list, os.path.join(output_dir, output_file))
+#    arcpy.CheckOutExtension("Spatial")
+#    arcpy.MosaicToNewRaster_management(input_rasters=raster_file_list, output_location=output_dir,
+#                                       raster_dataset_name_with_extension=output_file, mosaic_method=mosaic_method,
+#                                       number_of_bands=1)
+    return None
