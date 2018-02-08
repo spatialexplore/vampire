@@ -23,7 +23,7 @@ def generate_config_file(output_file, params):
             raise
     else:
         try:
-            pfile = open(output_file, 'w')
+            pfile = open(output_file, 'w+')
         except IOError as e:
             raise
 
