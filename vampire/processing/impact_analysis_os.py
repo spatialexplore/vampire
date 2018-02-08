@@ -97,13 +97,17 @@ def calculate_crop_impact(hazard_raster, threshold, hazard_var,
 
         return None
 
-def reclassify_raster(raster, threshold, output_raster):
+def reclassify_raster(raster, threshold, output_raster, threshold_direction='LESS_THAN'):
     _threshold = int(threshold)
     with rasterio.open(raster) as ras_r:
         _profile = ras_r.profile.copy()
         _ras_a = ras_r.read(1, masked=True)
-        _dst_r = np.ma.masked_where(_ras_a > _threshold, _ras_a)
-        _dst_r.data[_ras_a <= _threshold] = 1
+        if threshold_direction == 'LESS_THAN':
+            _dst_r = np.ma.masked_where(_ras_a < _threshold, _ras_a)
+            _dst_r.data[_ras_a]
+        else:
+            _dst_r = np.ma.masked_where(_ras_a > _threshold, _ras_a)
+            _dst_r.data[_ras_a <= _threshold] = 1
         _dst_r = _dst_r.filled(-9999)
         _profile.update(dtype=rasterio.float32, nodata=-9999)
         with rasterio.open(output_raster, 'w', **_profile) as dst:
