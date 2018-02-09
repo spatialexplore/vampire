@@ -288,6 +288,7 @@ def main():
         parser.add_option('-t', '--valid_from', dest='valid_from', action='store', help='valid from year-month-day')
         parser.add_option('-m', '--mask', dest='mask', action='store_true', default=False, help='apply crop mask')
         parser.add_option('-u', '--publish', dest='publish', action='store_true', default=False, help='publish product and impact')
+        parser.add_option('-a', '--impact', dest='impact', action='store_true', default=False, help='generate impact products')
         (options, args) = parser.parse_args()
         params = {}
         if options.verbose: print time.asctime()
@@ -327,13 +328,16 @@ def main():
                 _valid_from = datetime.datetime.strptime(options.valid_from, "%Y-%m-%d")
             print 'valid_from=', _valid_from
             params['valid_from'] = _valid_from
-        params['impact'] = True
+
+        params['impact'] = False
         params['mask'] = False
         params['publish'] = False
         if options.mask:
             params['mask'] = True
         if options.publish:
             params['publish'] = True
+        if options.impact:
+            params['impact'] = True
         vampire.config_generator.generate_config_file(_output, params)
         cp = vampire.ConfigProcessor.ConfigProcessor()
         cp.process_config(_output)
