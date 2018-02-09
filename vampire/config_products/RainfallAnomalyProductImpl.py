@@ -1,9 +1,10 @@
 import BaseDataset
+import RasterProductImpl
 import os
 import logging
 logger = logging.getLogger(__name__)
 
-class RainfallAnomalyProductImpl(object):
+class RainfallAnomalyProductImpl(RasterProductImpl.RasterProductImpl):
     """ Initialise RainfallAnomalyProductImpl.
 
     Implementation class for RainfallAnomalyProduct.
@@ -24,6 +25,7 @@ class RainfallAnomalyProductImpl(object):
 
     """
     def __init__(self, country, product_date, interval, vampire_defaults):
+        super(RainfallAnomalyProductImpl, self).__init__()
         self.country = country
         self.interval = interval
         self.product_date = product_date
@@ -34,6 +36,8 @@ class RainfallAnomalyProductImpl(object):
         self.chirps_dataset = BaseDataset.BaseDataset.create(dataset_type='CHIRPS', interval=self.interval,
                                                              product_date=self.product_date,
                                                              vampire_defaults=self.vp, region=self.country)
+        self.valid_from_date = self.chirps_dataset.start_date()
+        self.valid_to_date = self.chirps_dataset.end_date()
         return
 
     """ Generate VAMPIRE config file header for CHIRPS datasets.
@@ -96,8 +100,9 @@ class RainfallAnomalyProductImpl(object):
                         output_pattern=None):
         config = """
     ## Processing chain begin - Compute Rainfall Anomaly\n"""
-        config += self.chirps_dataset.generate_config(data_dir=None, download=True)
-
+        _c_str, _data_dir = self.chirps_dataset.generate_config(data_dir=None, download=True)
+        config += _c_str
+		
         if output_file is not None:
             _output_file = output_file
         else:
@@ -216,6 +221,12 @@ class RainfallAnomalyProductImpl(object):
         config += """
     ## Processing chain end - Compute Rainfall Anomaly"""
 
+        self.product_file = None
+        self.product_dir = _out_dir
+        self.product_pattern = self.vp.get('Days_Since_Last_Rain', 'regional_dslr_pattern')
+        self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
+        self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.product_date.month))
+        self.product_pattern = self.product_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.product_date.day))
         return config
 
 
