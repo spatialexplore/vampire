@@ -1,7 +1,8 @@
 try:
     import arcpy
 except ImportError:
-    raise ImportWarning
+    pass
+#    raise ImportWarning
 
 #class ArcGISServerManager(GISServerManager.GISServerManager):
 

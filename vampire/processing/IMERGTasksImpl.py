@@ -151,6 +151,9 @@ class IMERGDownloadTask(BaseTaskImpl.BaseTaskImpl):
             _end_date = datetime.datetime.strptime(dates[-1], '%Y-%m') + dateutil.relativedelta.relativedelta(day=31)
         _i_date = _start_date
         files_list = []
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
         while _i_date < _end_date:
             _imerg_file = '3B-DAY-L.MS.MRG.3IMERG.{0}{1:0>2}{2:0>2}-S000000-E235959.V04.nc4'.format(_i_date.year,
                                                                                                     _i_date.month,

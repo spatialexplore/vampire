@@ -61,7 +61,7 @@ def crop_files(base_path, output_path, bounds, tools_path, patterns = None, over
             _fileslist.append(_new_filename)
     return _fileslist
 
-def reproject_image_to_master ( master, slave, output, res=None ):
+def reproject_image_to_master ( master, slave, output, res=None, nodata=0.0 ):
     """This function reprojects an image (``slave``) to
     match the extent, resolution and projection of another
     (``master``) using GDAL. The newly reprojected image
@@ -118,7 +118,9 @@ def reproject_image_to_master ( master, slave, output, res=None ):
     gdal.ReprojectImage( slave_ds, dst_ds, slave_proj,
                          master_proj, gdal.GRA_NearestNeighbour)
 
-    dst_ds.GetRasterBand(1).SetNoDataValue(0.0) #slave_ds.GetRasterBand(1).GetNoDataValue())
+    if nodata is None:
+        nodata = 0.0
+    dst_ds.GetRasterBand(1).SetNoDataValue(nodata) #slave_ds.GetRasterBand(1).GetNoDataValue())
     dst_ds = None  # Flush to disk
     # with rasterio.open(dst_filename) as dst_r:
     #     profile = dst_r.profile.copy()

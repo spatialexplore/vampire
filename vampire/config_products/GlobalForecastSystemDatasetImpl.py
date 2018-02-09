@@ -78,7 +78,7 @@ class GlobalForecastSystemDatasetImpl(RasterDatasetImpl.RasterDatasetImpl):
             _data_dir = self.vp.get('GFS', 'data_dir')
         else:
             _data_dir = data_dir
-        _download_dir = "{0}\\{1}".format(_data_dir, self.interval.capitalize())
+        _download_dir = os.path.join(_data_dir, self.interval.capitalize()) #"{0}\\{1}".format(_data_dir, self.interval.capitalize())
 
         if download:
             config += self._generate_download_section(data_dir=_download_dir)

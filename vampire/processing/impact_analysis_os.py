@@ -97,17 +97,24 @@ def calculate_crop_impact(hazard_raster, threshold, hazard_var,
 
         return None
 
-def reclassify_raster(raster, threshold, output_raster, threshold_direction='LESS_THAN'):
-    _threshold = int(threshold)
+def reclassify_raster(raster, threshold, output_raster,
+                      threshold_direction='LESS_THAN'):
+    _threshold = float(threshold)
     with rasterio.open(raster) as ras_r:
         _profile = ras_r.profile.copy()
         _ras_a = ras_r.read(1, masked=True)
         if threshold_direction == 'LESS_THAN':
-            _dst_r = np.ma.masked_where(_ras_a < _threshold, _ras_a)
-            _dst_r.data[_ras_a]
+            _dst_r = np.ma.masked_where(_ras_a >= _threshold, _ras_a)
+            _dst_r.data[_ras_a < _threshold] = 1
+        elif threshold_direction == 'EQUALS':
+            _dst_r = np.ma.masked_where(_ras_a <> _threshold, _ras_a)
+            _dst_r.data[_ras_a == _threshold] = 1
         else:
-            _dst_r = np.ma.masked_where(_ras_a > _threshold, _ras_a)
-            _dst_r.data[_ras_a <= _threshold] = 1
+            _dst_r = np.ma.masked_where(_ras_a <= _threshold, _ras_a)
+            _dst_r.data[_ras_a > _threshold] = 1
+
+#        _dst_r = np.ma.masked_where(_ras_a > _threshold, _ras_a)
+#        _dst_r.data[_ras_a <= _threshold] = 1
         _dst_r = _dst_r.filled(-9999)
         _profile.update(dtype=rasterio.float32, nodata=-9999)
         with rasterio.open(output_raster, 'w', **_profile) as dst:
@@ -147,6 +154,24 @@ def multiply_by_mask(raster, mask, output_raster):
             with rasterio.open(output_raster, 'w', **_profile) as dst:
                 dst.write(_dst_r.astype(rasterio.float32), 1)
                 print "saved multiply result in: ", output_raster
+    return None
+
+
+def create_mask(raster, mask, output_raster):
+    with rasterio.open(raster) as ras:
+        _ras_a = ras.read(1, masked=True)
+        _profile = ras.profile.copy()
+        with rasterio.open(mask) as _mask_r:
+            # TODO check if same size/projection
+            _mask_a = _mask_r.read(1, masked=True)
+            _dst_r = np.ma.masked_where(_mask_a==0, _mask_a)
+            _dst_r.data[:] = _ras_a
+            _profile.update(dtype=rasterio.float32, nodata=-9999)
+            _dst_r = _dst_r.filled(-9999)
+            with rasterio.open(output_raster, 'w', **_profile) as dst:
+                dst.write(_dst_r.astype(rasterio.float32), 1)
+                print "saved multiply result in: ", output_raster
+
     return None
 
 def shapefile_to_table(input_file, output_file):

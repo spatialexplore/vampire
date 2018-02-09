@@ -69,6 +69,9 @@ class DaysSinceLastRainTaskImpl(BaseTaskImpl.BaseTaskImpl):
             if max_date <= f_date < start_date:
                 raster_list.append(f)
 
+        if not os.path.exists(dst_dir):
+            os.makedirs(dst_dir)
+
         def replace_closure(subgroup, replacement, m):
             if m.group(subgroup) not in [None, '']:
                 start = m.start(subgroup)

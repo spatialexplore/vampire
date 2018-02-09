@@ -2,6 +2,7 @@
 import rasterio
 import numpy as np
 import os
+import raster_utils
 import logging
 logger = logging.getLogger(__name__)
 
@@ -60,10 +61,11 @@ def days_since_last_rain(raster_list, dslw_filename, dsld_filename, num_wet_days
 ##    rasters_list = arcpy.ListRasters()
     _count = 0
     _new_ras = None
+    raster_list.sort(reverse=True)
     for ras in raster_list:
         # only look at last 'max_days' rasters
         if _count < max_days:
-            _new_ras = os.path.join(temp_dir, 'temp_wd{0}'.format(_count))
+            _new_ras = os.path.join(temp_dir, 'temp_wd{0:0>2}'.format(_count))
 ##            newras = os.path.join(temp_path, '{0}_wd{1}'.format(os.path.splitext(os.path.basename(ras))[0], output_filenames[1]))
 #    ##        newras = temp_path + '/' + os.path.splitext(os.path.basename(ras))[0] + '_wd' + '.tif'
 #            # check if file exists
@@ -74,7 +76,7 @@ def days_since_last_rain(raster_list, dslw_filename, dsld_filename, num_wet_days
         else:
             break
     print("successfully reclassified rasters")
-    _reclass_rasters.sort(reverse=True)
+#    _reclass_rasters.sort()
     print(_reclass_rasters)
 
     # calculate last wet day
@@ -138,7 +140,7 @@ def _reclassify_wet_day(in_raster, out_raster, threshold):
         _cur_band = cur_r.read(1, masked=True)
         _out_ras = np.zeros(shape=_cur_band.shape)
         _profile = cur_r.profile.copy()
-        _out_ras[_cur_band >= threshold] += 1
+        _out_ras[_cur_band > int(threshold)] += 1
         _profile.update(dtype=rasterio.float32)
         with rasterio.open(path=out_raster, mode='w', **_profile) as dst:
             dst.write(_out_ras.astype(rasterio.float32), 1)
@@ -219,8 +221,9 @@ def _calc_num_days_since(rasters, dslw_fn, dsld_fn, max_days):
         # temporarily set No Data values to -999 so the grid cell isn't ignored
         # in calculations
             _temp_raster = np.zeros(_cur_band.shape)
+            _temp_raster[:] = _cur_band
             _temp_raster[_cur_band == cur_r.nodata] = -999
-            _temp_raster[_cur_band != cur_r.nodata] = _cur_band
+#            _temp_raster[_cur_band != cur_r.nodata] = _cur_band
 #        _temp_raster = arcpy.sa.Con(arcpy.sa.IsNull(rasters[i]), -999, rasters[i])
         # _dry_mask is 1 if dry day (<0.5mm rain) OR No Data
             _dry = np.zeros(_cur_band.shape)
@@ -286,4 +289,35 @@ def _calc_num_days_since(rasters, dslw_fn, dsld_fn, max_days):
         dst2.write(_dsld.astype(rasterio.float32), 1)
 #    outFinal2.save(dslw_fn)
 #    outFinal4.save(dsld_fn)
+    return 0
+
+def calc_flood_alert(forecast_filename, threshold_filename, dst_filename, value=1):
+    _nodata = None
+    with rasterio.open(forecast_filename) as forecast_r:
+        _nodata = forecast_r.nodata
+    tmp_output = os.path.join(os.path.dirname(forecast_filename), "tmpoutput.tif")
+    raster_utils.reproject_image_to_master(threshold_filename, forecast_filename, tmp_output,
+                                           nodata=_nodata)
+
+    with rasterio.open(tmp_output) as forecast_r:
+        _forecast_band = forecast_r.read(1, masked=True)
+        _profile = forecast_r.profile.copy()
+        with rasterio.open(threshold_filename) as threshold_r:
+            _threshold_band = threshold_r.read(1, masked=True)
+            _out_ras = np.zeros(shape=_threshold_band.shape)
+            _out_ras[_forecast_band >= _threshold_band] += 1
+            _profile.update(dtype=rasterio.float64)
+            with rasterio.open(path=dst_filename, mode='w', **_profile) as dst:
+                dst.write(_out_ras.astype(rasterio.float64), 1)
+
+#    _forecast_raster = arcpy.sa.Raster(forecast_filename)
+#    _threshold_raster = arcpy.sa.Raster(threshold_filename)
+#    _cellsize = arcpy.env.cellSize
+#    arcpy.env.cellSize = "MINOF"
+#    dst = arcpy.sa.GreaterThanEqual(_forecast_raster, _threshold_raster) * int(value)
+#    # if value != 1:
+#    #     d    st2 = arcpy.sa.Times(dst, value)
+#    #     dst = dst2
+#    dst.save(dst_filename)
+#    arcpy.env.cellSize = _cellsize
     return 0
