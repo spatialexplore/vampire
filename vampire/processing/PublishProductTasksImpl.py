@@ -332,6 +332,38 @@ class PublishFloodForecastProduct(PublishableRasterProduct):
             #self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
         return
 
+@PublishProductTasksImpl.register_subclass('days_since_last_rain')
+class PublishDSLRProduct(PublishableRasterProduct):
+    """ Initialise MODISDownloadTask object.
+
+    Implementation class for downloading MODIS products.
+
+    """
+    def __init__(self, params, vampire_defaults):
+        logger.debug('Initialising MODIS download task')
+        super(PublishDSLRProduct, self).__init__(params, vampire_defaults)
+        self.product_dir = self.vp.get('Days_Since_Last_Rain', 'vhi_product_dir')
+        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.valid_from_date = self.params['start_date']
+        self.valid_to_date = self.params['end_date']
+        self.summary = '{0} {1}'.format(self.vp.get('Days_Since_Last_Rain', 'interval'.capitalize()),
+                                        self.vp.get('Days_Since_Last_Rain', 'summary'))
+        self.tags = '{0}, {1}'.format(self.vp.get('Days_Since_Last_Rain', 'tags'),
+                                      self.vp.get_country_name(self.vp.get('vampire', 'home_country')))
+        self.template_file = self.vp.get('Days_Since_Last_Rain', 'template_file')
+        _product_pattern = self.vp.get('Days_Since_Last_Rain', 'regional_dslr_pattern')
+        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
+        self.product_filename = _product_files[0]
+#        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
+        self.product_name = self.vp.get('Days_Since_Last_Rain', 'product_name')
+        self.destination_filename = self.product_filename
+        self.ingestion_date = self.valid_from_date
+            #self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
+        return
+
+
+
 @PublishProductTasksImpl.register_subclass('vhi_impact_area')
 class PublishVHIAreaImpactProduct(PublishableTabularProduct):
     """ Initialise MODISDownloadTask object.
@@ -466,3 +498,70 @@ class PublishFloodPopnImpactProduct(PublishableTabularProduct):
         self.destination_filename = self.product_filename
         self.ingestion_date = self.valid_from_date
         return
+
+
+@PublishProductTasksImpl.register_subclass('days_since_last_rain_impact_area')
+class PublishDSLRAreaImpactProduct(PublishableTabularProduct):
+    """ Initialise MODISDownloadTask object.
+
+    Implementation class for downloading MODIS products.
+
+    """
+    def __init__(self, params, vampire_defaults):
+        logger.debug('Initialising Area Impact product.')
+        super(PublishDSLRAreaImpactProduct, self).__init__(params, vampire_defaults)
+        self.params = params
+        self.vp = vampire_defaults
+        self.product_dir = self.vp.get('hazard_impact', 'dslr_output_dir')
+        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.valid_from_date = self.params['start_date']
+        self.valid_to_date = self.params['end_date']
+        self.database = self.vp.get('database', 'impact_db')
+        self.table_name = self.vp.get('database', 'dslr_impact_area_table')
+        try:
+            self.schema = self.vp.get('database', 'dslr_impact_area_schema')
+        except Exception, e:
+            self.schema = self.vp.get('database', 'default_schema')
+        _product_pattern = self.vp.get('hazard_impact', 'dslr_area_pattern')
+        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
+
+        self.product_filename = _product_files[0]
+        self.product_name = 'dslr_impact_area'
+        self.destination_filename = self.product_filename
+        self.ingestion_date = self.valid_from_date
+        return
+
+@PublishProductTasksImpl.register_subclass('days_since_last_rain_impact_popn')
+class PublishDSLRPopnImpactProduct(PublishableTabularProduct):
+    """ Initialise MODISDownloadTask object.
+
+    Implementation class for downloading MODIS products.
+
+    """
+    def __init__(self, params, vampire_defaults):
+        logger.debug('Initialising Popn Impact product.')
+        super(PublishDSLRPopnImpactProduct, self).__init__(params, vampire_defaults)
+#        self.params = params
+#        self.vp = vampire_defaults
+        self.product_dir = self.vp.get('hazard_impact', 'dslr_output_dir')
+        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.valid_from_date = self.params['start_date']
+        self.valid_to_date = self.params['end_date']
+        self.database = self.vp.get('database', 'impact_db')
+        self.table_name = self.vp.get('database', 'dslr_impact_popn_table')
+        try:
+            self.schema = self.vp.get('database', 'impact_popn_schema')
+        except Exception, e:
+            self.schema = self.vp.get('database', 'default_schema')
+        _product_pattern = self.vp.get('hazard_impact', 'dslr_popn_pattern')
+        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
+
+        self.product_filename = _product_files[0]
+            #'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif' % self.product_date.strftime('%Y.%m.%d')
+        self.product_name = 'dslr_impact_popn'
+        self.destination_filename = self.product_filename
+        self.ingestion_date = self.valid_from_date
+        return
+
