@@ -191,6 +191,8 @@ class CHIRPSDownloadTask(BaseTaskImpl.BaseTaskImpl):
                             if not os.path.isfile(local_f) or overwrite:
                                 ftp_host.download(f, local_f)  # remote, local
                                 files_list.append(os.path.basename(f))
+                        else:
+                            logger.debug('File {0} not available for download.'.format(f))
         return files_list
 
 

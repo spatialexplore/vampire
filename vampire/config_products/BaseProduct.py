@@ -402,6 +402,27 @@ class RainfallAnomalyProduct(BaseProduct):
         self.impl = RainfallAnomalyProductImpl.RainfallAnomalyProductImpl(country, product_date, interval, vampire_defaults)
         return
 
+    @property
+    def product_file(self):
+        """ Get full path to the output product file name. """
+        return self.impl.product_file
+    @property
+    def product_dir(self):
+        """ Get directory name for product output. """
+        return self.impl.product_dir
+    @property
+    def product_pattern(self):
+        """ Get output product file name pattern (regular expression used to search for the product file). """
+        return self.impl.product_pattern
+    @property
+    def valid_from_date(self):
+        """ Get date the output product file is valid from. """
+        return self.impl.valid_from_date
+    @property
+    def valid_to_date(self):
+        """ Get date the output product file is valid until. """
+        return self.impl.valid_to_date
+
     def generate_header(self):
         """ Generate details related to Rainfall Anomaly that go in the config file header. """
         return self.impl.generate_header()
@@ -465,6 +486,27 @@ class SPIProduct(BaseProduct):
         """
         self.impl = SPIProductImpl.SPIProductImpl(country, product_date, interval, vampire_defaults)
         return
+
+    @property
+    def product_file(self):
+        """ Get full path to the output product file name. """
+        return self.impl.product_file
+    @property
+    def product_dir(self):
+        """ Get directory name for product output. """
+        return self.impl.product_dir
+    @property
+    def product_pattern(self):
+        """ Get output product file name pattern (regular expression used to search for the product file). """
+        return self.impl.product_pattern
+    @property
+    def valid_from_date(self):
+        """ Get date the output product file is valid from. """
+        return self.impl.valid_from_date
+    @property
+    def valid_to_date(self):
+        """ Get date the output product file is valid until. """
+        return self.impl.valid_to_date
 
     def generate_header(self):
         """ Generate details related to SPI that go in the config file header. """
@@ -535,6 +577,27 @@ class MODISEVILongtermAverageProduct(BaseProduct):
         self.impl = MODISEVILongtermAverageProductImpl.MODISEVILongtermAverageProductImpl(country, product_date, interval, vampire_defaults)
         return
 
+    @property
+    def product_file(self):
+        """ Get full path to the output product file name. """
+        return self.impl.product_file
+    @property
+    def product_dir(self):
+        """ Get directory name for product output. """
+        return self.impl.product_dir
+    @property
+    def product_pattern(self):
+        """ Get output product file name pattern (regular expression used to search for the product file). """
+        return self.impl.product_pattern
+    @property
+    def valid_from_date(self):
+        """ Get date the output product file is valid from. """
+        return self.impl.valid_from_date
+    @property
+    def valid_to_date(self):
+        """ Get date the output product file is valid until. """
+        return self.impl.valid_to_date
+
     def generate_header(self):
         """ Generate details related to MODIS EVI long-term average that go in the config file header. """
         return self.impl.generate_header()
@@ -592,6 +655,27 @@ class MODISLSTLongtermAverageProduct(BaseProduct):
         self.impl = MODISLSTLongtermAverageProductImpl.MODISLSTLongtermAverageProductImpl(country, product_date, interval, vampire_defaults)
         return
 
+    @property
+    def product_file(self):
+        """ Get full path to the output product file name. """
+        return self.impl.product_file
+    @property
+    def product_dir(self):
+        """ Get directory name for product output. """
+        return self.impl.product_dir
+    @property
+    def product_pattern(self):
+        """ Get output product file name pattern (regular expression used to search for the product file). """
+        return self.impl.product_pattern
+    @property
+    def valid_from_date(self):
+        """ Get date the output product file is valid from. """
+        return self.impl.valid_from_date
+    @property
+    def valid_to_date(self):
+        """ Get date the output product file is valid until. """
+        return self.impl.valid_to_date
+
     def generate_header(self):
         """ Generate details related to LST long-term average that go in the config file header. """
         return self.impl.generate_header()
@@ -646,6 +730,27 @@ class CHIRPSLongtermAverageProduct(BaseProduct):
         """
         self.impl = CHIRPSLongtermAverageProductImpl.CHIRPSLongtermAverageProductImpl(country, product_date, interval, vampire_defaults)
         return
+
+    @property
+    def product_file(self):
+        """ Get full path to the output product file name. """
+        return self.impl.product_file
+    @property
+    def product_dir(self):
+        """ Get directory name for product output. """
+        return self.impl.product_dir
+    @property
+    def product_pattern(self):
+        """ Get output product file name pattern (regular expression used to search for the product file). """
+        return self.impl.product_pattern
+    @property
+    def valid_from_date(self):
+        """ Get date the output product file is valid from. """
+        return self.impl.valid_from_date
+    @property
+    def valid_to_date(self):
+        """ Get date the output product file is valid until. """
+        return self.impl.valid_to_date
 
     def generate_header(self):
         """ Generate details related to CHIRPS long-term statistics that go in the config file header. """

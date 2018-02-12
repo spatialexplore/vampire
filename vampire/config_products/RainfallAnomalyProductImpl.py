@@ -1,9 +1,10 @@
 import BaseDataset
+import RasterProductImpl
 import os
 import logging
 logger = logging.getLogger(__name__)
 
-class RainfallAnomalyProductImpl(object):
+class RainfallAnomalyProductImpl(RasterProductImpl.RasterProductImpl):
     """ Initialise RainfallAnomalyProductImpl.
 
     Implementation class for RainfallAnomalyProduct.
@@ -24,6 +25,7 @@ class RainfallAnomalyProductImpl(object):
 
     """
     def __init__(self, country, product_date, interval, vampire_defaults):
+        super(RainfallAnomalyProductImpl, self).__init__()
         self.country = country
         self.interval = interval
         self.product_date = product_date
@@ -34,6 +36,8 @@ class RainfallAnomalyProductImpl(object):
         self.chirps_dataset = BaseDataset.BaseDataset.create(dataset_type='CHIRPS', interval=self.interval,
                                                              product_date=self.product_date,
                                                              vampire_defaults=self.vp, region=self.country)
+        self.valid_from_date = self.chirps_dataset.start_date()
+        self.valid_to_date = self.chirps_dataset.end_date()
         return
 
     """ Generate VAMPIRE config file header for CHIRPS datasets.
@@ -96,8 +100,9 @@ class RainfallAnomalyProductImpl(object):
                         output_pattern=None):
         config = """
     ## Processing chain begin - Compute Rainfall Anomaly\n"""
-        config += self.chirps_dataset.generate_config(data_dir=None, download=True)
-
+        _c_str, _data_dir = self.chirps_dataset.generate_config(data_dir=None, download=True)
+        config += _c_str
+		
         if output_file is not None:
             _output_file = output_file
         else:
@@ -216,6 +221,12 @@ class RainfallAnomalyProductImpl(object):
         config += """
     ## Processing chain end - Compute Rainfall Anomaly"""
 
+        self.product_file = None
+        self.product_dir = _out_dir
+        self.product_pattern = self.vp.get('Days_Since_Last_Rain', 'regional_dslr_pattern')
+        self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
+        self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.product_date.month))
+        self.product_pattern = self.product_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.product_date.day))
         return config
 
 
@@ -282,188 +293,3 @@ class RainfallAnomalyProductImpl(object):
 
         return config
 
-
-    #     year = start_date.strftime("%Y")
-    #     month = start_date.strftime("%m")
-    #     day = start_date.strftime("%d")
-    #     if country == 'Global':
-    #         crop = False
-    #
-    #     # if output_file is specified, it will override the location of the output file.
-    #     # if output_dir is specified, the rainfall anomaly result will be stored here.
-    #     # the filename will be generated from the default pattern.
-    #     if output_dir is not None:
-    #         _out_dir = output_dir
-    #     else:
-    #         _out_dir = self.vampire.get('CHIRPS_Rainfall_Anomaly', 'output_dir')
-    #
-    #     # if cur_file is specified, cur_dir is not used.
-    #     # if cur_dir is specified, it is used with the default pattern to find the current rainfall file
-    #     # if not specified, cur_dir is determined from the default values.
-    #     if cur_dir is not None:
-    #         _cur_dir = cur_dir
-    #     else:
-    #         if country == 'Global':
-    #             _cur_dir = os.path.join(self.vampire.get('CHIRPS', 'data_dir'), interval.capitalize())
-    #         else:
-    #             _cur_dir = os.path.join(self.vampire.get('CHIRPS', 'data_dir'), '{interval}\\{ccode}'.format(
-    #                 interval=interval, ccode=self.vampire.get_country_code(country).upper()
-    #             ))
-    #     if interval == 'monthly':
-    #         _interval_name = 'month'
-    #         _file_pattern = self.vampire.get('CHIRPS', 'global_monthly_pattern')
-    #         if country == 'Global':
-    #             _output_file_pattern = self.vampire.get('CHIRPS_Rainfall_Anomaly', 'ra_global_output_monthly_pattern')
-    #             _crop_output_pattern = ''
-    #             _cur_file_pattern = self.vampire.get('CHIRPS', 'global_monthly_pattern')
-    #             _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'global_lta_monthly_pattern')
-    #         else:
-    #             _crop_output_pattern = '{0}{1}'.format(
-    #                 self.vampire.get_country_code(country).lower(),
-    #                 self.vampire.get('CHIRPS', 'crop_regional_output_monthly_pattern'))
-    #             _output_file_pattern = self.vampire.get('CHIRPS_Rainfall_Anomaly', 'ra_regional_output_monthly_pattern')
-    #             _cur_file_pattern = self.vampire.get('CHIRPS', 'regional_monthly_pattern')
-    #             _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'regional_lta_monthly_pattern')
-    #         # replace generic month in pattern with the specific one needed so the correct file is found.
-    #         _cur_file_pattern = _cur_file_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(month))
-    #         _lta_file_pattern = _lta_file_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(month))
-    #     elif interval == 'seasonal':
-    #         _interval_name = "season"
-    #         _file_pattern = self.vampire.get('CHIRPS', 'global_seasonal_pattern')
-    #         if country == 'Global':
-    #             _crop_output_pattern = ''
-    #             _output_file_pattern = self.vampire.get('CHIRPS_Rainfall_Anomaly', 'ra_global_output_seasonal_pattern')
-    #             _cur_file_pattern = self.vampire.get('CHIRPS', 'global_seasonal_pattern')
-    #             _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'global_lta_seasonal_pattern')
-    #         else:
-    #             _crop_output_pattern = '{0}{1}'.format(
-    #                 self.vampire.get_country_code(country).lower(),
-    #                 self.vampire.get('CHIRPS', 'crop_regional_output_seasonal_pattern'))
-    #             _output_file_pattern = self.vampire.get('CHIRPS_Rainfall_Anomaly', 'ra_regional_output_seasonal_pattern')
-    #             _cur_file_pattern = self.vampire.get('CHIRPS', 'regional_seasonal_pattern')
-    #             _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'regional_lta_seasonal_pattern')
-    #         # replace generic season in pattern with the specific one needed so the correct file is found.
-    #         _lta_file_pattern = _lta_file_pattern.replace('(?P<season>\d{6})', '(?P<season>{0})'.format(season))
-    #         _cur_file_pattern = _cur_file_pattern.replace('(?P<season>\d{6})', '(?P<season>{0})'.format(season))
-    #
-    #     elif interval == 'dekad':
-    #         _file_pattern = self.vampire.get('CHIRPS', 'global_dekad_pattern')
-    #         _interval_name = interval
-    #         if country == 'Global':
-    #             _crop_output_pattern = ''
-    #             _output_file_pattern = self.vampire.get('CHIRPS_Rainfall_Anomaly', 'ra_global_output_dekad_pattern')
-    #             _cur_file_pattern = self.vampire.get('CHIRPS', 'global_dekad_pattern')
-    #             _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'global_lta_dekad_pattern')
-    #         else:
-    #             _crop_output_pattern = '{0}{1}'.format(
-    #                 self.vampire.get_country_code(country).lower(),
-    #                 self.vampire.get('CHIRPS', 'crop_regional_output_dekad_pattern'))
-    #             _output_file_pattern = self.vampire.get('CHIRPS_Rainfall_Anomaly', 'ra_regional_output_dekad_pattern')
-    #             _cur_file_pattern = self.vampire.get('CHIRPS', 'regional_dekad_pattern')
-    #             _lta_file_pattern = self.vampire.get('CHIRPS_Longterm_Average', 'regional_lta_dekad_pattern')
-    #         # replace generic month and dekad in pattern with the specific one needed so the correct file is found.
-    #         _cur_file_pattern = _cur_file_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(month))
-    #         if int(day) <=10:
-    #             _dekad = 1
-    #         elif int(day) <=20:
-    #             _dekad = 2
-    #         else:
-    #             _dekad = 3
-    #         _cur_file_pattern = _cur_file_pattern.replace('(?P<dekad>\d{1})', '(?P<dekad>{0})'.format(_dekad))
-    #         _lta_file_pattern = _lta_file_pattern.replace('(?P<month>\d{02})', '(?P<month>{0})'.format(month))
-    #         _lta_file_pattern = _lta_file_pattern.replace('(?P<dekad>\d{1})', '(?P<dekad>{0})'.format(_dekad))
-    #     else:
-    #         raise ValueError, 'Unrecognised interval {0}. Unable to generate rainfall anomaly config.'.format(
-    #             interval)
-    #         # _interval_name = interval
-    #         # _crop_output_pattern = "'{0}".format(country.lower()) + "_cli_{product}.{year}.{month}{extension}'"
-    #         # _file_pattern = ''
-    #         # _cur_file_pattern = ''
-    #
-    #     # replace generic year in pattern with the specific one needed so the correct file is found.
-    #     _cur_file_pattern = _cur_file_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(year))
-    #
-    #     # directory for downloaded CHIRPS files
-    #     _dl_output = "{0}\\{1}".format(self.vampire.get('CHIRPS','data_dir'),
-    #                                    interval.capitalize())
-    #
-    #     _num_yrs = int(self.vampire.get('CHIRPS_Longterm_Average', 'lta_date_range').split('-')[1]) - int(
-    #         self.vampire.get('CHIRPS_Longterm_Average', 'lta_date_range').split('-')[0]
-    #     )
-    #     _boundary_file = None
-    #     _country_code = self.vampire.get_country_code(country)
-    #     if country != 'Global':
-    #         _boundary_file = os.path.join(os.path.join(self.vampire.get('CHIRPS', 'regional_boundary_prefix'),
-    #                                                    self.vampire.get('CHIRPS', 'regional_boundary_suffix')),
-    #                                       '{0}{1}'.format(_country_code.lower(),
-    #                                                       self.vampire.get('CHIRPS', 'regional_boundary_file')))
-    #         #self.vampire.get_country(country)['chirps_boundary_file']
-    #
-    #     # if lta_file is specified, lta_dir is not used.
-    #     # if lta_dir is specified, it is used with the default pattern to find the long-term average rainfall file
-    #     # if not specified, lta_dir is determined from the default values.
-    #     if lta_dir is not None:
-    #         _lta_dir = lta_dir
-    #     else:
-    #         if country == 'Global':
-    #             _lta_dir = os.path.join(self.vampire.get('CHIRPS', 'global_product_dir'),
-    #                                     '{interval}\\Statistics_By{interval_name}'.format(
-    #                 interval=interval.capitalize(), interval_name=_interval_name.capitalize()))
-    #         elif country == self.vampire.get_home_country():
-    #             _lta_dir = os.path.join(self.vampire.get('CHIRPS', 'home_country_product_dir'),
-    #                                     '{interval}\\Statistics_By{interval_name}'.format(
-    #                                         interval=interval.capitalize(), interval_name=_interval_name.capitalize()))
-    #         else:
-    #             _lta_dir = os.path.join(self.vampire.get('CHIRPS', 'regional_product_dir_prefix'),
-    #                                     '{suffix}\\{interval}\\Statistics_By{interval_name}'.format(
-    #                                         suffix=self.vampire.get('CHIRPS', 'regional_product_dir_suffix'),
-    #                                         interval=interval.capitalize(),
-    #                                         interval_name=_interval_name.capitalize()))
-    #
-    #     config = """
-    # ## Processing chain begin - Compute Rainfall Anomaly\n"""
-    #     if download:
-    #         # add commands to download data
-    #         config += self.generate_download_section(interval=interval, data_dir=_dl_output,
-    #                                                       start_date=start_date, end_date=start_date)
-    #     if crop:
-    #         # add commands to crop global data to region
-    #         config += self.generate_crop_section(country=country, input_dir=_dl_output,
-    #                                                   output_dir=os.path.join(_dl_output, _country_code.upper()),
-    #                                                   file_pattern=_file_pattern, output_pattern=_crop_output_pattern,
-    #                                                   boundary_file=_boundary_file, no_data=True
-    #                                                  )
-    #
-    #     config += """
-    # # compute rainfall anomaly
-    # - process: Analysis
-    #   type: rainfall_anomaly"""
-    #     if cur_file is not None:
-    #         file_string += """
-    #   current_file: {cur_file}""".format(cur_file=cur_file)
-    #     else:
-    #         config += """
-    #   current_dir: {cur_dir}
-    #   current_file_pattern: '{cur_pattern}'""".format(cur_dir=_cur_dir, cur_pattern=_cur_file_pattern)
-    #
-    #     if lta_file is not None:
-    #         file_string += """
-    #   longterm_avg_file: {lta_file}""".format(lta_file=lta_file)
-    #     else:
-    #         config += """
-    #   longterm_avg_dir: {lta_dir}
-    #   longterm_avg_file_pattern: '{lta_pattern}'""".format(lta_dir=_lta_dir, lta_pattern=_lta_file_pattern)
-    #
-    #     if output_file is not None:
-    #         config += """
-    #   output_file: {output_file}""".format(output_file=output_file)
-    #     else:
-    #         config += """
-    #   output_dir: {out_dir}
-    #   output_file_pattern: '{out_pattern}'""".format(out_dir=_out_dir, out_pattern=_output_file_pattern)
-    #
-    #     config += """
-    # ## Processing chain end - Compute Rainfall Anomaly
-    #     """
-    #
-    #    return config
