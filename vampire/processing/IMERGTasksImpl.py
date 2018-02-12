@@ -155,9 +155,15 @@ class IMERGDownloadTask(BaseTaskImpl.BaseTaskImpl):
             os.makedirs(output_dir)
 
         while _i_date < _end_date:
-            _imerg_file = '3B-DAY-L.MS.MRG.3IMERG.{0}{1:0>2}{2:0>2}-S000000-E235959.V04.nc4'.format(_i_date.year,
-                                                                                                    _i_date.month,
-                                                                                                    _i_date.day)
+            if self.vp.get('IMERG', 'default_product') == 'GPM_3IMERGDL.05':
+                _version = '05'
+            else:
+                _version = '04'
+            _imerg_file = '3B-DAY-L.MS.MRG.3IMERG.{0}{1:0>2}{2:0>2}-S000000-E235959.V{3}.nc4'.format(_i_date.year,
+                                                                                                     _i_date.month,
+                                                                                                     _i_date.day,
+                                                                                                     _version)
+
             if not os.path.exists(os.path.join(output_dir, _imerg_file)):
                 # The url of the file we wish to retrieve
                 # url = url_base product/year/month/imerg_file
@@ -182,12 +188,14 @@ class IMERGDownloadTask(BaseTaskImpl.BaseTaskImpl):
                         fp.write(chunk)
                 files_list.append(_outfile)
             # get the .xml too
-            _imerg_xml = '3B-DAY-L.MS.MRG.3IMERG.{0}{1:0>2}{2:0>2}-S000000-E235959.V04.nc4.xml'.format(_i_date.year,
-                                                                                                _i_date.month,
-                                                                                                _i_date.day)
-            _imerg_xml_output = '3B-DAY-L.MS.MRG.3IMERG.{0}{1:0>2}{2:0>2}-S000000-E235959.V04.nc4.aux.xml'.format(_i_date.year,
-                                                                                                _i_date.month,
-                                                                                                _i_date.day)
+            _imerg_xml = '3B-DAY-L.MS.MRG.3IMERG.{0}{1:0>2}{2:0>2}-S000000-E235959.V{3}.nc4.xml'.format(_i_date.year,
+                                                                                                        _i_date.month,
+                                                                                                        _i_date.day,
+                                                                                                        _version)
+            _imerg_xml_output = '3B-DAY-L.MS.MRG.3IMERG.{0}{1:0>2}{2:0>2}-S000000-E235959.V{3}.nc4.aux.xml'.format(_i_date.year,
+                                                                                                                   _i_date.month,
+                                                                                                                   _i_date.day,
+                                                                                                                   _version)
             _url = '{0}{1}/{2}/{3:0>2}/{4}'.format(self.vp.get('IMERG', 'base_url'),
                                                    self.vp.get('IMERG', 'default_product'),
                                                    _i_date.year, _i_date.month, _imerg_xml)
