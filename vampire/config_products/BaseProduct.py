@@ -460,6 +460,18 @@ class RainfallAnomalyProduct(BaseProduct):
                         lta_file, lta_dir, lta_pattern, output_file,
                         output_pattern)
 
+
+    def generate_publish_config(self):
+        """ Generate config section to publish Rainfall Anomaly data product.
+
+        Generates configuration file section to publish the Rainfall Anomaly output file to a GIS server.
+
+        :return: Config file sections required for publishing Rainfall Anomaly.
+        :rtype: string
+        """
+        return self.impl.generate_publish_config()
+
+
 @BaseProduct.register_subclass('spi')
 class SPIProduct(BaseProduct):
     """ Standardized Precipitation Index data product configuration.
@@ -549,6 +561,17 @@ class SPIProduct(BaseProduct):
         return self.impl.generate_config(output_dir, cur_file, cur_dir, cur_pattern,
                         lta_file, lta_dir, lta_pattern, ltsd_file, ltsd_dir, ltsd_pattern,
                         output_file, output_pattern)
+
+    def generate_publish_config(self):
+        """ Generate config section to publish Standardised Precipitation Index data product.
+
+        Generates configuration file section to publish the Standardised Precipitation Index output file to a GIS server.
+
+        :return: Config file sections required for publishing Standardised Precipitation Index.
+        :rtype: string
+        """
+        return self.impl.generate_publish_config()
+
 
 @BaseProduct.register_subclass('evi_longterm_average')
 class MODISEVILongtermAverageProduct(BaseProduct):
@@ -861,6 +884,17 @@ class DaysSinceLastRainProduct(BaseProduct):
         return self.impl.generate_config(data_dir=data_dir, output_dir=output_dir, file_pattern=file_pattern,
                                          threshold=threshold, max_days=max_days, download=download,
                                          crop=crop, crop_dir=crop_dir)
+
+
+    def generate_publish_config(self):
+        """ Generate config section to publish Days Since Last Rain data product.
+
+        Generates configuration file section to publish the Days Since Last Rain output file to a GIS server.
+
+        :return: Config file sections required for publishing Days Since Last Rain.
+        :rtype: string
+        """
+        return self.impl.generate_publish_config()
 
 
 @BaseProduct.register_subclass('flood_forecast')
