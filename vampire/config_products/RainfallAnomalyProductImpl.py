@@ -127,8 +127,9 @@ class RainfallAnomalyProductImpl(RasterProductImpl.RasterProductImpl):
             if self.country.lower() == 'global':
                 _cur_dir = os.path.join(self.vp.get('CHIRPS', 'data_dir'), self.interval.capitalize())
             else:
-                _cur_dir = os.path.join(self.vp.get('CHIRPS', 'data_dir'), '{interval}\\{ccode}'.format(
-                    interval=self.interval, ccode=self.vp.get_country_code(self.country).upper()
+                _cur_dir = os.path.join(self.vp.get('CHIRPS', 'data_dir'),
+                                        os.path.join(self.interval.capitalize(),
+                                                     self.vp.get_country_code(self.country).upper()
                 ))
 
         if self.country.lower() == 'global':
@@ -199,18 +200,20 @@ class RainfallAnomalyProductImpl(RasterProductImpl.RasterProductImpl):
         else:
             if self.country.lower() == 'global':
                 _lta_dir = os.path.join(self.vp.get('CHIRPS', 'global_product_dir'),
-                                        '{interval}\\Statistics_By{interval_name}'.format(
-                                        interval=self.interval.capitalize(), interval_name=_interval_name.capitalize()))
+                                        os.path.join(self.interval.capitalize(),
+                                                     'Statistics_By{interval_name}'.format(
+                                                     interval_name=_interval_name.capitalize())))
             elif self.country == self.vp.get_home_country():
                 _lta_dir = os.path.join(self.vp.get('CHIRPS', 'home_country_product_dir'),
-                                        '{interval}\\Statistics_By{interval_name}'.format(
-                                        interval=self.interval.capitalize(), interval_name=_interval_name.capitalize()))
+                                        os.path.join(self.interval.capitalize(),
+                                                     'Statistics_By{interval_name}'.format(
+                                                     interval_name=_interval_name.capitalize())))
             else:
                 _lta_dir = os.path.join(self.vp.get('CHIRPS', 'regional_product_dir_prefix'),
-                                        '{suffix}\\{interval}\\Statistics_By{interval_name}'.format(
-                                        suffix=self.vp.get('CHIRPS', 'regional_product_dir_suffix'),
-                                        interval=self.interval.capitalize(),
-                                        interval_name=_interval_name.capitalize()))
+                                        os.path.join(self.vp.get('CHIRPS', 'regional_product_dir_suffix'),
+                                                     os.path.join(self.interval.capitalize(),
+                                                                  'Statistics_By{interval_name}'.format(
+                                                                  interval_name=_interval_name.capitalize()))))
 
 
         config += self._generate_rainfall_anomaly_section(cur_file=_cur_file, cur_dir=_cur_dir,
