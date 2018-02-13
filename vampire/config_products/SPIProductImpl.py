@@ -127,9 +127,9 @@ class SPIProductImpl(RasterProductImpl.RasterProductImpl):
             if self.country.lower() == 'global':
                 _cur_dir = os.path.join(self.vp.get('CHIRPS', 'data_dir'), self.interval.capitalize())
             else:
-                _cur_dir = os.path.join(self.vp.get('CHIRPS', 'data_dir'), '{interval}\\{ccode}'.format(
-                    interval=self.interval, ccode=self.vp.get_country_code(self.country).upper()
-                ))
+                _cur_dir = os.path.join(self.vp.get('CHIRPS', 'data_dir'),
+                                        os.path.join(self.interval.capitalize(),
+                                                     self.vp.get_country_code(self.country).upper()))
 
         if self.country.lower() == 'global':
             _output_file_pattern = self.vp.get('CHIRPS_SPI',
@@ -212,18 +212,20 @@ class SPIProductImpl(RasterProductImpl.RasterProductImpl):
         else:
             if self.country.lower() == 'global':
                 _lta_dir = os.path.join(self.vp.get('CHIRPS', 'global_product_dir'),
-                                        '{interval}\\Statistics_By{interval_name}'.format(
-                                        interval=self.interval.capitalize(), interval_name=_interval_name.capitalize()))
+                                        os.path.join(self.interval.capitalize(),
+                                                     'Statistics_By{interval_name}'.format(
+                                                     interval_name=_interval_name.capitalize())))
             elif self.country == self.vp.get_home_country():
                 _lta_dir = os.path.join(self.vp.get('CHIRPS', 'home_country_product_dir'),
-                                        '{interval}\\Statistics_By{interval_name}'.format(
-                                        interval=self.interval.capitalize(), interval_name=_interval_name.capitalize()))
+                                        os.path.join(self.interval.capitalize(),
+                                                     'Statistics_By{interval_name}'.format(
+                                                     interval_name=_interval_name.capitalize())))
             else:
                 _lta_dir = os.path.join(self.vp.get('CHIRPS', 'regional_product_dir_prefix'),
-                                        '{suffix}\\{interval}\\Statistics_By{interval_name}'.format(
-                                        suffix=self.vp.get('CHIRPS', 'regional_product_dir_suffix'),
-                                        interval=self.interval.capitalize(),
-                                        interval_name=_interval_name.capitalize()))
+                                        os.path.join(self.vp.get('CHIRPS', 'regional_product_dir_suffix'),
+                                                     os.path.join(self.interval.capitalize(),
+                                                                  'Statistics_By{interval_name}'.format(
+                                                                  interval_name=_interval_name.capitalize()))))
 
         # if ltsd_file is specified, ltsd_dir is not used.
         if ltsd_file is not None:
@@ -238,18 +240,20 @@ class SPIProductImpl(RasterProductImpl.RasterProductImpl):
         else:
             if self.country.lower() == 'global':
                 _ltsd_dir = os.path.join(self.vp.get('CHIRPS', 'global_product_dir'),
-                                        '{interval}\\Statistics_By{interval_name}'.format(
-                                        interval=self.interval.capitalize(), interval_name=_interval_name.capitalize()))
+                                        os.path.join(self.interval.capitalize(),
+                                                     'Statistics_By{interval_name}'.format(
+                                                     interval_name=_interval_name.capitalize())))
             elif self.country == self.vp.get_home_country():
                 _ltsd_dir = os.path.join(self.vp.get('CHIRPS', 'home_country_product_dir'),
-                                        '{interval}\\Statistics_By{interval_name}'.format(
-                                        interval=self.interval.capitalize(), interval_name=_interval_name.capitalize()))
+                                        os.path.join(self.interval.capitalize(),
+                                                     'Statistics_By{interval_name}'.format(
+                                                     interval_name=_interval_name.capitalize())))
             else:
                 _ltsd_dir = os.path.join(self.vp.get('CHIRPS', 'regional_product_dir_prefix'),
-                                        '{suffix}\\{interval}\\Statistics_By{interval_name}'.format(
-                                        suffix=self.vp.get('CHIRPS', 'regional_product_dir_suffix'),
-                                        interval=self.interval.capitalize(),
-                                        interval_name=_interval_name.capitalize()))
+                                        os.path.join(self.vp.get('CHIRPS', 'regional_product_dir_suffix'),
+                                                     os.path.join(self.interval.capitalize(),
+                                                                  'Statistics_By{interval_name}'.format(
+                                                                  interval_name=_interval_name.capitalize()))))
 
 
 
