@@ -26,6 +26,7 @@ class SPIProductImpl(RasterProductImpl.RasterProductImpl):
     """
     def __init__(self, country, product_date, interval, vampire_defaults):
         super(SPIProductImpl, self).__init__()
+        self.product_name = 'spi'
         self.country = country
         self.interval = interval
         self.product_date = product_date
@@ -158,6 +159,8 @@ class SPIProductImpl(RasterProductImpl.RasterProductImpl):
             _ltsd_file_pattern = ltsd_pattern
 
         _interval_name = None
+        self.product_file = None
+        self.product_dir = _out_dir
         if self.interval.lower() == 'dekad':
             interval_name = 'dekad'
             if int(self.product_date.day) <=10:
@@ -173,6 +176,13 @@ class SPIProductImpl(RasterProductImpl.RasterProductImpl):
             _ltsd_file_pattern = _ltsd_file_pattern.replace('(?P<month>\d{02})',
                                                           '(?P<month>{0})'.format(self.product_date.month))
             _ltsd_file_pattern = _ltsd_file_pattern.replace('(?P<dekad>\d{1})', '(?P<dekad>{0})'.format(_dekad))
+            self.product_pattern = self.vp.get('CHIRPS_SPI', 'spi_regional_dekad_pattern')
+            self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})',
+                                                                '(?P<year>{0})'.format(self.product_date.year))
+            self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})',
+                                                                '(?P<month>{0:0>2})'.format(self.product_date.month))
+            self.product_pattern = self.product_pattern.replace('(?P<dekad>\d{1})',
+                                                                '(?P<dekad>{0})'.format(_dekad))
         elif self.interval.lower() == 'monthly':
             _interval_name = 'month'
             # replace generic month in pattern with the specific one needed so the correct file is found.
@@ -182,6 +192,11 @@ class SPIProductImpl(RasterProductImpl.RasterProductImpl):
                                                           '(?P<month>{0})'.format(self.product_date.month))
             _ltsd_file_pattern = _ltsd_file_pattern.replace('(?P<month>\d{02})',
                                                           '(?P<month>{0})'.format(self.product_date.month))
+            self.product_pattern = self.vp.get('CHIRPS_SPI', 'spi_regional_monthly_pattern')
+            self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})',
+                                                                '(?P<year>{0})'.format(self.product_date.year))
+            self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})',
+                                                                '(?P<month>{0:0>2})'.format(self.product_date.month))
         elif self.interval.lower() == 'seasonal':
             _interval_name = 'season'
             # replace generic season in pattern with the specific one needed so the correct file is found.
@@ -190,6 +205,11 @@ class SPIProductImpl(RasterProductImpl.RasterProductImpl):
             _lta_file_pattern = _lta_file_pattern.replace('(?P<season>\d{6})', '(?P<season>{0})'.format(_season))
             _cur_file_pattern = _cur_file_pattern.replace('(?P<season>\d{6})', '(?P<season>{0})'.format(_season))
             _ltsd_file_pattern = _ltsd_file_pattern.replace('(?P<season>\d{02})', '(?P<season>{0})'.format(_season))
+            self.product_pattern = self.vp.get('CHIRPS_SPI', 'spi_regional_seasonal_pattern')
+            self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})',
+                                                                '(?P<year>{0})'.format(self.product_date.year))
+            self.product_pattern = self.product_pattern.replace('(?P<season>\d{6})',
+                                                                '(?P<season>{0})'.format(_season))
         else:
             logger.error('Unrecognised interval {0}. Unable to generate SPI config.'.format(
                 self.interval))
@@ -267,12 +287,6 @@ class SPIProductImpl(RasterProductImpl.RasterProductImpl):
         config += """
     ## Processing chain end - Compute Standardised Precipitation Index"""
 
-        self.product_file = None
-        self.product_dir = _out_dir
-        self.product_pattern = self.vp.get('Days_Since_Last_Rain', 'regional_dslr_pattern')
-        self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
-        self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.product_date.month))
-        self.product_pattern = self.product_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.product_date.day))
         return config
 
 
