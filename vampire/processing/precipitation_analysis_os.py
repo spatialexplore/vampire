@@ -21,8 +21,12 @@ def calc_rainfall_anomaly(cur_filename, lta_filename, dst_filename):
             newd_f = np.ma.masked_where(np.ma.mask_or(np.ma.getmask(_cur_band), np.ma.getmask(lta_r)), dst_f)
             newd_f += np.divide(_cur_band, lta_a) * 100.0
             newd_f.astype(int)
-            res = newd_f.filled(fill_value=cur_r.nodata)
-            res2 = np.ma.masked_where(res==cur_r.nodata, res)
+            _nodata_val = cur_r.nodata
+            if _nodata_val is None:
+                _nodata_val = -999
+                _profile.update(nodata=_nodata_val)
+            res = newd_f.filled(fill_value=_nodata_val)
+            res2 = np.ma.masked_where(res==_nodata_val, res)
             _profile.update(dtype=rasterio.int32)
             with rasterio.open(path=dst_filename, mode='w', **_profile) as dst:
                 dst.write(_res.astype(rasterio.int32), 1)
@@ -39,7 +43,11 @@ def calc_standardized_precipitation_index(cur_filename, lta_filename, ltsd_filen
                 ltsd_a = ltsd_r.read(1, masked=True)
                 _sub_f = _cur_band - lta_a
                 _dst_f = _sub_f / ltsd_a
-                _res = _dst_f.filled(fill_value=cur_r.nodata)
+                _nodata_val = cur_r.nodata
+                if _nodata_val is None:
+                    _nodata_val = -999
+                    _profile.update(nodata=_nodata_val)
+                _res = _dst_f.filled(fill_value=_nodata_val)
                 # dst_f = np.zeros(_cur_band.shape)
                 # newd_f = np.ma.masked_where(np.ma.mask_or(np.ma.getmask(_cur_band), np.ma.getmask(lta_r)), dst_f)
                 # newd_f += np.divide(np.subtract(_cur_band, lta_a), ltsd_a)
