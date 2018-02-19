@@ -149,6 +149,8 @@ class IMERGDownloadTask(BaseTaskImpl.BaseTaskImpl):
             # get from first day of month for first date in list to last day in month of last date in list
             _start_date = datetime.datetime.strptime(dates[0], '%Y-%m')
             _end_date = datetime.datetime.strptime(dates[-1], '%Y-%m') + dateutil.relativedelta.relativedelta(day=31)
+            if end_date is not None and _end_date > end_date:
+                _end_date = end_date
         _i_date = _start_date
         files_list = []
         if not os.path.exists(output_dir):
@@ -175,7 +177,12 @@ class IMERGDownloadTask(BaseTaskImpl.BaseTaskImpl):
                 # can be thrown here, including HTTPError and URLError. These should be
                 # caught and handled.
                 _request = urllib2.Request(_url)
-                _response = urllib2.urlopen(_request)
+                try:
+                    _response = urllib2.urlopen(_request)
+                except urllib2.HTTPError, e:
+                    logger.debug('HTTPError, url: {0}'.format(_url))
+                    _i_date += datetime.timedelta(days=1)
+                    continue
                 _outfile = os.path.join(output_dir, _imerg_file)
                 total_size = int(_response.info().getheader('Content-Length').strip())
                 downloaded = 0
