@@ -4,9 +4,10 @@ import shutil
 
 import psycopg2
 import VampireDefaults
-
-import ArcGISServerImpl
-
+try:
+    import ArcGISServerImpl
+except ImportError:
+    pass
 logger = logging.getLogger(__name__)
 
 class GISServer():
