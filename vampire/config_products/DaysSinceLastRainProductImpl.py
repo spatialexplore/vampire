@@ -30,6 +30,7 @@ class DaysSinceLastRainProductImpl(RasterProductImpl.RasterProductImpl):
         :type vampire_defaults: VampireDefaults object
         """
         super(DaysSinceLastRainProductImpl, self).__init__()
+        self.product_name = 'days_since_last_rain'
         self.country = country
         self.interval = interval
         self.product_date = product_date
