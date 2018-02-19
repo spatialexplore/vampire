@@ -258,7 +258,7 @@ class PublishSPIProduct(PublishableRasterProduct):
         self.summary = '{0} {1}'.format(self.vp.get('CHIRPS_SPI', 'default_interval'.capitalize()),
                                         self.vp.get('CHIRPS_SPI', 'summary'))
         self.tags = '{0}, {1}'.format(self.vp.get('CHIRPS_SPI', 'tags'),
-                                      self.vp.get_country(self.vp.get('vampire_tmp', 'home_country')))
+                                      self.vp.get_country(self.vp.get('vampire', 'home_country')))
         self.template_file = self.vp.get('CHIRPS_SPI', 'template_file')
         if self.product_date.day < 11:
             _dekad = 1
