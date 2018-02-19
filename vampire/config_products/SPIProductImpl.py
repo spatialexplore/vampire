@@ -171,10 +171,10 @@ class SPIProductImpl(RasterProductImpl.RasterProductImpl):
                 _dekad = 3
             _cur_file_pattern = _cur_file_pattern.replace('(?P<dekad>\d{1})', '(?P<dekad>{0})'.format(_dekad))
             _lta_file_pattern = _lta_file_pattern.replace('(?P<month>\d{02})',
-                                                          '(?P<month>{0})'.format(self.product_date.month))
+                                                          '(?P<month>{0:0>2})'.format(self.product_date.month))
             _lta_file_pattern = _lta_file_pattern.replace('(?P<dekad>\d{1})', '(?P<dekad>{0})'.format(_dekad))
             _ltsd_file_pattern = _ltsd_file_pattern.replace('(?P<month>\d{02})',
-                                                          '(?P<month>{0})'.format(self.product_date.month))
+                                                          '(?P<month>{0:0>2})'.format(self.product_date.month))
             _ltsd_file_pattern = _ltsd_file_pattern.replace('(?P<dekad>\d{1})', '(?P<dekad>{0})'.format(_dekad))
             self.product_pattern = self.vp.get('CHIRPS_SPI', 'spi_regional_dekad_pattern')
             self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})',
@@ -187,11 +187,11 @@ class SPIProductImpl(RasterProductImpl.RasterProductImpl):
             _interval_name = 'month'
             # replace generic month in pattern with the specific one needed so the correct file is found.
             _cur_file_pattern = _cur_file_pattern.replace('(?P<month>\d{2})',
-                                                          '(?P<month>{0})'.format(self.product_date.month))
+                                                          '(?P<month>{0:0>2})'.format(self.product_date.month))
             _lta_file_pattern = _lta_file_pattern.replace('(?P<month>\d{2})',
-                                                          '(?P<month>{0})'.format(self.product_date.month))
-            _ltsd_file_pattern = _ltsd_file_pattern.replace('(?P<month>\d{02})',
-                                                          '(?P<month>{0})'.format(self.product_date.month))
+                                                          '(?P<month>{0:0>2})'.format(self.product_date.month))
+            _ltsd_file_pattern = _ltsd_file_pattern.replace('(?P<month>\d{2})',
+                                                          '(?P<month>{0:0>2})'.format(self.product_date.month))
             self.product_pattern = self.vp.get('CHIRPS_SPI', 'spi_regional_monthly_pattern')
             self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})',
                                                                 '(?P<year>{0})'.format(self.product_date.year))
