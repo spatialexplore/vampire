@@ -1,6 +1,8 @@
 import datetime
 import logging
 import directory_utils
+import re
+import os
 
 import VampireDefaults
 
@@ -258,19 +260,43 @@ class PublishSPIProduct(PublishableRasterProduct):
         self.summary = '{0} {1}'.format(self.vp.get('CHIRPS_SPI', 'default_interval'.capitalize()),
                                         self.vp.get('CHIRPS_SPI', 'summary'))
         self.tags = '{0}, {1}'.format(self.vp.get('CHIRPS_SPI', 'tags'),
-                                      self.vp.get_country(self.vp.get('vampire', 'home_country')))
+                                      self.vp.get_country_name(self.vp.get('vampire', 'home_country')))
         self.template_file = self.vp.get('CHIRPS_SPI', 'template_file')
-        if self.product_date.day < 11:
-            _dekad = 1
-        elif self.product_date.day < 21:
-            _dekad = 2
-        else:
-            _dekad = 3
-        self.date_string = '{0}.{1}'.format(self.product_date.strftime('%Y.%m'), _dekad)
-        self.product_filename = 'lka_cli_chirps-v2.0.%s.spi.tif' % self.date_string
+
+        _product_pattern = self.params['input_pattern']
+        _product_files = directory_utils.get_matching_files(self.params['input_dir'], _product_pattern)
+        self.product_filename = _product_files[0]
+        #        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
         self.product_name = 'spi'
-        self.destination_filename = 'lka_cli_chirps-v2.0.%s.spi.tif' % self.product_date.strftime('%Y%m%d')
-        self.ingestion_date = self.product_date - datetime.timedelta(days=int(self.vampire.get('CHIRPS_SPI', 'interval')))
+        self.publish_name = None
+        if 'publish_name' in self.params:
+            self.publish_name = self.params['publish_name']
+#        if self.product_date.day < 11:
+#            _dekad = 1
+#        elif self.product_date.day < 21:
+#            _dekad = 2
+#        else:
+#            _dekad = 3
+#        self.date_string = '{0}.{1}'.format(self.product_date.strftime('%Y.%m'), _dekad)
+#        self.product_filename = 'lka_cli_chirps-v2.0.%s.spi.tif' % self.date_string
+#        self.product_name = 'spi'
+
+        # if using geoserver, need to modify destination filename so if can parse the date
+        # ie. to have no full stops and be in the format YYYYmmdd
+        self.destination_filename = os.path.basename(self.product_filename)
+        if self.vp.get('vampire', 'gis_server').lower() == 'geoserver':
+            # find date in destination filename and remove full stops
+            regex = ''
+            new_date = '{0}'.format(self.product_date.strftime('%Y%m%d'))
+            if self.vp.get('CHIRPS_SPI', 'default_interval').lower() == 'monthly':
+                regex = r'\d{4}.\d{2}'
+            elif self.vp.get('CHIRPS_SPI', 'default_interval').lower() == 'seasonal':
+                regex = r'\d{4}.\d{6}'
+            elif self.vp.get('CHIRPS_SPI', 'default_interval').lower() == 'dekad':
+                regex = r'\d{4}.\d{2}.\d{1}'
+            self.destination_filename = re.sub(regex, new_date, self.destination_filename)
+#        self.destination_filename = 'lka_cli_chirps-v2.0.%s.spi.tif' % self.product_date.strftime('%Y%m%d')
+        self.ingestion_date = self.product_date - datetime.timedelta(days=int(self.vp.get('CHIRPS_SPI', 'interval')))
         return
 
 @PublishProductTasksImpl.register_subclass('vhi_masked')
@@ -325,7 +351,7 @@ class PublishFloodForecastProduct(PublishableRasterProduct):
         self.product_filename = _product_files[0]
 #        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
 
-        self.product_name = self.vp.get('FLOOD_FORECAST', 'product_name')
+        self.product_name = 'flood_forecast'
         self.publish_name = self.params['publish_name']
         self.destination_filename = self.product_filename
         self.ingestion_date = self.valid_from_date
