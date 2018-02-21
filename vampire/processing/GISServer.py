@@ -45,16 +45,17 @@ class Geoserver(object):
 
     def move_output_to_geoserver(self, product):
         _geoserver_data = self.vp.get('directories', 'geoserver_data') #'C:\\Program Files (x86)\\GeoServer 2.11.0\\data_dir\\data\\'
-        if os.path.exists(os.path.join(product.product_dir, product.product_filename)):
+        if os.path.exists(product.product_filename):
             # copy to geoserver data dir
-            _dst_dir = os.path.join(_geoserver_data, product.product_name)
+            _dst_dir = os.path.join(_geoserver_data, product.destination_filename)
             print product.product_name
             print product.product_filename
             print product.product_dir
             print product.destination_filename
             print _dst_dir
+
             shutil.copyfile(os.path.join(product.product_dir, product.product_filename),
-                            os.path.join(_dst_dir, self.product.destination_filename))
+                            os.path.join(_geoserver_data, product.destination_filename))
         return None
 
     def upload_to_db(self, product):
