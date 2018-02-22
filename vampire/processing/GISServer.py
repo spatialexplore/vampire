@@ -34,7 +34,7 @@ class GISServer():
 @GISServer.register_subclass('geoserver')
 class Geoserver(object):
     def __init__(self, vampire_defaults):
-        logger.debug('Initialising MODIS download task')
+        logger.debug('Initialising Geoserver.')
         self.vp = vampire_defaults
         return
 
@@ -44,7 +44,10 @@ class Geoserver(object):
         return
 
     def move_output_to_geoserver(self, product):
-        _geoserver_data = self.vp.get('directories', 'geoserver_data') #'C:\\Program Files (x86)\\GeoServer 2.11.0\\data_dir\\data\\'
+        _geoserver_data = os.path.join(self.vp.get('directories', 'geoserver_data'),
+                                       product.product_name)
+        logger.debug('Moving {0} to geoserver data directory {1}'.format(
+            product.product_filename, _geoserver_data))
         if os.path.exists(product.product_filename):
             # copy to geoserver data dir
             _dst_dir = os.path.join(_geoserver_data, product.destination_filename)
@@ -53,9 +56,15 @@ class Geoserver(object):
             print product.product_dir
             print product.destination_filename
             print _dst_dir
+            if not os.path.exists(_geoserver_data):
+                logger.debug('Geoserver data directory {0} does not exist. Try creating it'.format(_geoserver_data))
+                os.makedirs(_geoserver_data)
 
             shutil.copyfile(os.path.join(product.product_dir, product.product_filename),
                             os.path.join(_geoserver_data, product.destination_filename))
+        else:
+            logger.debug('Product file {0} not found'.format(
+                os.path.join(product.product_dir, product.product_filename)))
         return None
 
     def upload_to_db(self, product):
