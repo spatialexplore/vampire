@@ -225,7 +225,7 @@ class PublishRainfallAnomalyProduct(PublishableRasterProduct):
                 regex = r'\d{4}.\d{2}.\d{1}'
             self.destination_filename = re.sub(regex, new_date, self.destination_filename)
 #        self.destination_filename = 'lka_cli_chirps-v2.0.%s.ratio_anom.tif' % self.product_date.strftime('%Y%m%d')
-        self.ingestion_date = self.product_date - datetime.timedelta(days=int(self.vampire.get('CHIRPS_Rainfall_Anomaly', 'interval')))
+        self.ingestion_date = self.product_date #- datetime.timedelta(days=int(self.vampire.get('CHIRPS_Rainfall_Anomaly', 'interval')))
         return
 
 @PublishProductTasksImpl.register_subclass('vhi')
@@ -326,7 +326,7 @@ class PublishSPIProduct(PublishableRasterProduct):
                 regex = r'\d{4}.\d{2}.\d{1}'
             self.destination_filename = re.sub(regex, new_date, self.destination_filename)
 #        self.destination_filename = 'lka_cli_chirps-v2.0.%s.spi.tif' % self.product_date.strftime('%Y%m%d')
-        self.ingestion_date = self.product_date - datetime.timedelta(days=int(self.vp.get('CHIRPS_SPI', 'interval')))
+        self.ingestion_date = self.product_date #- datetime.timedelta(days=int(self.vp.get('CHIRPS_SPI', 'interval')))
         return
 
 @PublishProductTasksImpl.register_subclass('vhi_masked')
@@ -374,7 +374,7 @@ class PublishMaskedVHIProduct(PublishableRasterProduct):
                 regex = r'\d{4}.\d{2}.\d{1}'
             self.destination_filename = re.sub(regex, new_date, self.destination_filename)
 #        self.destination_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_masked.tif' % self.product_date.strftime('%Y%m%d')
-        self.ingestion_date = self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
+        self.ingestion_date = self.product_date #- datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
         return
 
 @PublishProductTasksImpl.register_subclass('flood_forecast')
