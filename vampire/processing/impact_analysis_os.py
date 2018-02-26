@@ -158,7 +158,9 @@ def multiply_by_mask(raster, mask, output_raster):
 
 
 def create_mask(raster, mask, output_raster):
-    with rasterio.open(raster) as ras:
+    _tmp_ras = os.path.join(os.path.dirname(raster), 'tmp_{0}'.format(os.path.basename(raster)))
+    raster_utils.reproject_image_to_master(master=mask, slave=raster, output=_tmp_ras)
+    with rasterio.open(_tmp_ras) as ras:
         _ras_a = ras.read(1, masked=True)
         _profile = ras.profile.copy()
         with rasterio.open(mask) as _mask_r:
