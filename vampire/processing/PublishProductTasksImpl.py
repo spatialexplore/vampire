@@ -415,7 +415,7 @@ class PublishFloodForecastProduct(PublishableRasterProduct):
             regex = r'\d{4}.\d{2}.\d{2}'
             new_date = '{0}'.format(self.product_date.strftime('%Y%m%d'))
             self.destination_filename = re.sub(regex, new_date, self.destination_filename)
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = datetime.datetime.strptime(self.valid_from_date, '%d/%m/%Y')
             #self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
         return
 
@@ -427,9 +427,9 @@ class PublishDSLRProduct(PublishableRasterProduct):
 
     """
     def __init__(self, params, vampire_defaults):
-        logger.debug('Initialising MODIS download task')
+        logger.debug('Initialising PublishDSLRProduct task')
         super(PublishDSLRProduct, self).__init__(params, vampire_defaults)
-        self.product_dir = self.vp.get('Days_Since_Last_Rain', 'vhi_product_dir')
+        self.product_dir = self.vp.get('Days_Since_Last_Rain', 'output_dir')
         self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
@@ -443,7 +443,7 @@ class PublishDSLRProduct(PublishableRasterProduct):
         _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
         self.product_filename = _product_files[0]
 #        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
-        self.product_name = self.vp.get('Days_Since_Last_Rain', 'product_name')
+        self.product_name = 'days_since_last_rain'
         self.destination_filename = self.product_filename
         # if using geoserver, need to modify destination filename so if can parse the date
         # ie. to have no full stops and be in the format YYYYmmdd
@@ -453,7 +453,7 @@ class PublishDSLRProduct(PublishableRasterProduct):
             regex = r'\d{4}.\d{2}.\d{2}'
             new_date = '{0}'.format(self.product_date.strftime('%Y%m%d'))
             self.destination_filename = re.sub(regex, new_date, self.destination_filename)
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #datetime.datetime.strptime(self.valid_from_date, '%d/%m/%Y')
             #self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
         return
 
