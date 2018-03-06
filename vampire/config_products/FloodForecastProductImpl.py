@@ -246,12 +246,14 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
             _forecast_days = ''.join(map(str, range(i+1,i+_num_forecasts)))
             self.product_pattern = self.product_pattern.replace('(?P<forecast_period>fd\d{3})',
                                                               'fd{0}'.format(_forecast_days))
-            self.publish_name = '{0}_{1}'.format(self.product_name, _forecast_days)
-            self.valid_from_date = _valid_from() # + datetime.timedelta(days=i+1)
-            self.valid_to_date = self.valid_from_date
+            self.publish_name = self.product_name
+#            self.publish_name = '{0}_{1}'.format(self.product_name, _forecast_days)
+            self.valid_from_date = _valid_from() + datetime.timedelta(days=i+1)
+            self.valid_to_date = _valid_from() + datetime.timedelta(days=i+_num_forecasts)
             cfg_string += super(FloodForecastProductImpl, self).generate_publish_config()
             self.product_pattern = _product_pattern
-            self.valid_from_date = _valid_from
-            self.valid_to_date = _valid_to
+            self.ingestion_date = self.valid_to_date
+#            self.valid_from_date = _valid_from
+#            self.valid_to_date = _valid_to
 
         return cfg_string
