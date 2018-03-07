@@ -268,7 +268,7 @@ class PublishVHIProduct(PublishableRasterProduct):
             elif self.vp.get('MODIS_VHI', 'default_interval').lower() == 'dekad':
                 regex = r'\d{4}.\d{2}.\d{1}'
             self.destination_filename = re.sub(regex, new_date, self.destination_filename)
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
             #self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
         return
 
@@ -488,7 +488,7 @@ class PublishVHIAreaImpactProduct(PublishableTabularProduct):
         self.product_filename = _product_files[0]
         self.product_name = 'vhi_impact_area'
         self.destination_filename = self.product_filename
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
         return
 
 @PublishProductTasksImpl.register_subclass('vhi_impact_popn')
@@ -521,7 +521,7 @@ class PublishVHIPopnImpactProduct(PublishableTabularProduct):
             #'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif' % self.product_date.strftime('%Y.%m.%d')
         self.product_name = 'vhi_impact_popn'
         self.destination_filename = self.product_filename
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
         return
 
 @PublishProductTasksImpl.register_subclass('flood_impact_area')
@@ -556,7 +556,7 @@ class PublishFloodAreaImpactProduct(PublishableTabularProduct):
         self.product_filename = _product_files[0]
         self.product_name = 'flood_impact_area'
         self.destination_filename = self.product_filename
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
         return
 
 @PublishProductTasksImpl.register_subclass('flood_impact_popn')
@@ -591,11 +591,11 @@ class PublishFloodPopnImpactProduct(PublishableTabularProduct):
         self.product_filename = _product_files[0]
         self.product_name = 'flood_impact_popn'
         self.destination_filename = self.product_filename
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
         return
 
 
-@PublishProductTasksImpl.register_subclass('days_since_last_rain_impact_area')
+@PublishProductTasksImpl.register_subclass('dslr_impact_area')
 class PublishDSLRAreaImpactProduct(PublishableTabularProduct):
     """ Initialise MODISDownloadTask object.
 
@@ -624,10 +624,10 @@ class PublishDSLRAreaImpactProduct(PublishableTabularProduct):
         self.product_filename = _product_files[0]
         self.product_name = 'dslr_impact_area'
         self.destination_filename = self.product_filename
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
         return
 
-@PublishProductTasksImpl.register_subclass('days_since_last_rain_impact_popn')
+@PublishProductTasksImpl.register_subclass('dslr_impact_popn')
 class PublishDSLRPopnImpactProduct(PublishableTabularProduct):
     """ Initialise MODISDownloadTask object.
 
@@ -657,6 +657,6 @@ class PublishDSLRPopnImpactProduct(PublishableTabularProduct):
             #'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif' % self.product_date.strftime('%Y.%m.%d')
         self.product_name = 'dslr_impact_popn'
         self.destination_filename = self.product_filename
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
         return
 
