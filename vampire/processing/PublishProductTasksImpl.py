@@ -544,7 +544,7 @@ class PublishFloodAreaImpactProduct(PublishableTabularProduct):
         self.params = params
         self.vp = vampire_defaults
         self.product_dir = self.vp.get('hazard_impact', 'flood_output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.database = self.vp.get('database', 'impact_db')
