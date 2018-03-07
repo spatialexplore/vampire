@@ -193,13 +193,18 @@ class GFSDownloadTask(object):
                 _file_str = 'file=' + _file
                 url = base_url + _file_str + '&' + _level_str + '&' + _var_str + '&' + _extent_str + '&' + _dir_str
                 _fname = _file + '.grb'
+                _msg = None
+                _dl_file = None
                 if overwrite or not os.path.exists(_fname):
                     try:
-                        urllib.urlretrieve(url, _fname)
+                        _dl_file, _msg = urllib.urlretrieve(url, _fname)
                     except urllib.ContentTooShortError, e:
                         print "Content too short!! Didn't download " + _file
                         continue
-                    files_list.append(_fname)
+                    if _msg is not None and _msg.type == 'application/octet-stream':
+                        files_list.append(_fname)
+                    else:
+                        raise ValueError('Could not download GFS data file for {0}'.format(d))
 
                 if i == 240:
                     # change step to 12 hrs
