@@ -90,9 +90,12 @@ class PublishToDatabaseTask(object):
             _port = self.vp.get('database', 'impact_port') #'localhost'
         except Exception,e:
             _port = self.vp.get('database', 'default_port')
+        _overwrite = False
+        if 'overwrite' in self.params:
+            _overwrite = True
         database_utils.insert_csv_to_table(database=product.database, host=_host, port=_port, user=_user,
                                                    password=_password, table=product.table_name, schema=product.schema,
-                                                   csv_file=product.product_filename) #, overwrite=True)
+                                                   csv_file=product.product_filename, overwrite=_overwrite)
     #     _product_dir = product.product_dir
     #     _filename_pattern = product.filename_pattern
     #     _table_name = product.table_name

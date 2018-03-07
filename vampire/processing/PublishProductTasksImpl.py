@@ -189,7 +189,7 @@ class PublishRainfallAnomalyProduct(PublishableRasterProduct):
 
     """
     def __init__(self, params, vampire_defaults):
-        logger.debug('Initialising publish rainfall anomaly product task')
+        logger.debug('Initialising MODIS download task')
         super(PublishRainfallAnomalyProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vp.get('CHIRPS_Rainfall_Anomaly', 'output_dir')
         self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
@@ -289,7 +289,7 @@ class PublishSPIProduct(PublishableRasterProduct):
         self.summary = '{0} {1}'.format(self.vp.get('CHIRPS_SPI', 'default_interval'.capitalize()),
                                         self.vp.get('CHIRPS_SPI', 'summary'))
         self.tags = '{0}, {1}'.format(self.vp.get('CHIRPS_SPI', 'tags'),
-                                      self.vp.get_country_name(self.vp.get('vampire', 'home_country')))
+                                      self.vp.get_country(self.vp.get('vampire_tmp', 'home_country')))
         self.template_file = self.vp.get('CHIRPS_SPI', 'template_file')
 
         _product_pattern = self.params['input_pattern']
@@ -404,7 +404,7 @@ class PublishFloodForecastProduct(PublishableRasterProduct):
         self.product_filename = _product_files[0]
 #        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
 
-        self.product_name = 'flood_forecast'
+        self.product_name = self.vp.get('FLOOD_FORECAST', 'product_name')
         self.publish_name = self.params['publish_name']
         self.destination_filename = self.product_filename
         # if using geoserver, need to modify destination filename so if can parse the date
