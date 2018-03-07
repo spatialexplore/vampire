@@ -79,8 +79,8 @@ class ImpactProductImpl(object):
       type: database
       product: {product}
       start_date: {start_date}
-      end_date: {end_date}""".format(product=self.product_name, start_date=self.valid_from_date.strftime("%d/%m/%Y"),
-                                     end_date=self.valid_to_date.strftime("%d/%m/%Y"))
+      end_date: {end_date}""".format(product=self.product_name, start_date=self.valid_from_date.strftime("%Y-%m-%d"),
+                                     end_date=self.valid_to_date.strftime("%Y-%m-%d"))
         if self.output_file is not None:
             cfg_string += """
       input_file: {input_file}""".format(input_file=self.output_file)
