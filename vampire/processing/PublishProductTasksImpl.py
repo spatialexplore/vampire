@@ -416,7 +416,6 @@ class PublishFloodForecastProduct(PublishableRasterProduct):
         if self.vp.get('vampire', 'gis_server').lower() == 'geoserver':
             # find date in destination filename and remove full stops
             new_date = '{0}'.format(self.product_date.strftime('%Y%m%d'))
-            self.destination_filename = re.sub(regex, new_date, self.destination_filename)
         else:
             # find date in destination filename and remove full stops
             new_date = '{0}'.format(self.product_date.strftime('%Y.%m.%d'))
