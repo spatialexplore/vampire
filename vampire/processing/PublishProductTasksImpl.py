@@ -405,10 +405,12 @@ class PublishFloodForecastProduct(PublishableRasterProduct):
 #        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
 
         self.product_name = 'flood_forecast'
-        self.publish_name = self.params['publish_name']
+        self.publish_name = None
+        if 'publish_name' in self.params:
+            self.publish_name = self.params['publish_name']
         # if using geoserver, need to modify destination filename so if can parse the date
         # ie. to have no full stops and be in the format YYYYmmdd
-        self.destination_filename = re.sub('_fd\d{3}', '', self.product_filename)
+        self.destination_filename = re.sub('_fd\d{3}', '', os.path.basename(self.product_filename))
         regex = r'\d{4}.\d{2}.\d{2}'
         new_date = None
         if self.vp.get('vampire', 'gis_server').lower() == 'geoserver':
