@@ -99,6 +99,7 @@ def to_sql_update(df, engine, schema, table):
             COLUMN_KEY = 'PRI';
             '''.format(schema=schema, table=table)
     id_cols = [x[0] for x in engine.execute(sql).fetchall()]
+    print 'Primary keys: {0}'.format(id_cols)
     id_vals = [df[col_name].to_list() for col_name in id_cols]
     sql = '''DELETE FROM {schema}.{table} WHERE 0'''.format(schema=schema, table=table)
     for row in zip(*id_vals):
