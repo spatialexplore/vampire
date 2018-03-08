@@ -5,6 +5,17 @@ import pandas
 import psycopg2
 import sqlalchemy
 
+def check_table_empty(database, host, user, password, table_name):
+    # create connection to database
+    _connection_str = 'dbname={0} host={1} user={2} password={3}'.format(database, host, user, password)
+    _conn = psycopg2.connect(_connection_str)
+    _cur = _conn.cursor()
+    _cur.execute("select count(*) as tot from {0}".format(table_name,))
+    result = _cur.fetchone()[0]
+    _conn.close()
+    if result == 0:
+        return True
+    return False
 
 def check_table_exists(database, host, user, password, table_name):
     # create connection to database
@@ -13,6 +24,7 @@ def check_table_exists(database, host, user, password, table_name):
     _cur = _conn.cursor()
     _cur.execute("select exists(select * from information_schema.tables where table_name=%s)", (table_name,))
     result = _cur.fetchone()[0]
+    _conn.close()
     return result
 
 def create_table(database, table_name, columns, host, user, password):
@@ -64,10 +76,14 @@ def insert_csv_to_table(database, host, port, user, password, schema, table, csv
     engine = sqlalchemy.create_engine(_url)
     # check if table exists first
     if check_table_exists(database=database, host=host, user=user, password=password, table_name=table):
-        index_name = list(pd.columns.values)[0].upper()
-        max_id_query = 'select max(index) FROM {0}.{1}'.format(schema, table)
-        max_id = int(pandas.read_sql_query(max_id_query, engine).values)
-        pd['index'] = range(max_id + 1, max_id + len(pd) + 1)
+        if not check_table_empty(database=database, host=host, user=user, password=password,
+                                 table_name=table):
+            index_name = list(pd.columns.values)[0].upper()
+            max_id_query = 'select max(index) FROM {0}.{1}'.format(schema, table)
+            max_id = int(pandas.read_sql_query(max_id_query, engine).values)
+            pd['index'] = range(max_id + 1, max_id + len(pd) + 1)
+        else:
+            pd['index'] = range(1, len(pd) + 1)
     else:
         pd['index'] = range(1, len(pd) + 1)
 
@@ -93,15 +109,15 @@ def insert_csv_to_table(database, host, port, user, password, schema, table, csv
     return None
 
 def to_sql_update(df, engine, schema, table):
-    df.reset_index(inplace=True)
-    sql = '''SELECT column_name FROM information_schema.columns
-            WHERE table_schema = '{schema}' AND table_name = '{table}' AND
-            COLUMN_KEY = 'PRI';
-            '''.format(schema=schema, table=table)
-    id_cols = [x[0] for x in engine.execute(sql).fetchall()]
-    print 'Primary keys: {0}'.format(id_cols)
-    id_vals = [df[col_name].to_list() for col_name in id_cols]
-    sql = '''DELETE FROM {schema}.{table} WHERE 0'''.format(schema=schema, table=table)
+    sql_primary_keys = '''SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
+              FROM pg_index i
+              JOIN pg_attribute a ON a.attrelid = i.indrelid
+                      AND a.attnum = ANY(i.indkey)
+              WHERE i.indrelid = '{table}'::regclass
+              AND i.indisprimary;'''.format(table=table)
+    id_cols = [x[0] for x in engine.execute(sql_primary_keys)]
+    id_vals = [df[col_name].tolist() for col_name in id_cols]
+    sql = '''DELETE FROM {schema}.{table} WHERE FALSE'''.format(schema=schema, table=table)
     for row in zip(*id_vals):
         sql_row = ' AND '.join([''' {} = '{}' '''.format(n, v) for n, v in zip(id_cols, row)])
         sql += ' OR ({}) '.format(sql_row)
