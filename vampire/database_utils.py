@@ -72,10 +72,12 @@ def insert_csv_to_table(database, host, port, user, password, schema, table, csv
         pd['index'] = range(1, len(pd) + 1)
 
     if overwrite:
+        # find rows and delete them first
+        to_sql_update(pd, engine, schema, table)
 #        try:
 #            _lock_query = 'lock tables public.{0} write'.format(table)
 #            engine.execute(_lock_query)
-        pd.to_sql(table, engine, if_exists='replace', index=False)
+###        pd.to_sql(table, engine, if_exists='replace', index=False)
 #        finally:
 #            engine.execute('unlock tables')
 #        pd.to_sql(table, engine, if_exists='replace', index=True)
@@ -90,3 +92,19 @@ def insert_csv_to_table(database, host, port, user, password, schema, table, csv
 
     return None
 
+def to_sql_update(df, engine, schema, table):
+    df.reset_index(inplace=True)
+    sql = '''SELECT column_name FROM information_schema.columns
+            WHERE table_schema = '{schema}' AND table_name = '{table}' AND
+            COLUMN_KEY = 'PRI';
+            '''.format(schema=schema, table=table)
+    id_cols = [x[0] for x in engine.execute(sql).fetchall()]
+    id_vals = [df[col_name].to_list() for col_name in id_cols]
+    sql = '''DELETE FROM {schema}.{table} WHERE 0'''.format(schema=schema, table=table)
+    for row in zip(*id_vals):
+        sql_row = ' AND '.join([''' {} = '{}' '''.format(n, v) for n, v in zip(id_cols, row)])
+        sql += ' OR ({}) '.format(sql_row)
+    engine.execute(sql)
+
+    df.to_sql(table, engine, schema=schema, if_exists='append', index=False)
+    return
