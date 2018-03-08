@@ -388,7 +388,7 @@ class PublishFloodForecastProduct(PublishableRasterProduct):
         logger.debug('Initialising MODIS download task')
         super(PublishFloodForecastProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vp.get('FLOOD_FORECAST', 'product_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.summary = '{0} {1}'.format(self.vp.get('FLOOD_FORECAST', 'interval'.capitalize()),
@@ -578,7 +578,7 @@ class PublishFloodPopnImpactProduct(PublishableTabularProduct):
         self.params = params
         self.vp = vampire_defaults
         self.product_dir = self.vp.get('hazard_impact', 'flood_output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.database = self.vp.get('database', 'impact_db')
