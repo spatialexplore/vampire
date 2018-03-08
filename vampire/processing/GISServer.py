@@ -101,6 +101,9 @@ class Geoserver(object):
         print product.ingestion_date
         _ingestion_date = product.ingestion_date.replace(hour=6)
         print _ingestion_date
+        _geoserver_data = os.path.join(self.vp.get('directories', 'geoserver_data'),
+                                       product.product_name)
+        _location = os.path.join(_geoserver_data, product.destination_filename)
         # create connection to database
         _connection_str = 'dbname={0} host={1} user={2} password={3}'.format(_db_name, _host, _user, _pw)
         _conn = psycopg2.connect(_connection_str)
@@ -113,12 +116,13 @@ class Geoserver(object):
     WHERE fid = 1 AND NOT EXISTS (SELECT location, ingestion FROM %(table3)s WHERE %(table3)s.location = %(location)s
                                   AND %(table3)s.ingestion = %(ingestion)s)
     """,
-                {'table':psycopg2.extensions.AsIs(_table_name), 'location':product.destination_filename, 'ingestion':_ingestion_date,
+                {'table':psycopg2.extensions.AsIs(_table_name), 'location':_location, 'ingestion':_ingestion_date,
                  'table2':psycopg2.extensions.AsIs(_table_name), 'table3':psycopg2.extensions.AsIs(_table_name)})
         except Exception, e:
             print "Error: Can't INSERT into table {0}".format(_table_name)
             print e.message
         _conn.commit()
+        _conn.close()
         return None
 
 try:
