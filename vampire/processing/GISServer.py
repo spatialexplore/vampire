@@ -103,7 +103,8 @@ class Geoserver(object):
         print _ingestion_date
         _geoserver_data = os.path.join(self.vp.get('directories', 'geoserver_data'),
                                        product.product_name)
-        _location = os.path.join(_geoserver_data, product.destination_filename)
+        _location = product.destination_filename
+#        _location = os.path.join(_geoserver_data, product.destination_filename)
         # create connection to database
         _connection_str = 'dbname={0} host={1} user={2} password={3}'.format(_db_name, _host, _user, _pw)
         _conn = psycopg2.connect(_connection_str)
