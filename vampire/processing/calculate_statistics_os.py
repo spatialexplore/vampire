@@ -30,20 +30,26 @@ def calc_average(file_list, avg_file):
     if file_list:
         arrayList = []
         first = True
+        _nodata = None
         profile = None
         for f in file_list:
             with rasterio.open(f) as cur_r:
                 if first:
                     profile = cur_r.profile.copy()
+                    _nodata = cur_r.nodata
                     first = False
                 cur_a = cur_r.read(1, masked=True)
                 arrayList.append(cur_a)
-        dst_a = np.ma.dstack(arrayList)
-        dst_r = dst_a.mean(axis=2, dtype=rasterio.float32)
-        dst_r = dst_r.filled(-9999)
-        profile.update(dtype=rasterio.float32, nodata=-9999)
+        if _nodata is None:
+            _nodata = -9999
+            profile.update(nodata=_nodata)
+        dst_r = np.ma.mean(np.ma.dstack(arrayList), axis=2,
+                           dtype=rasterio.float32, fill_value=_nodata)
+        np.ma.set_fill_value(dst_r, _nodata)
+        dst_n = dst_r.filled(_nodata)
+        profile.update(dtype=rasterio.float32, nodata=_nodata)
         with rasterio.open(avg_file, 'w', **profile) as dst:
-            dst.write(dst_r.astype(rasterio.float32), 1)
+            dst.write(dst_n.astype(rasterio.float32), 1)
     return None
 
 def calc_min(file_list, min_file):
@@ -63,23 +69,29 @@ def calc_min(file_list, min_file):
     None
         Returns None
     """
-    print "calcMin (open source version): ", file_list
+    logger.debug("calcMin (open source version): {0}".format(file_list))
     if file_list:
         arrayList = []
         first = True
+        _nodata = None
         profile = None
         for f in file_list:
             with rasterio.open(f) as cur_r:
                 if first:
                     profile = cur_r.profile.copy()
+                    _nodata = cur_r.nodata
                     first = False
                 cur_a = cur_r.read(1, masked=True)
                 arrayList.append(cur_a)
-        dst_a = np.ma.dstack(arrayList)
-        dst_r = np.ma.min(dst_a, axis=2)
+        if _nodata is None:
+            _nodata = -9999
+            profile.update(nodata=_nodata)
+        dst_r = np.ma.min(np.ma.dstack(arrayList), axis=2, fill_value=_nodata)
+        np.ma.set_fill_value(dst_r, _nodata)
+        dst_n = dst_r.filled(_nodata)
         with rasterio.open(min_file, 'w', **profile) as dst:
-            dst.write(dst_r.astype(profile.dtype), 1)
-            print "saved minimum in: ", min_file
+            dst.write(dst_n.astype(profile.dtype), 1)
+            logger.debug("saved minimum in: {0}".format(min_file))
     return None
 
 def calc_max(file_list, max_file):
@@ -102,19 +114,22 @@ def calc_max(file_list, max_file):
     if file_list:
         arrayList = []
         first = True
+        _nodata = None
         profile = None
         for f in file_list:
             with rasterio.open(f) as cur_r:
                 if first:
+                    _nodata = cur_r.nodata
                     profile = cur_r.profile.copy()
                     first = False
                 cur_a = cur_r.read(1, masked=True)
                 arrayList.append(cur_a)
-        dst_a = np.ma.dstack(arrayList)
-        dst_r = np.ma.max(dst_a, axis=2)
+        dst_r = np.ma.max(np.ma.dstack(arrayList), axis=2, fill_value=_nodata)
+        np.ma.set_fill_value(dst_r, _nodata)
+        dst_n = dst_r.filled(_nodata)
         with rasterio.open(max_file, 'w', **profile) as dst:
-            dst.write(dst_r.astype(rasterio.float64), 1)
-#            print "saved maximum in: ", max_file
+            dst.write(dst_n.astype(rasterio.float64), 1)
+            logger.debug("saved maximum in: {0}".format(max_file))
     return None
 
 def calc_std_dev(file_list, sd_file):
@@ -138,20 +153,26 @@ def calc_std_dev(file_list, sd_file):
     if file_list:
         arrayList = []
         first = True
+        _nodata = None
         profile = None
         for f in file_list:
             with rasterio.open(f) as cur_r:
                 if first:
                     profile = cur_r.profile.copy()
+                    _nodata = cur_r.nodata
                     first = False
                 cur_a = cur_r.read(1, masked=True)
                 arrayList.append(cur_a)
-        dst_a = np.ma.dstack(arrayList)
-        dst_r = np.ma.std(dst_a, axis=2, ddof=1)
+        if _nodata is None:
+            _nodata = -9999
+            profile.update(nodata=_nodata)
+        dst_r = np.ma.std(np.ma.dstack(arrayList), axis=2, ddof=1, fill_value=_nodata)
+        np.ma.set_fill_value(dst_r, _nodata)
+        dst_n = dst_r.filled(_nodata)
         profile.update(dtype=rasterio.float32)
         with rasterio.open(sd_file, 'w', **profile) as dst:
-            dst.write(dst_r.astype(rasterio.float32), 1)
-#            print "saved standard deviation in: ", sd_file
+            dst.write(dst_n.astype(rasterio.float32), 1)
+            logger.debug("saved standard deviation in: {0}".format(sd_file))
     return None
 
 def calc_sum(file_list, sum_file):
@@ -171,24 +192,30 @@ def calc_sum(file_list, sum_file):
     None
         Returns None
     """
-    print "calcSum (open source version): ", file_list
+    logger.debug("calcSum (open source version): {0}".format(file_list))
     if file_list:
         arrayList = []
         first = True
+        _nodata = None
         profile = None
         for f in file_list:
             with rasterio.open(f) as cur_r:
                 if first:
                     profile = cur_r.profile.copy()
                     profile.update(driver='GTiff', dtype=rasterio.float32)
+                    _nodata = cur_r.nodata
                     first = False
                 cur_a = cur_r.read(1, masked=True)
                 arrayList.append(cur_a)
-        dst_a = np.dstack(arrayList)
-        dst_r = np.sum(dst_a, axis=2)
+        if _nodata is None:
+            _nodata = -9999
+            profile.update(nodata=_nodata)
+        dst_r = np.ma.sum(np.dstack(arrayList), axis=2, fill_value=_nodata)
+        np.ma.set_fill_value(dst_r, _nodata)
+        dst_n = dst_r.filled(_nodata)
         with rasterio.open(sum_file, 'w', **profile) as dst:
-            dst.write(dst_r.astype(rasterio.float32), 1)
-            print "saved sum in: ", sum_file
+            dst.write(dst_n.astype(rasterio.float32), 1)
+            logger.debug("saved sum in: {0}".format(sum_file))
     return None
 
 def calc_average_of_day_night(day_file, night_file, avg_file):
@@ -211,7 +238,7 @@ def calc_average_of_day_night(day_file, night_file, avg_file):
         Returns None
 
     """
-    print "calcAverage: ", day_file, night_file
+    logger.debug("calcAverage: {0}, {1}".format(day_file, night_file))
     with rasterio.open(day_file) as day_r:
         profile = day_r.profile.copy()
 #        profile.update(dtype=rasterio.uint32)
