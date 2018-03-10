@@ -210,7 +210,7 @@ def calc_sum(file_list, sum_file):
         if _nodata is None:
             _nodata = -9999
             profile.update(nodata=_nodata)
-        dst_r = np.ma.sum(np.dstack(arrayList), axis=2, fill_value=_nodata)
+        dst_r = np.ma.sum(np.dstack(arrayList), axis=2)
         np.ma.set_fill_value(dst_r, _nodata)
         dst_n = dst_r.filled(_nodata)
         with rasterio.open(sum_file, 'w', **profile) as dst:
