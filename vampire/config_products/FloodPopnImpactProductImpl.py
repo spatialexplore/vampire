@@ -241,7 +241,8 @@ class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
                                                               '{0}'.format(_forecast_days))
             self.valid_from_date = _valid_from #+ datetime.timedelta(days=i+1)
             self.valid_to_date = self.valid_from_date
-            _table_name = '{0}_{1}'.format(self.vp.get('database', 'flood_impact_popn_table'), _forecast_days)
+            _table_name = '{0}'.format(self.vp.get('database', 'flood_impact_popn_table'))
+#            _table_name = '{0}_{1}'.format(self.vp.get('database', 'flood_impact_popn_table'), _forecast_days)
             cfg_string += super(FloodPopnImpactProductImpl, self).generate_publish_config()
             cfg_string += """
       table: {table_name}
