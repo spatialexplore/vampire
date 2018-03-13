@@ -163,7 +163,7 @@ class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
             _hazard_pattern = hazard_pattern.replace('(?P<forecast_period>fd\d{3})', 'fd{0}'.format(_cur_forecast))
 #            _output_pattern = self.output_pattern.replace('{num_years}', '{0:0>2}'.format(f))
             _output_pattern = self.output_pattern.replace('{forecast_period}', '{0}'.format(_cur_forecast))
-            _valid_from_date = self.valid_from_date #+ datetime.timedelta(i)
+            _valid_from_date = self.valid_from_date + datetime.timedelta(i)
             _valid_to_date = _valid_from_date #self.valid_to_date + datetime.timedelta(i+_forecast_days-1)
             config += self._generate_popn_impact_section(hazard_file=hazard_file, hazard_dir=hazard_dir,
                                                          hazard_pattern=_hazard_pattern, boundary_file=_boundary_file,
@@ -239,13 +239,14 @@ class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
             _forecast_days = ''.join(map(str, range(i+1,i+_num_forecasts)))
             self.publish_pattern = self.publish_pattern.replace('(?P<forecast_period>fd\d{3})',
                                                               '{0}'.format(_forecast_days))
-            self.valid_from_date = _valid_from #+ datetime.timedelta(days=i+1)
+            self.valid_from_date = _valid_from # + datetime.timedelta(days=i+1)
             self.valid_to_date = self.valid_from_date
             _table_name = '{0}'.format(self.vp.get('database', 'flood_impact_popn_table'))
 #            _table_name = '{0}_{1}'.format(self.vp.get('database', 'flood_impact_popn_table'), _forecast_days)
             cfg_string += super(FloodPopnImpactProductImpl, self).generate_publish_config()
             cfg_string += """
       table: {table_name}
+      overwrite: True
             """.format(table_name=_table_name)
             self.publish_pattern = _publish_pattern
             self.valid_from_date = _valid_from
