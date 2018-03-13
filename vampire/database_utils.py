@@ -74,6 +74,7 @@ def insert_csv_to_table(database, host, port, user, password, schema, table, csv
     pd = pandas.read_csv(csv_file)
 #    print pd
     engine = sqlalchemy.create_engine(_url)
+    _exists = True
     # check if table exists first
     if check_table_exists(database=database, host=host, user=user, password=password, table_name=table):
         if not check_table_empty(database=database, host=host, user=user, password=password,
@@ -85,9 +86,10 @@ def insert_csv_to_table(database, host, port, user, password, schema, table, csv
         else:
             pd['index'] = range(1, len(pd) + 1)
     else:
+        _exists = False
         pd['index'] = range(1, len(pd) + 1)
 
-    if overwrite:
+    if _exists and overwrite:
         # find rows and delete them first
         to_sql_update(pd, engine, schema, table)
 #        try:
