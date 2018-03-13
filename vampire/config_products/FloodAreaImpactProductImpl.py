@@ -145,7 +145,8 @@ class FloodAreaImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
 #           _output_pattern = self.output_pattern.replace('{num_years}', '{0:0>2}'.format(f))
             _output_pattern = self.output_pattern.replace('{forecast_period}', '{0}'.format(_cur_forecast))
             _valid_from_date = self.valid_from_date + datetime.timedelta(i)
-            _valid_to_date = self.valid_from_date + datetime.timedelta(i+_forecast_days-1)
+            _valid_to_date = _valid_from_date
+#            _valid_to_date = self.valid_from_date + datetime.timedelta(i+_forecast_days-1)
             config += self._generate_area_impact_section(hazard_file=hazard_file, hazard_dir=hazard_dir,
                                                          hazard_pattern=_hazard_pattern, boundary_file=_boundary_file,
                                                          boundary_dir=_boundary_dir, boundary_pattern=_boundary_pattern,
