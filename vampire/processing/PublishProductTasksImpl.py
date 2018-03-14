@@ -436,7 +436,7 @@ class PublishDSLRProduct(PublishableRasterProduct):
         logger.debug('Initialising PublishDSLRProduct task')
         super(PublishDSLRProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vp.get('Days_Since_Last_Rain', 'output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.summary = '{0} {1}'.format(self.vp.get('Days_Since_Last_Rain', 'interval'.capitalize()),
@@ -444,22 +444,27 @@ class PublishDSLRProduct(PublishableRasterProduct):
         self.tags = '{0}, {1}'.format(self.vp.get('Days_Since_Last_Rain', 'tags'),
                                       self.vp.get_country_name(self.vp.get('vampire', 'home_country')))
         self.template_file = self.vp.get('Days_Since_Last_Rain', 'template_file')
-        _product_pattern = self.vp.get('Days_Since_Last_Rain', 'regional_dslr_pattern')
-        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+#        _product_pattern = self.vp.get('Days_Since_Last_Rain', 'regional_dslr_pattern')
+#        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_pattern = self.params['input_pattern']
         _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
         self.product_filename = _product_files[0]
 #        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
         self.product_name = 'days_since_last_rain'
-        self.destination_filename = self.product_filename
+#        self.destination_filename = self.product_filename
         # if using geoserver, need to modify destination filename so if can parse the date
         # ie. to have no full stops and be in the format YYYYmmdd
+        new_date = None
+        self.destination_filename = os.path.basename(self.product_filename)
+        regex = r'\d{4}.\d{2}.\d{2}'
         if self.vp.get('vampire', 'gis_server').lower() == 'geoserver':
-            self.destination_filename = os.path.basename(self.product_filename)
             # find date in destination filename and remove full stops
-            regex = r'\d{4}.\d{2}.\d{2}'
             new_date = '{0}'.format(self.product_date.strftime('%Y%m%d'))
-            self.destination_filename = re.sub(regex, new_date, self.destination_filename)
-        self.ingestion_date = self.product_date #datetime.datetime.strptime(self.valid_from_date, '%d/%m/%Y')
+        else:
+            # find date in destination filename
+            new_date = '{0}'.format(self.product_date.strftime('%Y.%m.%d'))
+        self.destination_filename = re.sub(regex, new_date, self.destination_filename)
+        self.ingestion_date = self.valid_from_date #datetime.datetime.strptime(self.valid_from_date, '%d/%m/%Y')
             #self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
         return
 
