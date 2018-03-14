@@ -4,6 +4,8 @@ import shutil
 
 import psycopg2
 import VampireDefaults
+import datetime
+
 try:
     import ArcGISServerImpl
 except ImportError:
@@ -100,7 +102,10 @@ class Geoserver(object):
             raise ValueError("Database table name not in Vampire.ini")
 
         logger.debug('Ingestion date: {0}'.format(product.ingestion_date))
-        _ingestion_date = product.ingestion_date.replace(hour=6)
+        if isinstance(product.ingestion_date, datetime.datetime):
+            _ingestion_date = product.ingestion_date.replace(hour=6)
+        else:
+            _ingestion_date = product.ingestion_date
         _geoserver_data = os.path.join(self.vp.get('directories', 'geoserver_data'),
                                        product.product_name)
         _location = product.destination_filename
