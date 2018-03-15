@@ -286,6 +286,7 @@ def calc_zonal_statistics(raster_file, polygon_file, zone_field, output_table):
         for p in i['properties']:
             row.append(i['properties'][p])
         _stats_list.append(row)
+
     _output_csv = os.path.join(os.path.dirname(output_table), output_table)
     with open(_output_csv, 'wb') as cf:
         wr = csv.writer(cf)
