@@ -192,10 +192,10 @@ class DSLRPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
       output_pattern: '{output_pattern}'""".format(output_dir=output_dir, output_pattern=output_pattern)
         if start_date is not None:
             cfg_string += """
-      start_date: {start_date}""".format(start_date=start_date.strftime("%d/%m/%Y"))
+      start_date: {start_date}""".format(start_date=start_date.strftime("%Y-%m-%d"))
         if end_date is not None:
             cfg_string += """
-      end_date: {end_date}""".format(end_date=end_date.strftime("%d/%m/%Y"))
+      end_date: {end_date}""".format(end_date=end_date.strftime("%Y-%m-%d"))
         cfg_string += """
         """
         return cfg_string
