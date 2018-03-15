@@ -305,6 +305,7 @@ class GFSAccumulateTask(object):
         for d in _dates:
             # find all files
             _allfiles = directory_utils.get_matching_files(data_dir, data_pattern)
+            _allfiles.sort()
             _cur_day = 0
             _cur_hr = 0
             _cur_accum_str = ''
