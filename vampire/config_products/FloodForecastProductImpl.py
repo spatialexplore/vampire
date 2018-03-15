@@ -124,6 +124,8 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
         else:
             _flood_years = flood_years
 
+        _flood_years_values = ast.literal_eval(self.vp.get('FLOOD_FORECAST', 'flood_years_values'))
+
         if output_file is None:
             if output_dir is None:
                 _output_dir = self.vp.get('FLOOD_FORECAST', 'product_dir')
@@ -152,7 +154,7 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
             _file_pattern = _file_pattern.replace('(?P<month>\d{2})', '(?P<month>{0:0>2})'.format(self.product_date.month))
             _file_pattern = _file_pattern.replace('(?P<day>\d{2})', '(?P<day>{0:0>2})'.format(self.product_date.day))
 
-        for f in _flood_years:
+        for f,v in zip(_flood_years, _flood_years_values):
             _threshold_file = None
             if threshold_file is None:
                 _threshold_pattern = self.vp.get('FLOOD_FORECAST', 'threshold_pattern')
@@ -165,7 +167,7 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
                                                            threshold_file=_threshold_file, threshold_dir=_threshold_dir,
                                                            threshold_pattern=_threshold_pattern,
                                                            output_file=None, output_dir=_output_dir,
-                                                           output_pattern=_output_pattern, num_years=f)
+                                                           output_pattern=_output_pattern, num_years=f, output_value=v)
 
         self.product_pattern = self.vp.get('FLOOD_FORECAST', 'flood_forecast_pattern')
         self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})', '(?P<year>{0})'.format(self.product_date.year))
@@ -198,13 +200,14 @@ class FloodForecastProductImpl(RasterProductImpl.RasterProductImpl):
 
     def generate_flood_forecast_section(self, data_dir, file_pattern,
                                         threshold_file, threshold_dir, threshold_pattern,
-                                        output_file, output_dir, output_pattern, num_years):
+                                        output_file, output_dir, output_pattern, num_years, output_value):
         cfg_string = """
     # Compute flood forecast
     - process: Analysis
       type: flood_alert"""
         cfg_string += """
-      num_years: {num_years}""".format(num_years=num_years)
+      num_years: {num_years}
+      output_value: {output_value}""".format(num_years=num_years, output_value=output_value)
         cfg_string += """
       forecast_dir: {forecast_dir}
       forecast_pattern: '{forecast_pattern}'""".format(forecast_dir=data_dir, forecast_pattern=file_pattern)
