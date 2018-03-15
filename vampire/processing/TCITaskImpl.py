@@ -142,7 +142,7 @@ class TCITaskImpl(BaseTaskImpl.BaseTaskImpl):
             try:
                 _lst_max_filename = files_list[0]
             except IndexError, e:
-                raise ValueError('Cannot find matching LST long-term maximum file in directory')
+                raise ValueError('Cannot find LST long-term maximum file matching {0} in directory {1}'.format(lst_max_pattern, lst_max_dir))
 
         _lst_min_filename = lst_min_filename
         if _lst_min_filename is None:
