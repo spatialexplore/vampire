@@ -97,6 +97,9 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
     def calculate_impact_area(self, hazard_raster, hazard_dir, hazard_pattern, threshold, threshold_direction,
                               boundary, b_field, output_file, output_dir, output_pattern, start_date, end_date,
                               hazard_var='vhi'):
+        logger.debug("calculate_impact_area with hazard {0}, hazard dir {1}, hazard pattern {2}".format(hazard_raster,
+                                                                                                        hazard_dir,
+                                                                                                        hazard_pattern))
         if threshold is None:
             # get threshold from VampireDefaults
             _threshold = self.vp.get('hazard_impact', '{0}_threshold'.format(hazard_var))
@@ -111,6 +114,7 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
             if hazard_pattern is not None:
                 _input_files = directory_utils.get_matching_files(hazard_dir, hazard_pattern)
                 _hazard_raster = os.path.join(hazard_dir, _input_files[0])
+                logger.debug("hazard files: {0}".format(_input_files))
             else:
                 raise ValueError("Hazard raster is not specified")
         else:
@@ -129,6 +133,7 @@ class AreaImpactTaskImpl(BaseTaskImpl.BaseTaskImpl):
                 raise ValueError("No output specified")
         else:
             _output_file = output_file
+        logger.debug("Output file: {0}".format(_output_file))
 
         if _threshold == '':
             _reclass_raster = _hazard_raster
