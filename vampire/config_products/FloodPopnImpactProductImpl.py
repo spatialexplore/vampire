@@ -116,6 +116,9 @@ class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
 #             _hazard_pattern = _hazard_pattern.replace('(?P<month>\d{2})', '(?P<month>{0})'.format(self.product_date.month))
 #             _hazard_pattern = _hazard_pattern.replace('(?P<day>\d{2})', '(?P<day>{0})'.format(self.product_date.day))
 
+        _hazard_threshold = self.vp.get('hazard_impact', 'flood_threshold')
+        _threshold_direction = self.vp.get('hazard_impact', 'flood_threshold_direction')
+
         if boundary_file is not None:
             _boundary_file = boundary_file
         else:
@@ -167,6 +170,8 @@ class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
             _valid_to_date = _valid_from_date #self.valid_to_date + datetime.timedelta(i+_forecast_days-1)
             config += self._generate_popn_impact_section(hazard_file=hazard_file, hazard_dir=hazard_dir,
                                                          hazard_pattern=_hazard_pattern, boundary_file=_boundary_file,
+                                                         hazard_threshold=_hazard_threshold,
+                                                         hazard_threshold_direction=_threshold_direction,
                                                          boundary_dir=_boundary_dir, boundary_pattern=_boundary_pattern,
                                                          boundary_field=_boundary_field, population_file=_population_file,
                                                          output_file=self.output_file, output_dir=self.output_dir,
@@ -179,6 +184,7 @@ class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
         return config
 
     def _generate_popn_impact_section(self, hazard_file, hazard_dir, hazard_pattern,
+                                      hazard_threshold, hazard_threshold_direction,
                                       boundary_file, boundary_dir, boundary_pattern, boundary_field,
                                       population_file,
                                       output_file, output_dir, output_pattern,
@@ -206,8 +212,11 @@ class FloodPopnImpactProductImpl(ImpactProductImpl.ImpactProductImpl):
         cfg_string += """
       boundary_field: {boundary_field}
       population_file: {population_file}
-      hazard_threshold: 1
-      threshold_direction: EQUALS""".format(boundary_field=boundary_field, population_file=population_file)
+      hazard_threshold: {hazard_threshold}
+      threshold_direction: {threshold_direction}""".format(boundary_field=boundary_field,
+                                                           population_file=population_file,
+                                                           hazard_threshold=hazard_threshold,
+                                                           threshold_direction=hazard_threshold_direction)
 
         if output_file is not None:
             cfg_string += """
