@@ -129,7 +129,8 @@ def reproject_image_to_master ( master, slave, output, res=None, nodata=0.0 ):
     #     profile.update(nodata=-9999)
     #     with rasterio.open(dst_filename, 'w', **profile) as dst:
     #         dst.write(_dst_a.astype(rasterio.float32), 1)
-
+    master_ds = None
+    slave_ds = None
     return dst_filename
 
 
