@@ -389,7 +389,7 @@ class PublishFloodForecastProduct(PublishableRasterProduct):
         logger.debug('Initialising MODIS download task')
         super(PublishFloodForecastProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vp.get('FLOOD_FORECAST', 'product_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.summary = '{0} {1}'.format(self.vp.get('FLOOD_FORECAST', 'interval'.capitalize()),
@@ -422,7 +422,7 @@ class PublishFloodForecastProduct(PublishableRasterProduct):
             new_date = '{0}'.format(self.product_date.strftime('%Y.%m.%d'))
         self.destination_filename = re.sub(regex, new_date, self.destination_filename)
 
-        self.ingestion_date = datetime.datetime.strptime(self.valid_from_date, '%d/%m/%Y')
+        self.ingestion_date = self.valid_from_date #datetime.datetime.strptime(self.valid_from_date, '%d/%m/%Y')
             #self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
         return
 
