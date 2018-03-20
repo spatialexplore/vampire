@@ -192,7 +192,7 @@ class PublishRainfallAnomalyProduct(PublishableRasterProduct):
         logger.debug('Initialising MODIS download task')
         super(PublishRainfallAnomalyProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vp.get('CHIRPS_Rainfall_Anomaly', 'output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.summary = '{0} {1}'.format(self.vp.get('CHIRPS_Rainfall_Anomaly', 'default_interval'.capitalize()),
@@ -284,7 +284,7 @@ class PublishSPIProduct(PublishableRasterProduct):
         logger.debug('Initialising MODIS download task')
         super(PublishSPIProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vp.get('CHIRPS_SPI', 'output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.summary = '{0} {1}'.format(self.vp.get('CHIRPS_SPI', 'default_interval'.capitalize()),
