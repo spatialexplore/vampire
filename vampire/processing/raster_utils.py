@@ -217,7 +217,53 @@ def mask_by_raster(raster_file, mask_file, output_file, nodata=None):
         _output.save(output_file)
         arcpy.env.cellSize = _cellsize
     except ImportError:
-        raise ValueError("Error, mask by raster not implemented yet" )
+        # no arcpy, use opensource techniques
+        import rasterio
+        _raster = None
+        _mask = None
+
+        with rasterio.open(raster_file) as _raster_r:
+            _nodata = _raster_r.nodata
+            logger.debug('In apply_mask: nodata value for raster file is: {0}'.format(_nodata))
+            with rasterio.open(mask_file) as _mask_r:
+                _mask_transform = _mask_r.transform
+                _raster_transform = _raster_r.transform
+                if (_mask_transform[1] < _raster_transform[1]):
+                    # mask resolution is higher than raster, resample raster
+                    tmp_output = os.path.join(os.path.dirname(raster_file), "tmpoutput.tif")
+                    reproject_image_to_master(mask_file, raster_file, tmp_output,
+                                  nodata=_nodata)
+                    _raster = tmp_output
+                    _mask = mask_file
+                else:
+                    # raster resolution is higher than mask, resample mask
+                    tmp_output = os.path.join(os.path.dirname(mask_file), "tmpoutput.tif")
+                    reproject_image_to_master(raster_file, mask_file, tmp_output,
+                                              nodata=_nodata)
+                    _mask = tmp_output
+                    _raster = raster_file
+        _raster_r = None
+        _mask_r = None
+        with rasterio.open(_raster) as _raster_rb:
+            _ras_band = _raster_rb.read(1)
+            _profile = _raster_rb.profile.copy()
+            _nodata = _raster_rb.nodata
+            if _nodata is None:
+                _nodata = -9999
+                _profile.update(nodata=_nodata)
+            _ras_band_masked = np.ma.masked_where(_ras_band==-999, _ras_band)
+            with rasterio.open(_mask) as _mask_r:
+                _mask_nodata = _mask_r.nodata
+                _mask_a = _mask_r.read(1)
+                _mask_masked = np.ma.masked_where(_mask_a==_mask_nodata, _mask_a)
+                _dst_a = np.ma.multiply(_ras_band_masked, _mask_masked)
+                np.ma.set_fill_value(_dst_a, _nodata)
+                _res = _dst_a.filled(fill_value=_nodata)
+                with rasterio.open(path=output_file, mode='w', **_profile) as dst:
+                    #                 dst.write(res.astype(rasterio.int32), 1)
+                    dst.write(_res.astype(_profile['dtype']), 1)
+
+#        raise ValueError("Error, mask by raster not implemented yet" )
 
 
 def mask_by_shapefile(raster_file, polygon_file, output_file, gdal_path, nodata=None):
