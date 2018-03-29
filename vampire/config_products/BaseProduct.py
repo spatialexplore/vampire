@@ -885,6 +885,37 @@ class DaysSinceLastRainProduct(BaseProduct):
                                          threshold=threshold, max_days=max_days, download=download,
                                          crop=crop, crop_dir=crop_dir)
 
+    def generate_mask_config(self, boundary_file=None, boundary_dir=None, boundary_pattern=None,
+                             boundary_field=None,
+                             output_file=None, output_dir=None, output_pattern=None):
+
+
+        """ Generate config section to mask VHI data product by a boundary.
+
+        Generates configuration file section to mask the VHI output file using a shapefile boundary.
+
+        :param boundary_file: Name of boundary file (shapefile) to use as mask.
+        :type boundary_file: string
+        :param boundary_dir: Directory where the boundary file is located.
+        :type boundary_dir: string
+        :param boundary_pattern: Regular expression pattern to used to find the boundary file.
+        :type boundary_pattern: string
+        :param boundary_field:
+        :type boundary_field: string
+        :param output_filename: Filename for masked DSLR output file.
+        :type output_filename: string
+        :param output_dir: Directory to save the masked DSLR output file.
+        :type output_dir: string
+        :param output_pattern: Pattern to be used to generate the masked DSLR output file name.
+        :type output_pattern: string
+        :return: Config file sections required for generating DSLR boundary mask.
+        :rtype: string
+        """
+        return self.impl.generate_mask_config(boundary_file=boundary_file, boundary_dir=boundary_dir,
+                                              boundary_pattern=boundary_pattern, boundary_field=boundary_field,
+                                              output_file=output_file, output_dir=output_dir,
+                                              output_pattern=output_pattern)
+
 
     def generate_publish_config(self):
         """ Generate config section to publish Days Since Last Rain data product.
