@@ -100,8 +100,8 @@ def calc_VHI(vci_filename, tci_filename, dst_filename, resample='TCI'):
             # check that resolution of vci matches resolution of tci
             _tci_aff = _tci_r.transform
             _vci_aff = _vci_r.transform
-            print 'vci {0}, {1}'.format(_vci_aff.a, _vci_aff.e)
-            print 'tci {0}, {1}'.format(_tci_aff.a, _tci_aff.e)
+            print 'vci {0}, {1}'.format(_vci_aff, type(_vci_aff)) #.a, _vci_aff.e)
+            print 'tci {0}, {1}'.format(_tci_aff, type(_tci_aff)) #.a, _tci_aff.e)
             # if _tci_aff.a != _vci_aff.a or _tci_aff.e != _vci_aff.e:
             #     if resample == 'TCI':
             #         # resample TCI to VCI resolution

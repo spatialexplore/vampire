@@ -116,9 +116,9 @@ def reclassify_raster(raster, threshold, output_raster,
 #        _dst_r = np.ma.masked_where(_ras_a > _threshold, _ras_a)
 #        _dst_r.data[_ras_a <= _threshold] = 1
         _dst_r = _dst_r.filled(-9999)
-        _profile.update(dtype=rasterio.float32, nodata=-9999)
+        _profile.update(dtype=rasterio.int16, nodata=-9999)
         with rasterio.open(output_raster, 'w', **_profile) as dst:
-            dst.write(_dst_r.astype(rasterio.float32), 1)
+            dst.write(_dst_r.astype(rasterio.int16), 1)
 
     # _driver = gdal.GetDriverByName('GTiff')
     # _file = gdal.Open(raster)
@@ -158,12 +158,16 @@ def multiply_by_mask(raster, mask, output_raster):
 
 
 def create_mask(raster, mask, output_raster):
-    _tmp_ras = os.path.join(os.path.dirname(raster), 'tmp_{0}'.format(os.path.basename(raster)))
-    raster_utils.reproject_image_to_master(master=mask, slave=raster, output=_tmp_ras)
-    with rasterio.open(_tmp_ras) as ras:
+    _tmp_mask = os.path.join(os.path.dirname(mask), 'tmp_{0}'.format(os.path.basename(mask)))
+    raster_utils.reproject_image_to_master(master=raster, slave=mask, output=_tmp_mask)
+#    _tmp_ras = os.path.join(os.path.dirname(raster), 'tmp_{0}'.format(os.path.basename(raster)))
+#    raster_utils.reproject_image_to_master(master=mask, slave=raster, output=_tmp_ras)
+#    with rasterio.open(_tmp_ras) as ras:
+    with rasterio.open(raster) as ras:
         _ras_a = ras.read(1, masked=True)
         _profile = ras.profile.copy()
-        with rasterio.open(mask) as _mask_r:
+        with rasterio.open(_tmp_mask) as _mask_r:
+#        with rasterio.open(mask) as _mask_r:
             # TODO check if same size/projection
             _mask_a = _mask_r.read(1, masked=True)
             _dst_r = np.ma.masked_where(_mask_a==0, _mask_a)

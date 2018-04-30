@@ -12,23 +12,33 @@ def calc_rainfall_anomaly(cur_filename, lta_filename, dst_filename):
         _cur_band = cur_r.read(1, masked=True)
         _profile = cur_r.profile.copy()
         print cur_r.nodatavals
+        _nodata = cur_r.nodata
+        if _nodata is None:
+            _nodata = -9999
+            _profile.update(nodata=_nodata)
         with rasterio.open(lta_filename) as lta_r:
             lta_a = lta_r.read(1, masked=True)
-            _div_f = _cur_band / lta_a
-            _div_f = _div_f * 100
-            _res = _div_f.filled(fill_value=cur_r.nodata)
-            dst_f = np.zeros(_cur_band.shape)
-            newd_f = np.ma.masked_where(np.ma.mask_or(np.ma.getmask(_cur_band), np.ma.getmask(lta_r)), dst_f)
-            newd_f += np.divide(_cur_band, lta_a) * 100.0
-            newd_f.astype(int)
-            _nodata_val = cur_r.nodata
-            if _nodata_val is None:
-                _nodata_val = -999
-                _profile.update(nodata=_nodata_val)
-            res = newd_f.filled(fill_value=_nodata_val)
-            res2 = np.ma.masked_where(res==_nodata_val, res)
+            lta_a[lta_a == lta_r.nodata] = _nodata
+#            _div_f = (_cur_band / lta_a) * 100
+            _div_f = np.ma.multiply(np.ma.divide(_cur_band, lta_a), 100)
+#            _div_f = _div_f * 100
+            _div_f2 = np.ma.masked_where(_div_f==_nodata, _div_f)
+            np.ma.set_fill_value(_div_f2, _nodata)
+            _res = _div_f.filled(fill_value=_nodata)
+
+#            dst_f = np.ma.zeros(lta_a.shape)
+#            newd_f = np.ma.masked_where(np.ma.mask_or(np.ma.getmask(_cur_band), np.ma.getmask(lta_r)), dst_f)
+#            newd_f += np.divide(_cur_band, lta_a) * 100.0
+#            newd_f.astype(int)
+# #            _nodata_val = cur_r.nodata
+# #            if _nodata_val is None:
+# #                _nodata_val = -999
+# #                _profile.update(nodata=_nodata_val)
+#             res = newd_f.filled(fill_value=_nodata)
+# #            res2 = np.ma.masked_where(res==_nodata, res)
             _profile.update(dtype=rasterio.int32)
             with rasterio.open(path=dst_filename, mode='w', **_profile) as dst:
+#                 dst.write(res.astype(rasterio.int32), 1)
                 dst.write(_res.astype(rasterio.int32), 1)
     return None
 
@@ -303,18 +313,25 @@ def calc_flood_alert(forecast_filename, threshold_filename, dst_filename, value=
     _nodata = None
     with rasterio.open(forecast_filename) as forecast_r:
         _nodata = forecast_r.nodata
+        logger.debug('In calc_flood_alert: nodata value for forecast file is: {0}'.format(_nodata))
     tmp_output = os.path.join(os.path.dirname(forecast_filename), "tmpoutput.tif")
     raster_utils.reproject_image_to_master(threshold_filename, forecast_filename, tmp_output,
                                            nodata=_nodata)
+    if _nodata is None:
+        _nodata = -9999
 
     with rasterio.open(tmp_output) as forecast_r:
+        logger.debug('reprojected forecast file nodata={0}'.format(forecast_r.nodata))
         _forecast_band = forecast_r.read(1, masked=True)
         _profile = forecast_r.profile.copy()
         with rasterio.open(threshold_filename) as threshold_r:
+            logger.debug('threshold file nodata= {0}'.format(threshold_r.nodata))
             _threshold_band = threshold_r.read(1, masked=True)
-            _out_ras = np.zeros(shape=_threshold_band.shape)
-            _out_ras[_forecast_band >= _threshold_band] += 1
-            _profile.update(dtype=rasterio.float64)
+            _out_ras = np.ma.zeros(shape=_threshold_band.shape)
+            _out_ras = np.ma.masked_where(np.ma.getmask(_threshold_band), _out_ras)
+            _out_ras[_forecast_band >= _threshold_band] += value
+            _out_ras = _out_ras.filled(_nodata)
+            _profile.update(dtype=rasterio.float64, nodata=_nodata)
             with rasterio.open(path=dst_filename, mode='w', **_profile) as dst:
                 dst.write(_out_ras.astype(rasterio.float64), 1)
 

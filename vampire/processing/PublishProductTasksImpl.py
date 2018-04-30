@@ -192,7 +192,7 @@ class PublishRainfallAnomalyProduct(PublishableRasterProduct):
         logger.debug('Initialising MODIS download task')
         super(PublishRainfallAnomalyProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vp.get('CHIRPS_Rainfall_Anomaly', 'output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.summary = '{0} {1}'.format(self.vp.get('CHIRPS_Rainfall_Anomaly', 'default_interval'.capitalize()),
@@ -239,7 +239,7 @@ class PublishVHIProduct(PublishableRasterProduct):
         logger.debug('Initialising MODIS download task')
         super(PublishVHIProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vp.get('MODIS_VHI', 'vhi_product_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.summary = '{0} {1}'.format(self.vp.get('MODIS_VHI', 'interval'.capitalize()),
@@ -247,12 +247,13 @@ class PublishVHIProduct(PublishableRasterProduct):
         self.tags = '{0}, {1}'.format(self.vp.get('MODIS_VHI', 'tags'),
                                       self.vp.get_country_name(self.vp.get('vampire', 'home_country')))
         self.template_file = self.vp.get('MODIS_VHI', 'template_file')
-        _product_pattern = self.vp.get('MODIS_VHI', 'vhi_pattern')
-        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_pattern = self.params['input_pattern']
+#        _product_pattern = self.vp.get('MODIS_VHI', 'vhi_pattern')
+#        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
         _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
         self.product_filename = _product_files[0]
 #        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
-        self.product_name = self.vp.get('MODIS_VHI', 'product_name')
+        self.product_name = 'vhi' #self.vp.get('MODIS_VHI', 'product_name')
         self.destination_filename = self.product_filename
         # if using geoserver, need to modify destination filename so if can parse the date
         # ie. to have no full stops and be in the format YYYYmmdd
@@ -268,7 +269,7 @@ class PublishVHIProduct(PublishableRasterProduct):
             elif self.vp.get('MODIS_VHI', 'default_interval').lower() == 'dekad':
                 regex = r'\d{4}.\d{2}.\d{1}'
             self.destination_filename = re.sub(regex, new_date, self.destination_filename)
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
             #self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
         return
 
@@ -283,7 +284,7 @@ class PublishSPIProduct(PublishableRasterProduct):
         logger.debug('Initialising MODIS download task')
         super(PublishSPIProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vp.get('CHIRPS_SPI', 'output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.summary = '{0} {1}'.format(self.vp.get('CHIRPS_SPI', 'default_interval'.capitalize()),
@@ -340,7 +341,7 @@ class PublishMaskedVHIProduct(PublishableRasterProduct):
         logger.debug('Initialising MODIS download task')
         super(PublishMaskedVHIProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vampire.get('MODIS_VHI', 'vhi_product_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.summary = '{0} {1}'.format(self.vp.get('MODIS_VHI', 'interval'.capitalize()),
@@ -388,7 +389,7 @@ class PublishFloodForecastProduct(PublishableRasterProduct):
         logger.debug('Initialising MODIS download task')
         super(PublishFloodForecastProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vp.get('FLOOD_FORECAST', 'product_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.summary = '{0} {1}'.format(self.vp.get('FLOOD_FORECAST', 'interval'.capitalize()),
@@ -404,18 +405,24 @@ class PublishFloodForecastProduct(PublishableRasterProduct):
         self.product_filename = _product_files[0]
 #        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
 
-        self.product_name = self.vp.get('FLOOD_FORECAST', 'product_name')
-        self.publish_name = self.params['publish_name']
-        self.destination_filename = self.product_filename
+        self.product_name = 'flood_forecast'
+        self.publish_name = None
+        if 'publish_name' in self.params:
+            self.publish_name = self.params['publish_name']
         # if using geoserver, need to modify destination filename so if can parse the date
         # ie. to have no full stops and be in the format YYYYmmdd
+        self.destination_filename = re.sub('_fd\d{3}', '', os.path.basename(self.product_filename))
+        regex = r'\d{4}.\d{2}.\d{2}'
+        new_date = None
         if self.vp.get('vampire', 'gis_server').lower() == 'geoserver':
-            self.destination_filename = os.path.basename(self.product_filename)
             # find date in destination filename and remove full stops
-            regex = r'\d{4}.\d{2}.\d{2}'
             new_date = '{0}'.format(self.product_date.strftime('%Y%m%d'))
-            self.destination_filename = re.sub(regex, new_date, self.destination_filename)
-        self.ingestion_date = datetime.datetime.strptime(self.valid_from_date, '%d/%m/%Y')
+        else:
+            # find date in destination filename and remove full stops
+            new_date = '{0}'.format(self.product_date.strftime('%Y.%m.%d'))
+        self.destination_filename = re.sub(regex, new_date, self.destination_filename)
+
+        self.ingestion_date = self.valid_from_date #datetime.datetime.strptime(self.valid_from_date, '%d/%m/%Y')
             #self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
         return
 
@@ -430,7 +437,7 @@ class PublishDSLRProduct(PublishableRasterProduct):
         logger.debug('Initialising PublishDSLRProduct task')
         super(PublishDSLRProduct, self).__init__(params, vampire_defaults)
         self.product_dir = self.vp.get('Days_Since_Last_Rain', 'output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.summary = '{0} {1}'.format(self.vp.get('Days_Since_Last_Rain', 'interval'.capitalize()),
@@ -438,22 +445,27 @@ class PublishDSLRProduct(PublishableRasterProduct):
         self.tags = '{0}, {1}'.format(self.vp.get('Days_Since_Last_Rain', 'tags'),
                                       self.vp.get_country_name(self.vp.get('vampire', 'home_country')))
         self.template_file = self.vp.get('Days_Since_Last_Rain', 'template_file')
-        _product_pattern = self.vp.get('Days_Since_Last_Rain', 'regional_dslr_pattern')
-        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+#        _product_pattern = self.vp.get('Days_Since_Last_Rain', 'regional_dslr_pattern')
+#        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_pattern = self.params['input_pattern']
         _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
         self.product_filename = _product_files[0]
 #        self.product_filename = 'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif' % self.product_date.strftime('%Y.%m.%d')
         self.product_name = 'days_since_last_rain'
-        self.destination_filename = self.product_filename
+#        self.destination_filename = self.product_filename
         # if using geoserver, need to modify destination filename so if can parse the date
         # ie. to have no full stops and be in the format YYYYmmdd
+        new_date = None
+        self.destination_filename = os.path.basename(self.product_filename)
+        regex = r'\d{4}.\d{2}.\d{2}'
         if self.vp.get('vampire', 'gis_server').lower() == 'geoserver':
-            self.destination_filename = os.path.basename(self.product_filename)
             # find date in destination filename and remove full stops
-            regex = r'\d{4}.\d{2}.\d{2}'
             new_date = '{0}'.format(self.product_date.strftime('%Y%m%d'))
-            self.destination_filename = re.sub(regex, new_date, self.destination_filename)
-        self.ingestion_date = self.product_date #datetime.datetime.strptime(self.valid_from_date, '%d/%m/%Y')
+        else:
+            # find date in destination filename
+            new_date = '{0}'.format(self.product_date.strftime('%Y.%m.%d'))
+        self.destination_filename = re.sub(regex, new_date, self.destination_filename)
+        self.ingestion_date = self.valid_from_date #datetime.datetime.strptime(self.valid_from_date, '%d/%m/%Y')
             #self.product_date - datetime.timedelta(days=int(self.vampire.get('MODIS_VHI', 'interval')))
         return
 
@@ -472,7 +484,7 @@ class PublishVHIAreaImpactProduct(PublishableTabularProduct):
         self.params = params
         self.vp = vampire_defaults
         self.product_dir = self.vp.get('hazard_impact', 'vhi_output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.database = self.vp.get('database', 'impact_db')
@@ -481,14 +493,15 @@ class PublishVHIAreaImpactProduct(PublishableTabularProduct):
             self.schema = self.vp.get('database', 'impact_area_schema')
         except Exception, e:
             self.schema = self.vp.get('database', 'default_schema')
-        _product_pattern = self.vp.get('hazard_impact', 'vhi_area_pattern')
-        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_pattern = self.params['input_pattern']
+#        _product_pattern = self.vp.get('hazard_impact', 'vhi_area_pattern')
+#        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
         _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
 
         self.product_filename = _product_files[0]
         self.product_name = 'vhi_impact_area'
         self.destination_filename = self.product_filename
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
         return
 
 @PublishProductTasksImpl.register_subclass('vhi_impact_popn')
@@ -504,7 +517,7 @@ class PublishVHIPopnImpactProduct(PublishableTabularProduct):
 #        self.params = params
 #        self.vp = vampire_defaults
         self.product_dir = self.vp.get('hazard_impact', 'vhi_output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.database = self.vp.get('database', 'impact_db')
@@ -513,15 +526,16 @@ class PublishVHIPopnImpactProduct(PublishableTabularProduct):
             self.schema = self.vp.get('database', 'impact_popn_schema')
         except Exception, e:
             self.schema = self.vp.get('database', 'default_schema')
-        _product_pattern = self.vp.get('hazard_impact', 'vhi_popn_pattern')
-        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
+        _product_pattern = self.params['input_pattern']
+#        _product_pattern = self.vp.get('hazard_impact', 'vhi_popn_pattern')
+#        _product_pattern = _product_pattern.replace('(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2})', '{0}'.format(self.product_date.strftime('%Y.%m.%d')))
         _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)
 
         self.product_filename = _product_files[0]
             #'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif' % self.product_date.strftime('%Y.%m.%d')
         self.product_name = 'vhi_impact_popn'
         self.destination_filename = self.product_filename
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
         return
 
 @PublishProductTasksImpl.register_subclass('flood_impact_area')
@@ -537,7 +551,7 @@ class PublishFloodAreaImpactProduct(PublishableTabularProduct):
         self.params = params
         self.vp = vampire_defaults
         self.product_dir = self.vp.get('hazard_impact', 'flood_output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.database = self.vp.get('database', 'impact_db')
@@ -556,7 +570,7 @@ class PublishFloodAreaImpactProduct(PublishableTabularProduct):
         self.product_filename = _product_files[0]
         self.product_name = 'flood_impact_area'
         self.destination_filename = self.product_filename
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
         return
 
 @PublishProductTasksImpl.register_subclass('flood_impact_popn')
@@ -572,7 +586,7 @@ class PublishFloodPopnImpactProduct(PublishableTabularProduct):
         self.params = params
         self.vp = vampire_defaults
         self.product_dir = self.vp.get('hazard_impact', 'flood_output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.database = self.vp.get('database', 'impact_db')
@@ -591,11 +605,11 @@ class PublishFloodPopnImpactProduct(PublishableTabularProduct):
         self.product_filename = _product_files[0]
         self.product_name = 'flood_impact_popn'
         self.destination_filename = self.product_filename
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
         return
 
 
-@PublishProductTasksImpl.register_subclass('days_since_last_rain_impact_area')
+@PublishProductTasksImpl.register_subclass('dslr_impact_area')
 class PublishDSLRAreaImpactProduct(PublishableTabularProduct):
     """ Initialise MODISDownloadTask object.
 
@@ -608,7 +622,7 @@ class PublishDSLRAreaImpactProduct(PublishableTabularProduct):
         self.params = params
         self.vp = vampire_defaults
         self.product_dir = self.vp.get('hazard_impact', 'dslr_output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.database = self.vp.get('database', 'impact_db')
@@ -624,10 +638,10 @@ class PublishDSLRAreaImpactProduct(PublishableTabularProduct):
         self.product_filename = _product_files[0]
         self.product_name = 'dslr_impact_area'
         self.destination_filename = self.product_filename
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
         return
 
-@PublishProductTasksImpl.register_subclass('days_since_last_rain_impact_popn')
+@PublishProductTasksImpl.register_subclass('dslr_impact_popn')
 class PublishDSLRPopnImpactProduct(PublishableTabularProduct):
     """ Initialise MODISDownloadTask object.
 
@@ -640,7 +654,7 @@ class PublishDSLRPopnImpactProduct(PublishableTabularProduct):
 #        self.params = params
 #        self.vp = vampire_defaults
         self.product_dir = self.vp.get('hazard_impact', 'dslr_output_dir')
-        self.product_date = datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
+        self.product_date = self.params['start_date'] #datetime.datetime.strptime(self.params['start_date'], '%d/%m/%Y')
         self.valid_from_date = self.params['start_date']
         self.valid_to_date = self.params['end_date']
         self.database = self.vp.get('database', 'impact_db')
@@ -657,6 +671,6 @@ class PublishDSLRPopnImpactProduct(PublishableTabularProduct):
             #'lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif' % self.product_date.strftime('%Y.%m.%d')
         self.product_name = 'dslr_impact_popn'
         self.destination_filename = self.product_filename
-        self.ingestion_date = self.valid_from_date
+        self.ingestion_date = self.product_date #self.valid_from_date
         return
 

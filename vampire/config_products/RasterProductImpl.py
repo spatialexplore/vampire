@@ -84,8 +84,8 @@ class RasterProductImpl(object):
       type: gis_server
       product: {product}
       start_date: {start_date}
-      end_date: {end_date}""".format(product=self.product_name, start_date=_valid_from_date.strftime("%d/%m/%Y"),
-                                     end_date=_valid_to_date.strftime("%d/%m/%Y"))
+      end_date: {end_date}""".format(product=self.product_name, start_date=_valid_from_date.strftime("%Y-%m-%d"),
+                                     end_date=_valid_to_date.strftime("%Y-%m-%d"))
         if self.publish_name is not None:
             cfg_string += """
       publish_name: {publish_name}""".format(publish_name=self.publish_name)

@@ -1,5 +1,6 @@
 import BaseDataset
 import RasterProductImpl
+import RasterDatasetImpl
 import os
 import datetime
 import logging
@@ -141,3 +142,64 @@ class DaysSinceLastRainProductImpl(RasterProductImpl.RasterProductImpl):
     ## Processing chain end - Compute Days Since Last Rain
         """
         return cfg_string
+
+    def generate_mask_config(self, boundary_file=None, boundary_dir=None, boundary_pattern=None,
+                             boundary_field=None,
+                             output_file=None, output_dir=None, output_pattern=None):
+
+        config = """
+        ## Processing chain begin - Mask DSLR\n"""
+
+        if self.product_file is None:
+            if self.product_dir is None:
+                self.product_dir = self.vp.get('Days_Since_Last_Rain', 'output_dir')
+            self.product_pattern = self.vp.get('Days_Since_Last_Rain', 'regional_dslr_pattern')
+            self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})',
+                                                                '(?P<year>{0})'.format(self.product_date.year))
+            self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})',
+                                                                '(?P<month>{0:0>2})'.format(self.product_date.month))
+            self.product_pattern = self.product_pattern.replace('(?P<day>\d{2})',
+                                                                '(?P<day>{0:0>2})'.format(self.product_date.day))
+
+        _output_dir = None
+        _output_pattern = None
+        if output_file is None:
+            if output_dir is None:
+                _output_dir = self.vp.get('Days_Since_Last_Rain', 'output_dir')
+            else:
+                _output_dir = output_dir
+            if output_pattern is None:
+                _output_pattern = self.vp.get('Days_Since_Last_Rain', 'dslr_crop_output_pattern')
+            else:
+                _output_pattern = output_pattern
+            _output_file = None
+        else:
+            _output_file = output_file
+
+        _boundary_dir = None
+        _boundary_pattern = None
+        if boundary_file is None:
+            _boundary_file = self.vp.get_country(self.country)['crop_boundary']
+        else:
+            _boundary_file = boundary_file
+        if _boundary_file == '':
+            _boundary_file = None
+        _boundary_raster = self.vp.get_country(self.country)['crop_boundary_raster']
+        if _boundary_raster == '':
+            _boundary_raster = None
+        _raster = RasterDatasetImpl.RasterDatasetImpl()
+        config += _raster.generate_mask_section(input_file=self.product_file, input_dir=self.product_dir,
+                                                input_pattern=self.product_pattern,
+                                                boundary_raster=_boundary_raster,
+                                                output_file=_output_file, output_dir=_output_dir,
+                                                output_pattern=_output_pattern, boundary_file=_boundary_file,
+                                                no_data=False)
+        self.product_dir = _output_dir
+        self.product_pattern = self.vp.get('Days_Since_Last_Rain', 'dslr_crop_pattern')
+        self.product_pattern = self.product_pattern.replace('(?P<year>\d{4})',
+                                                            '(?P<year>{0})'.format(self.product_date.year))
+        self.product_pattern = self.product_pattern.replace('(?P<month>\d{2})',
+                                                            '(?P<month>{0:0>2})'.format(self.product_date.month))
+        self.product_pattern = self.product_pattern.replace('(?P<day>\d{2})',
+                                                            '(?P<day>{0:0>2})'.format(self.product_date.day))
+        return config

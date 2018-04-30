@@ -36,6 +36,7 @@ class FloodAlertTaskImpl(BaseTaskImpl.BaseTaskImpl):
         _output_dir = None
         _output_pattern = None
         _num_years = None
+        _output_value = None
 
         if 'forecast_file' in self.params:
             _forecast_file = self.params['forecast_file']
@@ -73,16 +74,20 @@ class FloodAlertTaskImpl(BaseTaskImpl.BaseTaskImpl):
         if 'num_years' in self.params:
             _num_years = self.params['num_years']
 
+        if 'output_value' in self.params:
+            _output_value = self.params['output_value']
+
         self.calc_flood_alert(forecast_filename=_forecast_file, forecast_dir=_forecast_dir,
                               forecast_pattern=_forecast_pattern,
                               threshold_filename=_threshold_file, threshold_dir=_threshold_dir,
                               threshold_pattern=_threshold_pattern,
                               dst_filename=_out_file, dst_dir=_output_dir, dst_pattern=_output_pattern,
-                              num_years=_num_years)
+                              num_years=_num_years, output_value=_output_value)
 
     def calc_flood_alert(self, forecast_filename=None, forecast_dir=None, forecast_pattern=None,
                               threshold_filename=None, threshold_dir=None, threshold_pattern=None,
-                              dst_filename=None, dst_dir=None, dst_pattern=None, num_years=None):
+                              dst_filename=None, dst_dir=None, dst_pattern=None, num_years=None,
+                         output_value=None):
         logger.info('entering calc_flood_alert')
         if forecast_filename is None:
             # get filenames from pattern and directory
@@ -103,6 +108,11 @@ class FloodAlertTaskImpl(BaseTaskImpl.BaseTaskImpl):
         if dst_dir is not None and not os.path.isdir(dst_dir):
             # destination directory does not exist, create it first
             os.makedirs(dst_dir)
+        if output_value is None:
+            _output_value = 1
+        else:
+            _output_value = output_value
+
         for f in _forecast_filenames:
             # calculate flood forecast for each file
             if dst_filename is None:
@@ -116,7 +126,7 @@ class FloodAlertTaskImpl(BaseTaskImpl.BaseTaskImpl):
                 _dst_filename = dst_filename
             precipitation_analysis.calc_flood_alert(forecast_filename=f,
                                                     threshold_filename=_threshold_filename,
-                                                    dst_filename=_dst_filename
+                                                    dst_filename=_dst_filename, value=_output_value
                                                     )
         logger.info('leaving calc_flood_alert')
         return None

@@ -390,6 +390,16 @@ class MODISExtractTask(BaseTaskImpl.BaseTaskImpl):
                 sds = src_ds.GetSubDatasets()
 #                if logger: logger.debug("Number of bands: %s",src_ds.RasterCount)
                 self._convert_to_tiff(_ifl, _ofl, self.vp.get('directories', 'gdal_dir'))
+                if len(sds) == 0:
+                    # no subdatasets - rename file to include subset name
+                    _new_name = "{0}.{1}{2}".format(os.path.splitext(os.path.basename(_ofl))[0],
+                                                    subset_name,
+                                                    os.path.splitext(_ofl)[1])
+                    if not os.path.exists(os.path.join(output_dir, _new_name)) or overwrite:
+                        os.rename(_ofl, os.path.join(output_dir, _new_name))
+                    if not os.path.exists(os.path.join(output_dir, "{0}.aux.xml".format(_new_name))) or overwrite:
+                        os.rename("{0}.aux.xml".format(_ofl), os.path.join(output_dir,
+                                                                           "{0}.aux.xml".format(_new_name)))
                 for idx, sbs in enumerate(sds):
 #                    if logger: logger.debug("Subdataset: %s", sbs[0])
                     # get subset name (without spaces)
