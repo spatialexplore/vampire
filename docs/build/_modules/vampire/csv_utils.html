@@ -1,0 +1,322 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.csv_utils &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.csv_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">dbfpy.dbf</span>
+<span class="kn">import</span> <span class="nn">pandas</span>
+
+<div class="viewcode-block" id="add_field"><a class="viewcode-back" href="../../vampire.csv_utils.html#vampire.csv_utils.add_field">[docs]</a><span class="k">def</span> <span class="nf">add_field</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="n">new_field</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;DATE&#39;</span><span class="p">):</span>
+    <span class="n">base</span><span class="p">,</span><span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">table_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.csv&#39;</span><span class="p">:</span>
+        <span class="n">_new_csv</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">cf</span><span class="p">:</span>
+            <span class="n">_reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">cf</span><span class="p">)</span>
+            <span class="n">_header_row</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">_reader</span><span class="p">)</span>
+            <span class="n">_header_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_field</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">_reader</span><span class="p">:</span>
+                <span class="n">_new_row</span> <span class="o">=</span> <span class="n">row</span>
+                <span class="n">_new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<span class="c1">#                print _new_row</span>
+                <span class="n">_new_csv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_new_row</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">wf</span><span class="p">:</span>
+            <span class="n">wr</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
+            <span class="n">wr</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">_header_row</span><span class="p">)</span>
+            <span class="n">wr</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">_new_csv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="copy_field"><a class="viewcode-back" href="../../vampire.csv_utils.html#vampire.csv_utils.copy_field">[docs]</a><span class="k">def</span> <span class="nf">copy_field</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="n">new_field</span><span class="p">,</span> <span class="n">copy_field</span><span class="p">):</span>
+    <span class="n">base</span><span class="p">,</span><span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">table_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.csv&#39;</span><span class="p">:</span>
+        <span class="n">_new_csv</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">cf</span><span class="p">:</span>
+            <span class="n">_reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">cf</span><span class="p">)</span>
+            <span class="n">_header_row</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">_reader</span><span class="p">)</span>
+            <span class="n">_header_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_field</span><span class="p">)</span>
+            <span class="n">_lower_header</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">_header_row</span><span class="p">]</span>
+            <span class="n">_lower_header</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\&#39;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">_lower_header</span><span class="p">]</span>
+            <span class="n">_calc_index</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_calc_index</span> <span class="o">=</span> <span class="n">_lower_header</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">copy_field</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> not found in file header row.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">copy_field</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">_reader</span><span class="p">:</span>
+                <span class="n">_new_row</span> <span class="o">=</span> <span class="n">row</span>
+                <span class="n">_new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">_calc_index</span><span class="p">])</span>
+<span class="c1">#                print _new_row</span>
+                <span class="n">_new_csv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_new_row</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">wf</span><span class="p">:</span>
+            <span class="n">wr</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
+            <span class="n">wr</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">_header_row</span><span class="p">)</span>
+            <span class="n">wr</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">_new_csv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="calc_field"><a class="viewcode-back" href="../../vampire.csv_utils.html#vampire.csv_utils.calc_field">[docs]</a><span class="k">def</span> <span class="nf">calc_field</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="n">new_field</span><span class="p">,</span> <span class="n">cal_field</span><span class="p">,</span> <span class="n">multiplier</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;DOUBLE&#39;</span><span class="p">):</span>
+    <span class="n">base</span><span class="p">,</span><span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">table_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.csv&#39;</span><span class="p">:</span>
+        <span class="n">_new_csv</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">cf</span><span class="p">:</span>
+            <span class="n">_reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">cf</span><span class="p">)</span>
+            <span class="n">_header_row</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">_reader</span><span class="p">)</span>
+            <span class="n">_header_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_field</span><span class="p">)</span>
+            <span class="c1"># convert all to lower case for comparison</span>
+            <span class="n">_lower_header</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">_header_row</span><span class="p">]</span>
+            <span class="n">_lower_header</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\&#39;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">_lower_header</span><span class="p">]</span>
+            <span class="n">_calc_index</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_calc_index</span> <span class="o">=</span> <span class="n">_lower_header</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">cal_field</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> not found in file header row.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cal_field</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">_reader</span><span class="p">:</span>
+                <span class="n">_new_row</span> <span class="o">=</span> <span class="n">row</span>
+                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="n">_calc_index</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                    <span class="n">_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">_calc_index</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;LONG&#39;</span><span class="p">:</span>
+                        <span class="n">_new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">_val</span><span class="o">*</span><span class="n">multiplier</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">_new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">_val</span><span class="o">*</span><span class="n">multiplier</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+ <span class="c1">#               print _new_row</span>
+                <span class="n">_new_csv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_new_row</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">wf</span><span class="p">:</span>
+            <span class="n">wr</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
+            <span class="n">wr</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">_header_row</span><span class="p">)</span>
+            <span class="n">wr</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">_new_csv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="calc_pc_field"><a class="viewcode-back" href="../../vampire.csv_utils.html#vampire.csv_utils.calc_pc_field">[docs]</a><span class="k">def</span> <span class="nf">calc_pc_field</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="n">new_field</span><span class="p">,</span> <span class="n">numerator_field</span><span class="p">,</span> <span class="n">denominator_field</span><span class="p">):</span>
+    <span class="n">base</span><span class="p">,</span><span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">table_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.csv&#39;</span><span class="p">:</span>
+        <span class="n">_new_csv</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">cf</span><span class="p">:</span>
+            <span class="n">_reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">cf</span><span class="p">)</span>
+            <span class="n">_header_row</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">_reader</span><span class="p">)</span>
+            <span class="n">_header_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_field</span><span class="p">)</span>
+            <span class="c1"># convert all to lower case for comparison</span>
+            <span class="n">_lower_header</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">_header_row</span><span class="p">]</span>
+            <span class="n">_num_index</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">_den_index</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_num_index</span> <span class="o">=</span> <span class="n">_lower_header</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">numerator_field</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> not found in file header row.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">numerator_field</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_den_index</span> <span class="o">=</span> <span class="n">_lower_header</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">denominator_field</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> not found in file header row.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">denominator_field</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">_reader</span><span class="p">:</span>
+                <span class="n">_new_row</span> <span class="o">=</span> <span class="n">row</span>
+                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="n">_num_index</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                    <span class="n">_num_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">_num_index</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="n">_den_index</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                        <span class="n">_den_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">_den_index</span><span class="p">])</span>
+                        <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s1">&#39;LONG&#39;</span><span class="p">:</span>
+                            <span class="n">_new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">_num_val</span><span class="o">/</span><span class="n">_den_val</span><span class="o">*</span><span class="mi">100</span><span class="p">))</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">_new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">_num_val</span><span class="o">/</span><span class="n">_den_val</span><span class="o">*</span><span class="mf">100.0</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">_new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="c1">#                print _new_row</span>
+                <span class="n">_new_csv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_new_row</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">wf</span><span class="p">:</span>
+            <span class="n">wr</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
+            <span class="n">wr</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">_header_row</span><span class="p">)</span>
+            <span class="n">wr</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">_new_csv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="calc_normalized_field"><a class="viewcode-back" href="../../vampire.csv_utils.html#vampire.csv_utils.calc_normalized_field">[docs]</a><span class="k">def</span> <span class="nf">calc_normalized_field</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="n">new_field</span><span class="p">,</span> <span class="n">area_field</span><span class="p">,</span> <span class="n">total_field</span><span class="p">,</span> <span class="n">admin_area</span><span class="p">):</span>
+    <span class="n">base</span><span class="p">,</span><span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">table_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.csv&#39;</span><span class="p">:</span>
+        <span class="n">_df</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">table_name</span><span class="p">)</span> <span class="c1">#, dtype={&#39;dsd_code&#39;:&#39;str&#39;})</span>
+        <span class="n">_df</span><span class="p">[</span><span class="s1">&#39;dsd_code&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_df</span><span class="p">[</span><span class="s1">&#39;DSD_C&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:.0f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">)</span>
+        <span class="n">_df</span><span class="p">[</span><span class="n">new_field</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">_df</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">_df</span><span class="p">,</span> <span class="n">admin_area</span><span class="p">[[</span><span class="s1">&#39;dsd_code&#39;</span><span class="p">,</span> <span class="s1">&#39;shape_Area&#39;</span><span class="p">]],</span> <span class="n">on</span><span class="o">=</span><span class="s1">&#39;dsd_code&#39;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">new_value_formula</span><span class="p">(</span><span class="n">area</span><span class="p">,</span> <span class="n">total</span><span class="p">,</span> <span class="n">shape_area</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">area</span> <span class="o">/</span> <span class="n">total</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">total</span> <span class="o">/</span> <span class="p">(</span><span class="n">shape_area</span><span class="o">/</span><span class="mf">10000.0</span><span class="p">))</span> <span class="o">*</span> <span class="mf">100.0</span>
+        <span class="n">_df</span><span class="p">[</span><span class="n">new_field</span><span class="p">]</span> <span class="o">=</span> <span class="n">_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">new_value_formula</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">area_field</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="n">total_field</span><span class="p">],</span>
+                                                                 <span class="n">row</span><span class="p">[</span><span class="s1">&#39;shape_Area&#39;</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="c1">#        for index,row in _df.iterrows():</span>
+<span class="c1">#            _admin_row = admin_area.loc[(admin_area[&#39;dsd_code&#39;] == str(int(row[&#39;dsd_code&#39;])))]</span>
+<span class="c1">##            row[new_field] = (row[area_field] / row[total_field] ) * (row[total_field] / (_admin_row[&#39;shape_Area&#39;]/10000.0)) * 100.0</span>
+<span class="c1">#            _df.loc[index, new_field] = (row[area_field] / row[total_field] ) * (row[total_field] / (_admin_row[&#39;shape_Area&#39;]/10000.0)) * 100.0</span>
+        <span class="n">_min_area_aff</span> <span class="o">=</span> <span class="n">_df</span><span class="p">[</span><span class="n">area_field</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">_max_area_aff</span> <span class="o">=</span> <span class="n">_df</span><span class="p">[</span><span class="n">area_field</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">_min_total_area</span> <span class="o">=</span> <span class="n">_df</span><span class="p">[</span><span class="n">total_field</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">_max_total_area</span> <span class="o">=</span> <span class="n">_df</span><span class="p">[</span><span class="n">total_field</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">_df</span><span class="p">[</span><span class="s1">&#39;impact_norm2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">_df</span><span class="p">[</span><span class="n">area_field</span><span class="p">]</span> <span class="o">-</span> <span class="n">_min_area_aff</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">_max_area_aff</span> <span class="o">-</span> <span class="n">_min_area_aff</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">_df</span><span class="p">[</span><span class="n">total_field</span><span class="p">]</span> <span class="o">-</span> <span class="n">_min_total_area</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">_max_total_area</span> <span class="o">-</span> <span class="n">_min_total_area</span><span class="p">))</span>
+        <span class="n">_df</span><span class="p">[</span><span class="s1">&#39;impact_norm2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_df</span><span class="p">[</span><span class="s1">&#39;impact_norm2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span> <span class="o">*</span> <span class="mf">100.0</span>
+<span class="c1">##        print _df</span>
+        <span class="n">_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">table_name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="csv_to_choropleth_format"><a class="viewcode-back" href="../../vampire.csv_utils.html#vampire.csv_utils.csv_to_choropleth_format">[docs]</a><span class="k">def</span> <span class="nf">csv_to_choropleth_format</span><span class="p">(</span><span class="n">input_filename</span><span class="p">,</span> <span class="n">output_filename</span><span class="p">,</span> <span class="n">area_field</span><span class="p">,</span> <span class="n">value_field</span><span class="p">,</span> <span class="n">start_date_field</span><span class="p">,</span> <span class="n">end_date_field</span><span class="p">):</span>
+    <span class="n">_new_csv</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">cf</span><span class="p">:</span>
+        <span class="n">_reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">cf</span><span class="p">)</span>
+        <span class="n">_header_row</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">_reader</span><span class="p">)</span>
+        <span class="n">_new_header_row</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;area_id&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;start_date&#39;</span><span class="p">,</span> <span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="n">_area_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">_value_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">_start_date_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">_end_date_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_area_index</span> <span class="o">=</span> <span class="n">_header_row</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">area_field</span><span class="p">)</span>
+            <span class="n">_value_index</span> <span class="o">=</span> <span class="n">_header_row</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">value_field</span><span class="p">)</span>
+            <span class="n">_start_date_index</span> <span class="o">=</span> <span class="n">_header_row</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">start_date_field</span><span class="p">)</span>
+            <span class="n">_end_date_index</span> <span class="o">=</span> <span class="n">_header_row</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">end_date_field</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s1">&#39;Field name not found in file header row.&#39;</span><span class="p">,</span> <span class="n">e</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">_reader</span><span class="p">:</span>
+            <span class="n">_new_row</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">_new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">_area_index</span><span class="p">])</span>
+            <span class="n">_new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">_value_index</span><span class="p">])</span>
+            <span class="n">_new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">_start_date_index</span><span class="p">])</span>
+            <span class="n">_new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">_end_date_index</span><span class="p">])</span>
+            <span class="nb">print</span> <span class="n">_new_row</span>
+            <span class="n">_new_csv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_new_row</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">wf</span><span class="p">:</span>
+        <span class="n">wr</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
+        <span class="n">wr</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">_new_header_row</span><span class="p">)</span>
+        <span class="n">wr</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">_new_csv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">output_filename</span></div>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<div class="viewcode-block" id="convert_dbf_to_csv"><a class="viewcode-back" href="../../vampire.csv_utils.html#vampire.csv_utils.convert_dbf_to_csv">[docs]</a><span class="k">def</span> <span class="nf">convert_dbf_to_csv</span><span class="p">(</span><span class="n">input_dbf</span><span class="p">,</span> <span class="n">output_csv</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_csv</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csv_file</span><span class="p">:</span>
+        <span class="n">_dbf_file</span> <span class="o">=</span> <span class="n">dbfpy</span><span class="o">.</span><span class="n">dbf</span><span class="o">.</span><span class="n">Dbf</span><span class="p">(</span><span class="n">input_dbf</span><span class="p">)</span>
+<span class="c1">#        _out_csv = csv.writer(csv_file, quotechar=&quot;&#39;&quot;, quoting=csv.QUOTE_NONNUMERIC)</span>
+        <span class="n">_out_csv</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">csv_file</span><span class="p">,</span> <span class="n">quotechar</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">quoting</span><span class="o">=</span><span class="n">csv</span><span class="o">.</span><span class="n">QUOTE_NONE</span><span class="p">)</span>
+        <span class="n">_header</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">_dbf_file</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+            <span class="n">_header</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">_out_csv</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">_header</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">_dbf_file</span><span class="p">:</span>
+            <span class="n">_out_csv</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">fieldData</span><span class="p">)</span>
+        <span class="n">_dbf_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="c1"># with open(output_csv, &#39;rb&#39;) as incsv:</span>
+    <span class="c1">#     _csv_reader = csv.reader(incsv)</span>
+    <span class="c1">#     with open(os.path.join(os.path.dirname(output_csv), &quot;test.csv&quot;), &#39;wb&#39;) as ocsv:</span>
+    <span class="c1">#         _out_writer = csv.writer(ocsv, quotechar=&#39;&#39;, quoting=csv.QUOTE_NONE)</span>
+    <span class="c1">#         for row in _csv_reader:</span>
+    <span class="c1">#             _row = [s.replace(&quot;&#39;&quot;, &#39;&quot;&#39;) if type(s) is str else s for s in row]</span>
+    <span class="c1">#             _out_writer.writerows(row)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="merge_files"><a class="viewcode-back" href="../../vampire.csv_utils.html#vampire.csv_utils.merge_files">[docs]</a><span class="k">def</span> <span class="nf">merge_files</span><span class="p">(</span><span class="n">file1</span><span class="p">,</span> <span class="n">file2</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">file1_field</span><span class="p">,</span> <span class="n">file2_field</span><span class="p">):</span>
+    <span class="n">_first</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file1</span><span class="p">)</span>
+    <span class="n">_second</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file2</span><span class="p">)</span>
+
+    <span class="n">_merged</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">_first</span><span class="p">,</span> <span class="n">_second</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">,</span> <span class="n">left_on</span><span class="o">=</span><span class="n">file1_field</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="n">file2_field</span><span class="p">)</span>
+    <span class="n">_merged</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="aggregate_on_field"><a class="viewcode-back" href="../../vampire.csv_utils.html#vampire.csv_utils.aggregate_on_field">[docs]</a><span class="k">def</span> <span class="nf">aggregate_on_field</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">ref_field</span><span class="p">,</span> <span class="n">output_fields_dict</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">all_fields</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">_input</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+    <span class="c1"># create dictionary</span>
+    <span class="k">if</span> <span class="n">all_fields</span><span class="p">:</span>
+        <span class="n">_fields_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">_all_fields</span> <span class="o">=</span> <span class="n">_input</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">_all_fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">output_fields_dict</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+                <span class="n">_fields_dict</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;first&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_fields_dict</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_fields_dict</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_fields_dict</span> <span class="o">=</span> <span class="n">output_fields_dict</span>
+    <span class="n">_result</span> <span class="o">=</span> <span class="n">_input</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">ref_field</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">_fields_dict</span><span class="p">)</span>
+    <span class="n">_result</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

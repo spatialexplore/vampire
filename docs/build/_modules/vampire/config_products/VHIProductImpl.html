@@ -1,0 +1,368 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.VHIProductImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_products.VHIProductImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">BaseProduct</span>
+<span class="kn">import</span> <span class="nn">RasterDatasetImpl</span>
+<span class="kn">import</span> <span class="nn">RasterProductImpl</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="VHIProductImpl"><a class="viewcode-back" href="../../../vampire.config_products.VHIProductImpl.html#vampire.config_products.VHIProductImpl.VHIProductImpl">[docs]</a><span class="k">class</span> <span class="nc">VHIProductImpl</span><span class="p">(</span><span class="n">RasterProductImpl</span><span class="o">.</span><span class="n">RasterProductImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise VHIProductImpl.</span>
+
+<span class="sd">    Implementation class for VHIProduct.</span>
+<span class="sd">    Initialise object parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    country : string</span>
+<span class="sd">        Region of dataset - country name or &#39;global&#39;.</span>
+<span class="sd">    product_date : datetime</span>
+<span class="sd">        Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding</span>
+<span class="sd">        the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,</span>
+<span class="sd">        the product_date refers to the start of the season (3 month period).</span>
+<span class="sd">    interval : string</span>
+<span class="sd">        Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal</span>
+<span class="sd">    vampire_defaults : object</span>
+<span class="sd">        VAMPIREDefaults object containing VAMPIRE system default values.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">VHIProductImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;vhi&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">country</span> <span class="o">=</span> <span class="n">country</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">product_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;vegetation_product&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">day_of_year</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">vci_product</span> <span class="o">=</span> <span class="n">BaseProduct</span><span class="o">.</span><span class="n">BaseProduct</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">product_type</span><span class="o">=</span><span class="s1">&#39;vci&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
+                                                          <span class="n">product_date</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="p">,</span>
+                                                          <span class="n">vampire_defaults</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tci_product</span> <span class="o">=</span> <span class="n">BaseProduct</span><span class="o">.</span><span class="n">BaseProduct</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">product_type</span><span class="o">=</span><span class="s1">&#39;tci&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
+                                                          <span class="n">product_date</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="p">,</span>
+                                                          <span class="n">vampire_defaults</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vci_product</span><span class="o">.</span><span class="n">valid_from_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vci_product</span><span class="o">.</span><span class="n">valid_to_date</span>
+        <span class="k">return</span>
+
+
+<div class="viewcode-block" id="VHIProductImpl.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.VHIProductImpl.html#vampire.config_products.VHIProductImpl.VHIProductImpl.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span></div>
+
+    <span class="sd">&quot;&quot;&quot; Generate a config file process for the vegetation condition index (VCI) product.</span>
+
+<span class="sd">    Generate VAMPIRE config file processes for the product including download and crop if specified.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    output_dir : string</span>
+<span class="sd">        Path for product output. If the output_dir is None, the VAMPIRE default SPI product directory</span>
+<span class="sd">        will be used.</span>
+<span class="sd">    cur_file : string</span>
+<span class="sd">        Path for current precipitation file. Default is None. If None, cur_dir and cur_pattern will be used to find</span>
+<span class="sd">        the file.</span>
+<span class="sd">    cur_dir : string</span>
+<span class="sd">        Directory path for current precipitation file. Default is None. If cur_file is set, cur_dir is not used.</span>
+<span class="sd">    cur_pattern : string</span>
+<span class="sd">        Regular expression pattern for finding current precipitation file. Default is None. If cur_file is set,</span>
+<span class="sd">        cur_pattern is not used.</span>
+<span class="sd">    lta_file : string</span>
+<span class="sd">        Path for long-term average precipitation file. Default is None. If None, lta_dir and lta_pattern will be</span>
+<span class="sd">        used to find the file.</span>
+<span class="sd">    lta_dir : string</span>
+<span class="sd">        Directory path for long-term average precipitation file. Default is None. If lta_file is set, lta_dir is not</span>
+<span class="sd">        used.</span>
+<span class="sd">    lta_pattern : string</span>
+<span class="sd">        Regular expression pattern for finding long-term average precipitation file. Default is None. If lta_file is</span>
+<span class="sd">        set, lta_pattern is not used.</span>
+<span class="sd">    output_file : string</span>
+<span class="sd">        Directory path for output rainfall anomaly file. Default is None. If output_file is set, output_dir is not used.</span>
+<span class="sd">    output_pattern : string</span>
+<span class="sd">        Pattern for specifying output filename. Used in conjuction with cur_pattern. Default is None. If output_file is</span>
+<span class="sd">        set, output_pattern is not used.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    string</span>
+<span class="sd">        Returns string containing the configuration file process.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="VHIProductImpl.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.VHIProductImpl.html#vampire.config_products.VHIProductImpl.VHIProductImpl.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tci_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tci_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tci_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">vci_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vci_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vci_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">reproject</span><span class="o">=</span><span class="s1">&#39;TCI&#39;</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    ## Processing chain begin - Compute Vegetation Health Index</span><span class="se">\n</span><span class="s2">&quot;&quot;&quot;</span>
+        <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vci_product</span><span class="o">.</span><span class="n">generate_config</span><span class="p">()</span>
+        <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tci_product</span><span class="o">.</span><span class="n">generate_config</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">tci_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">tci_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_tci_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_TCI&#39;</span><span class="p">,</span> <span class="s1">&#39;tci_product_dir&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_tci_dir</span> <span class="o">=</span> <span class="n">tci_dir</span>
+            <span class="n">_tci_file</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">tci_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_tci_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_TCI&#39;</span><span class="p">,</span> <span class="s1">&#39;tci_pattern&#39;</span><span class="p">)</span>
+                <span class="n">_tci_pattern</span> <span class="o">=</span> <span class="n">_tci_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+                <span class="n">_tci_pattern</span> <span class="o">=</span> <span class="n">_tci_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+                <span class="n">_tci_pattern</span> <span class="o">=</span> <span class="n">_tci_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;day&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_tci_pattern</span> <span class="o">=</span> <span class="n">tci_pattern</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_tci_file</span> <span class="o">=</span> <span class="n">tci_file</span>
+            <span class="n">_tci_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">_tci_dir</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">vci_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">vci_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_vci_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VCI&#39;</span><span class="p">,</span> <span class="s1">&#39;vci_product_dir&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_vci_dir</span> <span class="o">=</span> <span class="n">vci_dir</span>
+            <span class="n">_vci_file</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">vci_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_vci_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VCI&#39;</span><span class="p">,</span> <span class="s1">&#39;vci_pattern&#39;</span><span class="p">)</span>
+                <span class="n">_vci_pattern</span> <span class="o">=</span> <span class="n">_vci_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+                <span class="n">_vci_pattern</span> <span class="o">=</span> <span class="n">_vci_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+                <span class="n">_vci_pattern</span> <span class="o">=</span> <span class="n">_vci_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;day&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_vci_pattern</span> <span class="o">=</span> <span class="n">vci_pattern</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_vci_file</span> <span class="o">=</span> <span class="n">vci_file</span>
+            <span class="n">_vci_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">_vci_dir</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">_output_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_product_dir&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+            <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_output_pattern&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">output_pattern</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_file</span> <span class="o">=</span> <span class="n">output_file</span>
+
+        <span class="k">if</span> <span class="n">reproject</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">reproject</span> <span class="o">==</span> <span class="s1">&#39;TCI&#39;</span><span class="p">:</span>
+                <span class="n">_tci_resample_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_TCI&#39;</span><span class="p">,</span> <span class="s1">&#39;tci_output_pattern&#39;</span><span class="p">)</span>
+                <span class="n">_tci_resample_pattern</span> <span class="o">=</span> <span class="n">_tci_resample_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.TCI&#39;</span><span class="p">,</span> <span class="s1">&#39;.TCI_resample&#39;</span><span class="p">)</span>
+                <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_match_projection_section</span><span class="p">(</span><span class="n">master_dir</span><span class="o">=</span><span class="n">_vci_dir</span><span class="p">,</span>
+                                                                 <span class="n">slave_dir</span><span class="o">=</span><span class="n">_tci_dir</span><span class="p">,</span>
+                                                                 <span class="n">output_dir</span><span class="o">=</span><span class="n">_tci_dir</span><span class="p">,</span>
+                                                                 <span class="n">master_pattern</span><span class="o">=</span><span class="n">_vci_pattern</span><span class="p">,</span>
+                                                                 <span class="n">slave_pattern</span><span class="o">=</span><span class="n">_tci_pattern</span><span class="p">,</span>
+                                                                 <span class="n">output_pattern</span><span class="o">=</span><span class="n">_tci_resample_pattern</span><span class="p">)</span>
+                <span class="n">_tci_pattern</span> <span class="o">=</span> <span class="n">_tci_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.TCI&#39;</span><span class="p">,</span> <span class="s1">&#39;.TCI_resample&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">reproject</span> <span class="o">==</span> <span class="s1">&#39;VCI&#39;</span><span class="p">:</span>
+                <span class="n">_vci_resample_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VCI&#39;</span><span class="p">,</span> <span class="s1">&#39;vci_output_pattern&#39;</span><span class="p">)</span>
+                <span class="n">_vci_resample_pattern</span> <span class="o">=</span> <span class="n">_vci_resample_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.VCI&#39;</span><span class="p">,</span> <span class="s1">&#39;.VCI_resample&#39;</span><span class="p">)</span>
+                <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_match_projection_section</span><span class="p">(</span><span class="n">master_dir</span><span class="o">=</span><span class="n">_tci_dir</span><span class="p">,</span>
+                                                                 <span class="n">slave_dir</span><span class="o">=</span><span class="n">_vci_dir</span><span class="p">,</span>
+                                                                 <span class="n">output_dir</span><span class="o">=</span><span class="n">_vci_dir</span><span class="p">,</span>
+                                                                 <span class="n">master_pattern</span><span class="o">=</span><span class="n">_tci_pattern</span><span class="p">,</span>
+                                                                 <span class="n">slave_pattern</span><span class="o">=</span><span class="n">_vci_pattern</span><span class="p">,</span>
+                                                                 <span class="n">output_pattern</span><span class="o">=</span><span class="n">_vci_resample_pattern</span><span class="p">)</span>
+                <span class="n">_vci_pattern</span> <span class="o">=</span> <span class="n">_vci_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.VCI&#39;</span><span class="p">,</span> <span class="s1">&#39;.VCI_resample&#39;</span><span class="p">)</span>
+
+        <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_vhi_section</span><span class="p">(</span><span class="n">tci_file</span><span class="o">=</span><span class="n">_tci_file</span><span class="p">,</span> <span class="n">tci_dir</span><span class="o">=</span><span class="n">_tci_dir</span><span class="p">,</span> <span class="n">tci_pattern</span><span class="o">=</span><span class="n">_tci_pattern</span><span class="p">,</span>
+                                            <span class="n">vci_file</span><span class="o">=</span><span class="n">_vci_file</span><span class="p">,</span> <span class="n">vci_dir</span><span class="o">=</span><span class="n">_vci_dir</span><span class="p">,</span> <span class="n">vci_pattern</span><span class="o">=</span><span class="n">_vci_pattern</span><span class="p">,</span>
+                                            <span class="n">output_file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span><span class="p">,</span>
+                                            <span class="n">output_pattern</span><span class="o">=</span><span class="n">_output_pattern</span><span class="p">)</span>
+        <span class="c1"># TODO: what if output_pattern is specified?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_pattern&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;day&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">config</span></div>
+
+<div class="viewcode-block" id="VHIProductImpl.generate_mask_config"><a class="viewcode-back" href="../../../vampire.config_products.VHIProductImpl.html#vampire.config_products.VHIProductImpl.VHIProductImpl.generate_mask_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_mask_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">boundary_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_field</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    ## Processing chain begin - Mask VHI</span><span class="se">\n</span><span class="s2">&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_product_dir&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_pattern&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;day&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+
+        <span class="n">_output_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_product_dir&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+            <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_crop_output_pattern&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">output_pattern</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="n">output_file</span>
+
+        <span class="n">_boundary_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_boundary_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">boundary_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_boundary_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="p">)[</span><span class="s1">&#39;crop_boundary&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_boundary_file</span> <span class="o">=</span> <span class="n">boundary_file</span>
+        <span class="k">if</span> <span class="n">_boundary_file</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">_boundary_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_boundary_raster</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="p">)[</span><span class="s1">&#39;crop_boundary_raster&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">_boundary_raster</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">_boundary_raster</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_raster</span> <span class="o">=</span> <span class="n">RasterDatasetImpl</span><span class="o">.</span><span class="n">RasterDatasetImpl</span><span class="p">()</span>
+        <span class="n">config</span> <span class="o">+=</span> <span class="n">_raster</span><span class="o">.</span><span class="n">generate_mask_section</span><span class="p">(</span><span class="n">input_file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product_file</span><span class="p">,</span> <span class="n">input_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span><span class="p">,</span>
+                                                <span class="n">input_pattern</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="p">,</span>
+                                                <span class="n">boundary_raster</span><span class="o">=</span><span class="n">_boundary_raster</span><span class="p">,</span>
+                                                <span class="n">output_file</span><span class="o">=</span><span class="n">_output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span>
+                                                <span class="n">output_pattern</span><span class="o">=</span><span class="n">_output_pattern</span><span class="p">,</span> <span class="n">boundary_file</span><span class="o">=</span><span class="n">_boundary_file</span><span class="p">,</span>
+                                                <span class="n">no_data</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="n">_output_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_crop_pattern&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;day&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">config</span></div>
+
+
+<div class="viewcode-block" id="VHIProductImpl.generate_vhi_section"><a class="viewcode-back" href="../../../vampire.config_products.VHIProductImpl.html#vampire.config_products.VHIProductImpl.VHIProductImpl.generate_vhi_section">[docs]</a>    <span class="k">def</span> <span class="nf">generate_vhi_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tci_file</span><span class="p">,</span> <span class="n">tci_dir</span><span class="p">,</span> <span class="n">tci_pattern</span><span class="p">,</span>
+                             <span class="n">vci_file</span><span class="p">,</span> <span class="n">vci_dir</span><span class="p">,</span> <span class="n">vci_pattern</span><span class="p">,</span>
+                             <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    # Compute vegetation health index</span>
+<span class="s2">    - process: Analysis</span>
+<span class="s2">      type: VHI&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">vci_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      VCI_file: </span><span class="si">{vci_file}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vci_file</span><span class="o">=</span><span class="n">vci_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      VCI_dir: </span><span class="si">{vci_dir}</span><span class="s2"></span>
+<span class="s2">      VCI_pattern: &#39;</span><span class="si">{vci_pattern}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vci_dir</span><span class="o">=</span><span class="n">vci_dir</span><span class="p">,</span> <span class="n">vci_pattern</span><span class="o">=</span><span class="n">vci_pattern</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">tci_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      TCI_file: </span><span class="si">{tci_file}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tci_file</span><span class="o">=</span><span class="n">tci_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      TCI_dir: </span><span class="si">{tci_dir}</span><span class="s2"></span>
+<span class="s2">      TCI_pattern: &#39;</span><span class="si">{tci_pattern}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tci_dir</span><span class="o">=</span><span class="n">tci_dir</span><span class="p">,</span> <span class="n">tci_pattern</span><span class="o">=</span><span class="n">tci_pattern</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      output_file: </span><span class="si">{output_file}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_file</span><span class="o">=</span><span class="n">output_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      output_dir: </span><span class="si">{output_dir}</span><span class="s2"></span>
+<span class="s2">      output_pattern: &#39;</span><span class="si">{output_pattern}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">output_pattern</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">config</span></div>
+
+<div class="viewcode-block" id="VHIProductImpl.generate_match_projection_section"><a class="viewcode-back" href="../../../vampire.config_products.VHIProductImpl.html#vampire.config_products.VHIProductImpl.VHIProductImpl.generate_match_projection_section">[docs]</a>    <span class="k">def</span> <span class="nf">generate_match_projection_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master_dir</span><span class="p">,</span> <span class="n">slave_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span>
+                                          <span class="n">master_pattern</span><span class="p">,</span> <span class="n">slave_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">):</span>
+        <span class="n">file_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    - process: Raster</span>
+<span class="s2">      type: match_projection</span>
+<span class="s2">      master_dir: </span><span class="si">{master_dir}</span><span class="s2"></span>
+<span class="s2">      master_pattern: &#39;</span><span class="si">{master_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">      slave_dir: </span><span class="si">{slave_dir}</span><span class="s2"></span>
+<span class="s2">      slave_pattern: &#39;</span><span class="si">{slave_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">      output_dir: </span><span class="si">{output_dir}</span><span class="s2"></span>
+<span class="s2">      output_pattern:  &#39;</span><span class="si">{output_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">master_dir</span><span class="o">=</span><span class="n">master_dir</span><span class="p">,</span> <span class="n">master_pattern</span><span class="o">=</span><span class="n">master_pattern</span><span class="p">,</span> <span class="n">slave_dir</span><span class="o">=</span><span class="n">slave_dir</span><span class="p">,</span>
+                   <span class="n">slave_pattern</span><span class="o">=</span><span class="n">slave_pattern</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">output_pattern</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">file_string</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

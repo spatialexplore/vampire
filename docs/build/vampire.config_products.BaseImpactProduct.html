@@ -1,0 +1,573 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.BaseImpactProduct module &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vampire.config_products.BaseImpactProduct">
+<span id="vampire-config-products-baseimpactproduct-module"></span><h1>vampire.config_products.BaseImpactProduct module<a class="headerlink" href="#module-vampire.config_products.BaseImpactProduct" title="Permalink to this headline">¶</a></h1>
+<p>Impact of Data Products module.</p>
+<p>Provides classes for each the impact of data products supported within Vampire. New product impacts should be added here.</p>
+<dl class="class">
+<dt id="vampire.config_products.BaseImpactProduct.BaseImpactProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseImpactProduct.</code><code class="descname">BaseImpactProduct</code><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#BaseImpactProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.BaseImpactProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Base class for data product impact configuration objects.</p>
+<p>Manages registration of data product impact configurations and creation of data product impact configuration objects.
+Data product impact configurations provide the ability to generate config file sections related to impact of the
+data product.</p>
+<dl class="classmethod">
+<dt id="vampire.config_products.BaseImpactProduct.BaseImpactProduct.create">
+<em class="property">classmethod </em><code class="descname">create</code><span class="sig-paren">(</span><em>impact_type</em>, <em>country</em>, <em>valid_from_date</em>, <em>valid_to_date</em>, <em>vampire_defaults=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#BaseImpactProduct.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.BaseImpactProduct.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create impact of the specified type.</p>
+<p>Creates the product impact identified by impact_type and sets initialization values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>impact_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Impact name.</li>
+<li><strong>country</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Country data product impact will be created for.</li>
+<li><strong>valid_from_date</strong> (<a class="reference external" href="https://docs.python.org/3/library/datetime.html#module-datetime" title="(in Python v3.6)"><em>datetime</em></a>) – Date product impact is valid from.</li>
+<li><strong>valid_to_date</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Date product impact is valid until.</li>
+<li><strong>vampire_defaults</strong> (<a class="reference internal" href="vampire.VampireDefaults.html#vampire.VampireDefaults.VampireDefaults" title="vampire.VampireDefaults.VampireDefaults"><em>VampireDefaults</em></a>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Product impact object of type specified (a registered subclass of BaseImpactProduct).</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="vampire.config_products.BaseImpactProduct.BaseImpactProduct.register_subclass">
+<em class="property">classmethod </em><code class="descname">register_subclass</code><span class="sig-paren">(</span><em>impact_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#BaseImpactProduct.register_subclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.BaseImpactProduct.register_subclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register product impact with the productimpact  manager.</p>
+<p>Registers the data product impact identified by impact_type with the product impact manager.
+This allows the appropriate product impact to be created automatically when requested.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>impact_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Product name.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseImpactProduct.BaseImpactProduct.subclasses">
+<code class="descname">subclasses</code><em class="property"> = {'days_since_last_rain_impact_area': &lt;class 'vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct'&gt;, 'days_since_last_rain_impact_popn': &lt;class 'vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct'&gt;, 'flood_forecast_impact_area': &lt;class 'vampire.config_products.BaseImpactProduct.FloodAreaImpactProduct'&gt;, 'flood_forecast_impact_popn': &lt;class 'vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct'&gt;, 'vhi_impact_area': &lt;class 'vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct'&gt;, 'vhi_impact_popn': &lt;class 'vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct'&gt;}</em><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.BaseImpactProduct.subclasses" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseImpactProduct.</code><code class="descname">DaysSinceLastRainAreaImpactProduct</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#DaysSinceLastRainAreaImpactProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseImpactProduct.BaseImpactProduct" title="vampire.config_products.BaseImpactProduct.BaseImpactProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseImpactProduct.BaseImpactProduct</span></code></a></p>
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>hazard_file</em>, <em>hazard_dir</em>, <em>hazard_pattern</em>, <em>boundary_file=None</em>, <em>boundary_dir=None</em>, <em>boundary_pattern=None</em>, <em>boundary_field=None</em>, <em>output_file=None</em>, <em>output_dir=None</em>, <em>output_pattern=None</em>, <em>masked=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#DaysSinceLastRainAreaImpactProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating VCI.</p>
+<p>Generate config file entries required to create VHI area impact for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>hazard_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – File name of hazard image file.</li>
+<li><strong>hazard_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the hazard file is located.</li>
+<li><strong>hazard_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the hazard file for the product date.</li>
+<li><strong>boundary_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Full path to the boundary file to use to calculate impact.</li>
+<li><strong>boundary_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the boundary file is located.</li>
+<li><strong>boundary_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the boundary file.</li>
+<li><strong>boundary_field</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Field within the boundary file to use to identify areas.</li>
+<li><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Filename for VHI area impact output file.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the VHI area impact output file.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the VHI area impact output file name. May refer to elements within the hazard_pattern.</li>
+<li><strong>masked</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating whether the impact should be masked by a boundary or not.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating VHI area impact.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#DaysSinceLastRainAreaImpactProduct.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to VHI area impact that go in the config file header.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct.generate_publish_config">
+<code class="descname">generate_publish_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#DaysSinceLastRainAreaImpactProduct.generate_publish_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct.generate_publish_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config section to publish Flood population impact.</p>
+<p>Generates configuration file section to publish the Flood population impact output file to a database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Config file sections required for publishing Flood population impact.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output impact file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output impact file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseImpactProduct.</code><code class="descname">DaysSinceLastRainPopnImpactProduct</code><span class="sig-paren">(</span><em>country</em>, <em>valid_from_date</em>, <em>valid_to_date</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#DaysSinceLastRainPopnImpactProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseImpactProduct.BaseImpactProduct" title="vampire.config_products.BaseImpactProduct.BaseImpactProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseImpactProduct.BaseImpactProduct</span></code></a></p>
+<p>Days Since Last Rain product impact configuration.</p>
+<p>Manages generation of configuration file sections for calculating impact of Days Since Last Rain on population.</p>
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>hazard_file=None</em>, <em>hazard_dir=None</em>, <em>hazard_pattern=None</em>, <em>boundary_file=None</em>, <em>boundary_dir=None</em>, <em>boundary_pattern=None</em>, <em>boundary_field=None</em>, <em>population_file=None</em>, <em>output_file=None</em>, <em>output_dir=None</em>, <em>output_pattern=None</em>, <em>masked=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#DaysSinceLastRainPopnImpactProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating VCI.</p>
+<p>Generate config file entries required to create VCI for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>hazard_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – File name of hazard image file.</li>
+<li><strong>hazard_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the hazard file is located.</li>
+<li><strong>hazard_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the hazard file for the product date.</li>
+<li><strong>boundary_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Full path to the boundary file to use to calculate impact.</li>
+<li><strong>boundary_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the boundary file is located.</li>
+<li><strong>boundary_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the boundary file.</li>
+<li><strong>boundary_field</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Field within the boundary file to use to identify areas.</li>
+<li><strong>population_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Full path to the file containing population data.</li>
+<li><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Filename for VHI population impact output file.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the VHI population impact output file.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the VHI population impact output file name. May refer to elements within the hazard_pattern.</li>
+<li><strong>masked</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating whether the impact should be masked by a boundary or not.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating VHI population impact.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct.generate_publish_config">
+<code class="descname">generate_publish_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#DaysSinceLastRainPopnImpactProduct.generate_publish_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct.generate_publish_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config section to publish Flood population impact.</p>
+<p>Generates configuration file section to publish the Flood population impact output file to a database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Config file sections required for publishing Flood population impact.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output impact file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output impact file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseImpactProduct.FloodAreaImpactProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseImpactProduct.</code><code class="descname">FloodAreaImpactProduct</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#FloodAreaImpactProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.FloodAreaImpactProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseImpactProduct.BaseImpactProduct" title="vampire.config_products.BaseImpactProduct.BaseImpactProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseImpactProduct.BaseImpactProduct</span></code></a></p>
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.FloodAreaImpactProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>hazard_file</em>, <em>hazard_dir</em>, <em>hazard_pattern</em>, <em>boundary_file=None</em>, <em>boundary_dir=None</em>, <em>boundary_pattern=None</em>, <em>boundary_field=None</em>, <em>output_file=None</em>, <em>output_dir=None</em>, <em>output_pattern=None</em>, <em>masked=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#FloodAreaImpactProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.FloodAreaImpactProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating Flood area impact.</p>
+<p>Generate config file entries required to create Flood area impact for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>hazard_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – File name of hazard image file.</li>
+<li><strong>hazard_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the hazard file is located.</li>
+<li><strong>hazard_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the hazard file for the product date.</li>
+<li><strong>boundary_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Full path to the boundary file to use to calculate impact.</li>
+<li><strong>boundary_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the boundary file is located.</li>
+<li><strong>boundary_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the boundary file.</li>
+<li><strong>boundary_field</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Field within the boundary file to use to identify areas.</li>
+<li><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Filename for Flood area impact output file.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the Flood area impact output file.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the Flood area impact output file name. May refer to elements within the hazard_pattern.</li>
+<li><strong>masked</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating whether the impact should be masked by a boundary or not.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating Flood area impact.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.FloodAreaImpactProduct.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#FloodAreaImpactProduct.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.FloodAreaImpactProduct.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to Flood area impact that go in the config file header.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.FloodAreaImpactProduct.generate_publish_config">
+<code class="descname">generate_publish_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#FloodAreaImpactProduct.generate_publish_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.FloodAreaImpactProduct.generate_publish_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config section to publish Flood population impact.</p>
+<p>Generates configuration file section to publish the Flood population impact output file to a database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Config file sections required for publishing Flood population impact.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseImpactProduct.</code><code class="descname">FloodPopnImpactProduct</code><span class="sig-paren">(</span><em>country</em>, <em>valid_from_date</em>, <em>valid_to_date</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#FloodPopnImpactProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseImpactProduct.BaseImpactProduct" title="vampire.config_products.BaseImpactProduct.BaseImpactProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseImpactProduct.BaseImpactProduct</span></code></a></p>
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>hazard_file=None</em>, <em>hazard_dir=None</em>, <em>hazard_pattern=None</em>, <em>boundary_file=None</em>, <em>boundary_dir=None</em>, <em>boundary_pattern=None</em>, <em>boundary_field=None</em>, <em>population_file=None</em>, <em>output_file=None</em>, <em>output_dir=None</em>, <em>output_pattern=None</em>, <em>masked=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#FloodPopnImpactProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating Flood population impact.</p>
+<p>Generate config file entries required to create Flood population impact for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>hazard_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – File name of hazard image file.</li>
+<li><strong>hazard_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the hazard file is located.</li>
+<li><strong>hazard_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the hazard file for the product date.</li>
+<li><strong>boundary_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Full path to the boundary file to use to calculate impact.</li>
+<li><strong>boundary_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the boundary file is located.</li>
+<li><strong>boundary_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the boundary file.</li>
+<li><strong>boundary_field</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Field within the boundary file to use to identify areas.</li>
+<li><strong>population_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Full path to the file containing population data.</li>
+<li><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Filename for Flood population impact output file.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the Flood population impact output file.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the Flood population impact output file name. May refer to elements within the hazard_pattern.</li>
+<li><strong>masked</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating whether the impact should be masked by a boundary or not.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating Flood population impact.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct.generate_publish_config">
+<code class="descname">generate_publish_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#FloodPopnImpactProduct.generate_publish_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct.generate_publish_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config section to publish Flood population impact.</p>
+<p>Generates configuration file section to publish the Flood population impact output file to a database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Config file sections required for publishing Flood population impact.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output impact file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output impact file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseImpactProduct.</code><code class="descname">VHIAreaImpactProduct</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#VHIAreaImpactProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseImpactProduct.BaseImpactProduct" title="vampire.config_products.BaseImpactProduct.BaseImpactProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseImpactProduct.BaseImpactProduct</span></code></a></p>
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>hazard_file</em>, <em>hazard_dir</em>, <em>hazard_pattern</em>, <em>boundary_file=None</em>, <em>boundary_dir=None</em>, <em>boundary_pattern=None</em>, <em>boundary_field=None</em>, <em>output_file=None</em>, <em>output_dir=None</em>, <em>output_pattern=None</em>, <em>masked=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#VHIAreaImpactProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating VCI.</p>
+<p>Generate config file entries required to create VHI area impact for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>hazard_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – File name of hazard image file.</li>
+<li><strong>hazard_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the hazard file is located.</li>
+<li><strong>hazard_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the hazard file for the product date.</li>
+<li><strong>boundary_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Full path to the boundary file to use to calculate impact.</li>
+<li><strong>boundary_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the boundary file is located.</li>
+<li><strong>boundary_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the boundary file.</li>
+<li><strong>boundary_field</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Field within the boundary file to use to identify areas.</li>
+<li><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Filename for VHI area impact output file.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the VHI area impact output file.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the VHI area impact output file name. May refer to elements within the hazard_pattern.</li>
+<li><strong>masked</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating whether the impact should be masked by a boundary or not.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating VHI area impact.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#VHIAreaImpactProduct.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to VHI area impact that go in the config file header.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct.generate_publish_config">
+<code class="descname">generate_publish_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#VHIAreaImpactProduct.generate_publish_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct.generate_publish_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config section to publish Flood population impact.</p>
+<p>Generates configuration file section to publish the Flood population impact output file to a database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Config file sections required for publishing Flood population impact.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output impact file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output impact file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseImpactProduct.</code><code class="descname">VHIPopnImpactProduct</code><span class="sig-paren">(</span><em>country</em>, <em>valid_from_date</em>, <em>valid_to_date</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#VHIPopnImpactProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseImpactProduct.BaseImpactProduct" title="vampire.config_products.BaseImpactProduct.BaseImpactProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseImpactProduct.BaseImpactProduct</span></code></a></p>
+<p>Vegetation Health Index product impact configuration.</p>
+<p>Manages generation of configuration file sections for calculating impact of Vegetation Health Index on population.</p>
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>hazard_file=None</em>, <em>hazard_dir=None</em>, <em>hazard_pattern=None</em>, <em>boundary_file=None</em>, <em>boundary_dir=None</em>, <em>boundary_pattern=None</em>, <em>boundary_field=None</em>, <em>population_file=None</em>, <em>output_file=None</em>, <em>output_dir=None</em>, <em>output_pattern=None</em>, <em>masked=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#VHIPopnImpactProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating VCI.</p>
+<p>Generate config file entries required to create VCI for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>hazard_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – File name of hazard image file.</li>
+<li><strong>hazard_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the hazard file is located.</li>
+<li><strong>hazard_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the hazard file for the product date.</li>
+<li><strong>boundary_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Full path to the boundary file to use to calculate impact.</li>
+<li><strong>boundary_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the boundary file is located.</li>
+<li><strong>boundary_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the boundary file.</li>
+<li><strong>boundary_field</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Field within the boundary file to use to identify areas.</li>
+<li><strong>population_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Full path to the file containing population data.</li>
+<li><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Filename for VHI population impact output file.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the VHI population impact output file.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the VHI population impact output file name. May refer to elements within the hazard_pattern.</li>
+<li><strong>masked</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating whether the impact should be masked by a boundary or not.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating VHI population impact.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct.generate_publish_config">
+<code class="descname">generate_publish_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseImpactProduct.html#VHIPopnImpactProduct.generate_publish_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct.generate_publish_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config section to publish Flood population impact.</p>
+<p>Generates configuration file section to publish the Flood population impact output file to a database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Config file sections required for publishing Flood population impact.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output impact file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output impact file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/vampire.config_products.BaseImpactProduct.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

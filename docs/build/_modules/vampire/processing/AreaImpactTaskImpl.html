@@ -1,0 +1,241 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.AreaImpactTaskImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.AreaImpactTaskImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">BaseTaskImpl</span>
+<span class="kn">import</span> <span class="nn">csv_utils</span> <span class="k">as</span> <span class="nn">csv_utils</span>
+<span class="kn">import</span> <span class="nn">directory_utils</span> <span class="k">as</span> <span class="nn">directory_utils</span>
+<span class="kn">import</span> <span class="nn">filename_utils</span> <span class="k">as</span> <span class="nn">filename_utils</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">impact_analysis_arc</span> <span class="k">as</span> <span class="nn">impact_analysis</span>
+    <span class="kn">import</span> <span class="nn">calculate_statistics_arc</span> <span class="k">as</span> <span class="nn">calculate_statistics</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">impact_analysis_os</span> <span class="k">as</span> <span class="nn">impact_analysis</span>
+    <span class="kn">import</span> <span class="nn">calculate_statistics_os</span> <span class="k">as</span> <span class="nn">calculate_statistics</span>
+
+<div class="viewcode-block" id="AreaImpactTaskImpl"><a class="viewcode-back" href="../../../vampire.processing.AreaImpactTaskImpl.html#vampire.processing.AreaImpactTaskImpl.AreaImpactTaskImpl">[docs]</a><span class="k">class</span> <span class="nc">AreaImpactTaskImpl</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise AreaImpactTaskImpl object.</span>
+
+<span class="sd">    Abstract implementation class for calculating hazard impact by area.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AreaImpactTaskImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising Area Impact task&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="AreaImpactTaskImpl.process"><a class="viewcode-back" href="../../../vampire.processing.AreaImpactTaskImpl.html#vampire.processing.AreaImpactTaskImpl.AreaImpactTaskImpl.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Compute area of event impact&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;hazard_type&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_hazard_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;hazard_type&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s1">&#39;No hazard type &quot;hazard_type&quot; set&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;start_date&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_start_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_start_date</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="s1">&#39;end_date&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_end_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_end_date</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">_hazard_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_hazard_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_hazard_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;hazard_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_hazard_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;hazard_file&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s1">&#39;hazard_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_hazard_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;hazard_dir&#39;</span><span class="p">]</span>
+            <span class="n">_hazard_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;hazard_pattern&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s1">&#39;No hazard filename &quot;hazard_file&quot; or hazard dir/pattern &quot;hazard_dir / hazard_pattern&quot; set&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;boundary_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_boundary_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;boundary_file&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s1">&#39;No boundary file &quot;boundary_file&quot; provided&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;boundary_field&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_boundary_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;boundary_field&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_boundary_field</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="s1">&#39;output_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_file&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s1">&#39;output_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_pattern&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s1">&#39;No output file &quot;output_file&quot; or output directory/pattern &quot;output_dir/output_pattern&quot; specified&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;hazard_threshold&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;hazard_threshold&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_threshold</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;threshold_direction&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_threshold_direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;threshold_direction&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_threshold_direction</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculate_impact_area</span><span class="p">(</span><span class="n">hazard_raster</span><span class="o">=</span><span class="n">_hazard_file</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="o">=</span><span class="n">_hazard_dir</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="o">=</span><span class="n">_hazard_pattern</span><span class="p">,</span>
+                                   <span class="n">boundary</span><span class="o">=</span><span class="n">_boundary_file</span><span class="p">,</span> <span class="n">b_field</span><span class="o">=</span><span class="n">_boundary_field</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">_threshold</span><span class="p">,</span>
+                                   <span class="n">threshold_direction</span><span class="o">=</span><span class="n">_threshold_direction</span><span class="p">,</span>
+                                   <span class="n">output_file</span><span class="o">=</span><span class="n">_output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">_output_pattern</span><span class="p">,</span>
+                                   <span class="n">start_date</span><span class="o">=</span><span class="n">_start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="n">_end_date</span><span class="p">,</span> <span class="n">hazard_var</span><span class="o">=</span><span class="n">_hazard_var</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="AreaImpactTaskImpl.calculate_impact_area"><a class="viewcode-back" href="../../../vampire.processing.AreaImpactTaskImpl.html#vampire.processing.AreaImpactTaskImpl.AreaImpactTaskImpl.calculate_impact_area">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_impact_area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hazard_raster</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">threshold_direction</span><span class="p">,</span>
+                              <span class="n">boundary</span><span class="p">,</span> <span class="n">b_field</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">,</span> <span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="p">,</span>
+                              <span class="n">hazard_var</span><span class="o">=</span><span class="s1">&#39;vhi&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># get threshold from VampireDefaults</span>
+            <span class="n">_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_threshold&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hazard_var</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_threshold</span> <span class="o">=</span> <span class="n">threshold</span>
+        <span class="k">if</span> <span class="n">threshold_direction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_threshold_direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_threshold_direction&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hazard_var</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_threshold_direction</span> <span class="o">=</span> <span class="n">threshold_direction</span>
+
+        <span class="k">if</span> <span class="n">hazard_raster</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">hazard_pattern</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_input_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">hazard_dir</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="p">)</span>
+                <span class="n">_hazard_raster</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">hazard_dir</span><span class="p">,</span> <span class="n">_input_files</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Hazard raster is not specified&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_hazard_raster</span> <span class="o">=</span> <span class="n">hazard_raster</span>
+
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<span class="c1">#                _input_pattern = self.vp.get(&#39;MODIS_VHI&#39;, &#39;vhi_crop_pattern&#39;)</span>
+                <span class="n">_input_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_input_pattern&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hazard_var</span><span class="p">))</span>
+                <span class="n">_output_file</span> <span class="o">=</span> <span class="n">filename_utils</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_hazard_raster</span><span class="p">),</span>
+                                                                       <span class="n">_input_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">)</span>
+                <span class="n">_output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_output_file</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_dir</span><span class="p">):</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No output specified&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="n">output_file</span>
+
+        <span class="k">if</span> <span class="n">_threshold</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">_reclass_raster</span> <span class="o">=</span> <span class="n">_hazard_raster</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">_threshold_direction</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                <span class="n">_threshold_direction</span> <span class="o">=</span> <span class="s1">&#39;LESS_THAN&#39;</span>
+            <span class="c1"># reclassify hazard raster to generate mask of all &lt;= threshold</span>
+            <span class="n">_reclass_raster</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">_output_file</span><span class="p">),</span> <span class="s1">&#39;hazard_area_reclass.tif&#39;</span><span class="p">)</span>
+            <span class="n">impact_analysis</span><span class="o">.</span><span class="n">reclassify_raster</span><span class="p">(</span><span class="n">raster</span><span class="o">=</span><span class="n">_hazard_raster</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">_threshold</span><span class="p">,</span>
+                                              <span class="n">threshold_direction</span><span class="o">=</span><span class="n">_threshold_direction</span><span class="p">,</span> <span class="n">output_raster</span><span class="o">=</span><span class="n">_reclass_raster</span><span class="p">)</span>
+
+        <span class="c1"># calculate impact on boundary</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_zonal_statistics</span><span class="p">(</span><span class="n">raster_file</span><span class="o">=</span><span class="n">_reclass_raster</span><span class="p">,</span> <span class="n">polygon_file</span><span class="o">=</span><span class="n">boundary</span><span class="p">,</span>
+                                                           <span class="n">zone_field</span><span class="o">=</span><span class="n">b_field</span><span class="p">,</span> <span class="n">output_table</span><span class="o">=</span><span class="n">_output_file</span><span class="p">)</span>
+        <span class="c1"># convert to hectares</span>
+        <span class="c1"># TODO: get multiplier from defaults depending on resolution of hazard raster</span>
+        <span class="n">_multiplier</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_area_multiplier&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hazard_var</span><span class="p">)))</span>
+<span class="c1">#        csv_utils.calc_field(table_name=_output_file, new_field=&#39;area_aff&#39;, cal_field=&#39;COUNT&#39;, multiplier=_multiplier)</span>
+        <span class="n">csv_utils</span><span class="o">.</span><span class="n">calc_field</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">_output_file</span><span class="p">,</span> <span class="n">new_field</span><span class="o">=</span><span class="s1">&#39;area_aff&#39;</span><span class="p">,</span> <span class="n">cal_field</span><span class="o">=</span><span class="s1">&#39;SUM&#39;</span><span class="p">,</span> <span class="n">multiplier</span><span class="o">=</span><span class="n">_multiplier</span><span class="p">)</span>
+        <span class="c1"># add start and end date fields and set values</span>
+        <span class="n">csv_utils</span><span class="o">.</span><span class="n">add_field</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">_output_file</span><span class="p">,</span> <span class="n">new_field</span><span class="o">=</span><span class="s1">&#39;start_date&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">start_date</span><span class="p">)</span>
+        <span class="n">csv_utils</span><span class="o">.</span><span class="n">add_field</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">_output_file</span><span class="p">,</span> <span class="n">new_field</span><span class="o">=</span><span class="s1">&#39;end_date&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">end_date</span><span class="p">)</span>
+
+        <span class="n">csv_utils</span><span class="o">.</span><span class="n">copy_field</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">_output_file</span><span class="p">,</span> <span class="n">new_field</span><span class="o">=</span><span class="s1">&#39;kabupaten_id&#39;</span><span class="p">,</span> <span class="n">copy_field</span><span class="o">=</span><span class="n">b_field</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

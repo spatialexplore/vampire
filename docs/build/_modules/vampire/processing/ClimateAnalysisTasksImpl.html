@@ -1,0 +1,241 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.ClimateAnalysisTasksImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.ClimateAnalysisTasksImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">VampireDefaults</span> <span class="k">as</span> <span class="nn">VampireDefaults</span>
+
+<span class="kn">import</span> <span class="nn">DaysSinceLastRainTaskImpl</span>
+<span class="kn">import</span> <span class="nn">FloodAlertTaskImpl</span>
+<span class="kn">import</span> <span class="nn">RainfallAnomalyTaskImpl</span>
+<span class="kn">import</span> <span class="nn">SPITaskImpl</span>
+<span class="kn">import</span> <span class="nn">TCITaskImpl</span>
+<span class="kn">import</span> <span class="nn">VCITaskImpl</span>
+<span class="kn">import</span> <span class="nn">VHITaskImpl</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ConfigFileError"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.ConfigFileError">[docs]</a><span class="k">class</span> <span class="nc">ConfigFileError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Raise when the config file contains an error&#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="n">e</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ConfigFileError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ClimateAnalysisTasksImpl"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.ClimateAnalysisTasksImpl">[docs]</a><span class="k">class</span> <span class="nc">ClimateAnalysisTasksImpl</span><span class="p">():</span>
+    <span class="n">subclasses</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="ClimateAnalysisTasksImpl.register_subclass"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.ClimateAnalysisTasksImpl.register_subclass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">register_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">product_type</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">subclass</span><span class="p">):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">product_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">subclass</span>
+            <span class="k">return</span> <span class="n">subclass</span>
+        <span class="k">return</span> <span class="n">decorator</span></div>
+
+<div class="viewcode-block" id="ClimateAnalysisTasksImpl.create"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.ClimateAnalysisTasksImpl.create">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">process_type</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">process_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad process type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">process_type</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">vampire_defaults</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">VampireDefaults</span><span class="o">.</span><span class="n">VampireDefaults</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">process_type</span><span class="p">](</span><span class="n">params</span><span class="p">,</span> <span class="n">vp</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="RainfallAnomalyTask"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.RainfallAnomalyTask">[docs]</a><span class="nd">@ClimateAnalysisTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;rainfall_anomaly&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RainfallAnomalyTask</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">RainfallAnomalyTaskImpl</span><span class="o">.</span><span class="n">RainfallAnomalyTaskImpl</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="RainfallAnomalyTask.process"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.RainfallAnomalyTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">process</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="SPITask"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.SPITask">[docs]</a><span class="nd">@ClimateAnalysisTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;spi&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">SPITask</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">SPITaskImpl</span><span class="o">.</span><span class="n">SPITaskImpl</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="SPITask.process"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.SPITask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">process</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="DaysSinceLastRainTask"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.DaysSinceLastRainTask">[docs]</a><span class="nd">@ClimateAnalysisTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;days_since_last_rain&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">DaysSinceLastRainTask</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">DaysSinceLastRainTaskImpl</span><span class="o">.</span><span class="n">DaysSinceLastRainTaskImpl</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="DaysSinceLastRainTask.process"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.DaysSinceLastRainTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
+        <span class="k">return</span></div></div>
+
+
+
+<span class="nd">@ClimateAnalysisTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;vci&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">VCITask</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">VCITaskImpl</span><span class="o">.</span><span class="n">VCITaskImpl</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="VCITask"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.VCITask">[docs]</a><span class="nd">@ClimateAnalysisTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;tci&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">VCITask</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">TCITaskImpl</span><span class="o">.</span><span class="n">TCITaskImpl</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="VCITask.process"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.VCITask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
+        <span class="k">return</span></div></div>
+
+
+<div class="viewcode-block" id="VHITask"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.VHITask">[docs]</a><span class="nd">@ClimateAnalysisTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;vhi&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">VHITask</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">VHITaskImpl</span><span class="o">.</span><span class="n">VHITaskImpl</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="VHITask.process"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.VHITask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+
+<div class="viewcode-block" id="FloodAlertTask"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.FloodAlertTask">[docs]</a><span class="nd">@ClimateAnalysisTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;flood_alert&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">FloodAlertTask</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise FloodAlertTask object.</span>
+
+<span class="sd">    Implementation class for predicting flood products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising Flood Alert task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">FloodAlertTaskImpl</span><span class="o">.</span><span class="n">FloodAlertTaskImpl</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="FloodAlertTask.process"><a class="viewcode-back" href="../../../vampire.processing.ClimateAnalysisTasksImpl.html#vampire.processing.ClimateAnalysisTasksImpl.FloodAlertTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

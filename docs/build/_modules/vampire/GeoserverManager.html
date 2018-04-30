@@ -1,0 +1,239 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.GeoserverManager &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.GeoserverManager</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+
+<span class="kn">import</span> <span class="nn">psycopg2</span>
+
+<span class="kn">import</span> <span class="nn">GISServerManager</span>
+
+
+<div class="viewcode-block" id="GeoserverManager"><a class="viewcode-back" href="../../vampire.GeoserverManager.html#vampire.GeoserverManager.GeoserverManager">[docs]</a><span class="k">class</span> <span class="nc">GeoserverManager</span><span class="p">(</span><span class="n">GISServerManager</span><span class="o">.</span><span class="n">GISServerManager</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">GISServerManager</span><span class="o">.</span><span class="n">GISServerManager</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="GeoserverManager.upload_to_GIS_server"><a class="viewcode-back" href="../../vampire.GeoserverManager.html#vampire.GeoserverManager.GeoserverManager.upload_to_GIS_server">[docs]</a>    <span class="k">def</span> <span class="nf">upload_to_GIS_server</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">input_file</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span>
+                             <span class="n">input_pattern</span><span class="p">,</span> <span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">move_output_to_geoserver</span><span class="p">(</span><span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">start_date</span><span class="o">=</span><span class="n">start_date</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upload_to_db</span><span class="p">(</span><span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">start_date</span><span class="o">=</span><span class="n">start_date</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GeoserverManager.move_output_to_geoserver"><a class="viewcode-back" href="../../vampire.GeoserverManager.html#vampire.GeoserverManager.GeoserverManager.move_output_to_geoserver">[docs]</a>    <span class="k">def</span> <span class="nf">move_output_to_geoserver</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">start_date</span><span class="p">):</span>
+        <span class="n">_geoserver_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;directories&#39;</span><span class="p">,</span> <span class="s1">&#39;geoserver_data&#39;</span><span class="p">)</span> <span class="c1">#&#39;C:\\Program Files (x86)\\GeoServer 2.11.0\\data_dir\\data\\&#39;</span>
+        <span class="k">if</span> <span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;rainfall_anomaly&#39;</span><span class="p">:</span>
+            <span class="c1"># rainfall anomaly</span>
+            <span class="n">_product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;output_dir&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">start_date</span><span class="o">.</span><span class="n">day</span> <span class="o">&lt;</span> <span class="mi">11</span><span class="p">:</span>
+                <span class="n">_dekad</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">start_date</span><span class="o">.</span><span class="n">day</span> <span class="o">&lt;</span> <span class="mi">21</span><span class="p">:</span>
+                <span class="n">_dekad</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_dekad</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">_date_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y.%m&#39;</span><span class="p">),</span> <span class="n">_dekad</span><span class="p">)</span>
+            <span class="n">_product_filename</span> <span class="o">=</span> <span class="s1">&#39;lka_cli_chirps-v2.0.</span><span class="si">%s</span><span class="s1">.ratio_anom.tif&#39;</span> <span class="o">%</span> <span class="n">_date_string</span>
+            <span class="n">_product_name</span> <span class="o">=</span> <span class="s1">&#39;rainfall_anomaly&#39;</span> <span class="c1">#os.path.join(&#39;rainfall_anomaly&#39;, _product_filename)</span>
+            <span class="n">_dst_filename</span> <span class="o">=</span> <span class="s1">&#39;lka_cli_chirps-v2.0.</span><span class="si">%s</span><span class="s1">.ratio_anom.tif&#39;</span> <span class="o">%</span> <span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;vhi&#39;</span><span class="p">:</span>
+            <span class="n">_product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_product_dir&#39;</span><span class="p">)</span>
+            <span class="n">_product_filename</span> <span class="o">=</span> <span class="s1">&#39;lka_phy_MOD13Q1.</span><span class="si">%s</span><span class="s1">.250m_16_days_EVI_EVI_VCI_VHI.tif&#39;</span> <span class="o">%</span> <span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y.%m.</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">_product_name</span> <span class="o">=</span> <span class="s1">&#39;vhi&#39;</span> <span class="c1">#os.path.join(&#39;vhi&#39;, _product_filename)</span>
+            <span class="n">_dst_filename</span> <span class="o">=</span> <span class="s1">&#39;lka_phy_MOD13Q1.</span><span class="si">%s</span><span class="s1">.250m_16_days_EVI_EVI_VCI_VHI.tif&#39;</span> <span class="o">%</span> <span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;vhi_masked&#39;</span><span class="p">:</span>
+            <span class="n">_product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_product_dir&#39;</span><span class="p">)</span>
+            <span class="n">_product_filename</span> <span class="o">=</span> <span class="s1">&#39;lka_phy_MOD13Q1.</span><span class="si">%s</span><span class="s1">.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif&#39;</span> <span class="o">%</span> <span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y.%m.</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">_product_name</span> <span class="o">=</span> <span class="s1">&#39;vhi_mask&#39;</span>  <span class="c1"># os.path.join(&#39;vhi&#39;, _product_filename)</span>
+            <span class="n">_dst_filename</span> <span class="o">=</span> <span class="s1">&#39;lka_phy_MOD13Q1.</span><span class="si">%s</span><span class="s1">.250m_16_days_EVI_EVI_VCI_VHI_masked.tif&#39;</span> <span class="o">%</span> <span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;spi&#39;</span><span class="p">:</span>
+            <span class="n">_product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_SPI&#39;</span><span class="p">,</span> <span class="s1">&#39;output_dir&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">start_date</span><span class="o">.</span><span class="n">day</span> <span class="o">&lt;</span> <span class="mi">11</span><span class="p">:</span>
+                <span class="n">_dekad</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">start_date</span><span class="o">.</span><span class="n">day</span> <span class="o">&lt;</span> <span class="mi">21</span><span class="p">:</span>
+                <span class="n">_dekad</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_dekad</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">_date_string</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y.%m&#39;</span><span class="p">),</span> <span class="n">_dekad</span><span class="p">)</span>
+            <span class="n">_product_filename</span> <span class="o">=</span> <span class="s1">&#39;lka_cli_chirps-v2.0.</span><span class="si">%s</span><span class="s1">.spi.tif&#39;</span> <span class="o">%</span> <span class="n">_date_string</span>
+            <span class="n">_product_name</span> <span class="o">=</span> <span class="s1">&#39;spi&#39;</span> <span class="c1">#os.path.join(&#39;spi&#39;, _product_filename)</span>
+            <span class="n">_dst_filename</span> <span class="o">=</span> <span class="s1">&#39;lka_cli_chirps-v2.0.</span><span class="si">%s</span><span class="s1">.spi.tif&#39;</span> <span class="o">%</span> <span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s1">&#39;Product </span><span class="si">{0}</span><span class="s1"> is not a valid product (ra, vhi, spi)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_product_dir</span><span class="p">,</span> <span class="n">_product_filename</span><span class="p">)):</span>
+            <span class="c1"># copy to geoserver data dir</span>
+            <span class="n">_dst_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_geoserver_data</span><span class="p">,</span> <span class="n">_product_name</span><span class="p">)</span>
+            <span class="nb">print</span> <span class="n">_product_name</span>
+            <span class="nb">print</span> <span class="n">_product_filename</span>
+            <span class="nb">print</span> <span class="n">_product_dir</span>
+            <span class="nb">print</span> <span class="n">_dst_filename</span>
+            <span class="nb">print</span> <span class="n">_dst_dir</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_product_dir</span><span class="p">,</span> <span class="n">_product_filename</span><span class="p">),</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_dst_dir</span><span class="p">,</span> <span class="n">_dst_filename</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="GeoserverManager.upload_to_db"><a class="viewcode-back" href="../../vampire.GeoserverManager.html#vampire.GeoserverManager.GeoserverManager.upload_to_db">[docs]</a>    <span class="k">def</span> <span class="nf">upload_to_db</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">start_date</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_db_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_db&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_db_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_db&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_schema&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_schema&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_host</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_host&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_host</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_host&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_port&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_port&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_user&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_user&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_pw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_pw&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_pw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_pw&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_table_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_schema</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_table&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">())))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Database table name not in Vampire.ini&quot;</span><span class="p">)</span>
+
+        <span class="n">_date_string</span> <span class="o">=</span> <span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;rainfall_anomaly&#39;</span><span class="p">:</span>
+            <span class="c1"># rainfall anomaly</span>
+    <span class="c1">#        _db_name = vp.get(&#39;database&#39;, &#39;default_db&#39;) #&#39;prima_ra&#39;</span>
+    <span class="c1">#        _table_name = &#39;rainfall_anomaly&#39;</span>
+            <span class="n">_filename</span> <span class="o">=</span> <span class="s1">&#39;lka_cli_chirps-v2.0.</span><span class="si">%s</span><span class="s1">.ratio_anom.tif&#39;</span> <span class="o">%</span> <span class="n">_date_string</span>
+            <span class="n">_ingestion_date</span> <span class="o">=</span> <span class="n">start_date</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;interval&#39;</span><span class="p">)))</span>
+        <span class="k">elif</span> <span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;vhi&#39;</span><span class="p">:</span>
+    <span class="c1">#        _db_name = &#39;prima_vhi_250m&#39;</span>
+    <span class="c1">#        _table_name = &#39;public.vhi&#39;</span>
+    <span class="c1">#        _filename = &#39;lka_phy_MOD13Q1.20160321.250m_16_days_EVI_EVI_VCI_VHI.tif&#39;</span>
+            <span class="n">_filename</span> <span class="o">=</span> <span class="s1">&#39;lka_phy_MOD13Q1.</span><span class="si">%s</span><span class="s1">.250m_16_days_EVI_EVI_VCI_VHI.tif&#39;</span> <span class="o">%</span> <span class="n">_date_string</span>
+            <span class="n">_ingestion_date</span> <span class="o">=</span> <span class="n">start_date</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;interval&#39;</span><span class="p">)))</span>
+        <span class="k">elif</span> <span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;vhi_masked&#39;</span><span class="p">:</span>
+            <span class="n">_filename</span> <span class="o">=</span> <span class="s1">&#39;lka_phy_MOD13Q1.</span><span class="si">%s</span><span class="s1">.250m_16_days_EVI_EVI_VCI_VHI_masked.tif&#39;</span> <span class="o">%</span> <span class="n">_date_string</span>
+            <span class="n">_ingestion_date</span> <span class="o">=</span> <span class="n">start_date</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;interval&#39;</span><span class="p">)))</span>
+        <span class="k">elif</span> <span class="n">product</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;spi&#39;</span><span class="p">:</span>
+    <span class="c1">#        _db_name = &#39;prima_spi_10day&#39;</span>
+    <span class="c1">#        _table_name = &#39;public.spi&#39;</span>
+            <span class="n">_filename</span> <span class="o">=</span> <span class="s1">&#39;lka_cli_chirps-v2.0.</span><span class="si">%s</span><span class="s1">.spi.tif&#39;</span> <span class="o">%</span> <span class="n">_date_string</span>
+            <span class="n">_ingestion_date</span> <span class="o">=</span> <span class="n">start_date</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_SPI&#39;</span><span class="p">,</span> <span class="s1">&#39;interval&#39;</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s1">&#39;Product </span><span class="si">{0}</span><span class="s1"> is not a valid product (ra, vhi, spi)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="p">)</span>
+
+    <span class="c1">#    _ingestion_date = start_date #datetime.datetime.strptime(start_date, &#39;%Y-%m-%d&#39;)</span>
+        <span class="nb">print</span> <span class="n">_ingestion_date</span>
+        <span class="n">_ingestion_date</span> <span class="o">=</span> <span class="n">_ingestion_date</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">hour</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="n">_ingestion_date</span>
+        <span class="c1"># create connection to database</span>
+        <span class="n">_connection_str</span> <span class="o">=</span> <span class="s1">&#39;dbname=</span><span class="si">{0}</span><span class="s1"> host=</span><span class="si">{1}</span><span class="s1"> user=</span><span class="si">{2}</span><span class="s1"> password=</span><span class="si">{3}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_db_name</span><span class="p">,</span> <span class="n">_host</span><span class="p">,</span> <span class="n">_user</span><span class="p">,</span> <span class="n">_pw</span><span class="p">)</span>
+        <span class="n">_conn</span> <span class="o">=</span> <span class="n">psycopg2</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">_connection_str</span><span class="p">)</span>
+        <span class="n">_cur</span> <span class="o">=</span> <span class="n">_conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="sd">&quot;&quot;&quot;INSERT INTO %(table)s (the_geom, location, ingestion)</span>
+<span class="sd">    SELECT the_geom, %(location)s, %(ingestion)s</span>
+<span class="sd">    FROM %(table2)s</span>
+<span class="sd">    WHERE fid = 1 AND NOT EXISTS (SELECT location, ingestion FROM %(table3)s WHERE %(table3)s.location = %(location)s</span>
+<span class="sd">                                  AND %(table3)s.ingestion = %(ingestion)s)</span>
+<span class="sd">    &quot;&quot;&quot;</span><span class="p">,</span>
+                <span class="p">{</span><span class="s1">&#39;table&#39;</span><span class="p">:</span><span class="n">psycopg2</span><span class="o">.</span><span class="n">extensions</span><span class="o">.</span><span class="n">AsIs</span><span class="p">(</span><span class="n">_table_name</span><span class="p">),</span> <span class="s1">&#39;location&#39;</span><span class="p">:</span><span class="n">_filename</span><span class="p">,</span> <span class="s1">&#39;ingestion&#39;</span><span class="p">:</span><span class="n">_ingestion_date</span><span class="p">,</span>
+                 <span class="s1">&#39;table2&#39;</span><span class="p">:</span><span class="n">psycopg2</span><span class="o">.</span><span class="n">extensions</span><span class="o">.</span><span class="n">AsIs</span><span class="p">(</span><span class="n">_table_name</span><span class="p">),</span> <span class="s1">&#39;table3&#39;</span><span class="p">:</span><span class="n">psycopg2</span><span class="o">.</span><span class="n">extensions</span><span class="o">.</span><span class="n">AsIs</span><span class="p">(</span><span class="n">_table_name</span><span class="p">)})</span>
+    <span class="c1">#         &quot;&quot;&quot;INSERT INTO %(table)s (the_geom, location, ingestion)</span>
+    <span class="c1"># SELECT the_geom, %(location)s, %(ingestion)s</span>
+    <span class="c1"># FROM %(table2)s</span>
+    <span class="c1"># WHERE fid = 1&quot;&quot;&quot;,</span>
+    <span class="c1">#         {&#39;table&#39;: psycopg2.extensions.AsIs(_table_name), &#39;location&#39;: _filename, &#39;ingestion&#39;: _ingestion_date,</span>
+    <span class="c1">#          &#39;table2&#39;: psycopg2.extensions.AsIs(_table_name)})</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;Error: Can&#39;t INSERT into table </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_table_name</span><span class="p">)</span>
+            <span class="nb">print</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span>
+        <span class="n">_conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

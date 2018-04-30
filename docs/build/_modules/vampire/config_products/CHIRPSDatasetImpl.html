@@ -1,0 +1,262 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.CHIRPSDatasetImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_products.CHIRPSDatasetImpl</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; CHIRPS data handling.</span>
+
+<span class="sd">    Provides classes for downloading and processing CHIRPS data.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">RasterDatasetImpl</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">dateutil.rrule</span>
+<span class="kn">import</span> <span class="nn">dateutil.relativedelta</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CHIRPSDatasetImpl"><a class="viewcode-back" href="../../../vampire.config_products.CHIRPSDatasetImpl.html#vampire.config_products.CHIRPSDatasetImpl.CHIRPSDatasetImpl">[docs]</a><span class="k">class</span> <span class="nc">CHIRPSDatasetImpl</span><span class="p">(</span><span class="n">RasterDatasetImpl</span><span class="o">.</span><span class="n">RasterDatasetImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; CHIRPS data</span>
+
+<span class="sd">    Data handling for CHIRPS data</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialise CHIRPSDatasetImpl object.</span>
+
+<span class="sd">        Implementation class for CHIRPSDataset.</span>
+<span class="sd">        Initialise object parameters and calculate start and end dates for dataset using product_date and interval.</span>
+
+<span class="sd">        :param interval: Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param product_date: Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding</span>
+<span class="sd">            the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,</span>
+<span class="sd">            the product_date refers to the start of the season (3 month period).</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        :param region: Default is None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising CHIRPS dataset&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CHIRPSDatasetImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">product_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">region</span> <span class="o">=</span> <span class="n">region</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;daily&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="n">product_date</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="n">product_date</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;dekad&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="n">product_date</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=-</span><span class="mi">10</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="n">product_date</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;monthly&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># ensure start date is first day of month</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">+</span> <span class="n">dateutil</span><span class="o">.</span><span class="n">relativedelta</span><span class="o">.</span><span class="n">relativedelta</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">days</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># ensure end_date is last day of month</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;seasonal&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="n">product_date</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">+</span> <span class="n">dateutil</span><span class="o">.</span><span class="n">relativedelta</span><span class="o">.</span><span class="n">relativedelta</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">days</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># set end_date as last day of third month</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Interval &#39;</span><span class="si">{0}</span><span class="s2">&#39; is not a valid CHIRPS dataset interval&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+<span class="c1">#        self.start_date = params[&#39;start_date&#39;]</span>
+<span class="c1">#        self.country = params[&#39;country&#39;]</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get and set start date of dataset. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__start_date</span>
+    <span class="nd">@start_date</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__start_date</span> <span class="o">=</span> <span class="n">sd</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get and set end date of dataset. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__end_date</span>
+    <span class="nd">@end_date</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ed</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__end_date</span> <span class="o">=</span> <span class="n">ed</span>
+
+<div class="viewcode-block" id="CHIRPSDatasetImpl.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.CHIRPSDatasetImpl.html#vampire.config_products.CHIRPSDatasetImpl.CHIRPSDatasetImpl.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate a config file process for the dataset.</span>
+
+<span class="sd">        Generate VAMPIRE config file process(es) for the dataset including download and crop if specified.</span>
+
+<span class="sd">        :param data_dir: Path for downloaded data. The data will be stored in this path under a directory with the interval name. If the</span>
+<span class="sd">            data_dir is None, the VAMPIRE default download directory will be used.</span>
+<span class="sd">        :type data_dir: string</span>
+<span class="sd">        :param download: Flag indicating whether data should be downloaded. Default is True.</span>
+<span class="sd">        :type download: bool</span>
+<span class="sd">        :param crop: Flag indicating whether data should be cropped to region. Default is True.</span>
+<span class="sd">        :type crop: bool</span>
+<span class="sd">        :param crop_dir: Path where cropped data will be stored. If None, the region code will be appended to the download data path.</span>
+<span class="sd">        :type crop_dir: string</span>
+
+<span class="sd">        :return: string containing the configuration file process.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;CHIRPSDataset generate_config&#39;</span><span class="p">)</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">data_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_data_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;data_dir&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_data_dir</span> <span class="o">=</span> <span class="n">data_dir</span>
+        <span class="n">_download_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_data_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">capitalize</span><span class="p">())</span>
+
+        <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">_download_dir</span>
+
+        <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_download_section</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="n">_download_dir</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">crop</span><span class="p">:</span>
+            <span class="n">_country_code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">crop_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_crop_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_download_dir</span><span class="p">,</span> <span class="n">_country_code</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_crop_dir</span> <span class="o">=</span> <span class="n">crop_dir</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">region</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;global&#39;</span><span class="p">:</span>
+                <span class="c1"># self.region should contain country name</span>
+                <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        # Crop data to </span><span class="si">{country}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">country</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span>
+                <span class="n">_input_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;global_</span><span class="si">{0}</span><span class="s1">_pattern&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">))</span>
+                <span class="n">_output_pattern</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+                                                  <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span>
+                                                              <span class="s1">&#39;crop_regional_output_</span><span class="si">{0}</span><span class="s1">_pattern&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">)))</span>
+                <span class="n">_boundary_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">))[</span><span class="s1">&#39;chirps_boundary_file&#39;</span><span class="p">]</span>
+                <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_crop_section</span><span class="p">(</span><span class="n">_download_dir</span><span class="p">,</span> <span class="n">_crop_dir</span><span class="p">,</span> <span class="n">_input_pattern</span><span class="p">,</span> <span class="n">_output_pattern</span><span class="p">,</span> <span class="n">_boundary_file</span><span class="p">)</span>
+                <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">_crop_dir</span>
+        <span class="k">return</span> <span class="n">config</span><span class="p">,</span> <span class="n">_output_dir</span></div>
+
+
+<div class="viewcode-block" id="CHIRPSDatasetImpl.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.CHIRPSDatasetImpl.html#vampire.config_products.CHIRPSDatasetImpl.CHIRPSDatasetImpl.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate VAMPIRE config file header for CHIRPS datasets.</span>
+
+<span class="sd">            :return: string containing config file header section.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">temp: </span><span class="si">{temp_dir}</span><span class="s2"></span>
+
+<span class="s2">CHIRPS:</span>
+<span class="s2">    filenames:</span>
+<span class="s2">        input_prefix: chirps-v2.0</span>
+<span class="s2">        input_extension: .tiff</span>
+<span class="s2">        output_prefix: idn_cli_chirps-v2.0</span>
+<span class="s2">        output_ext: .tif</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">temp_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;directories&#39;</span><span class="p">,</span> <span class="s1">&#39;temp_dir&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">config</span></div>
+
+    <span class="k">def</span> <span class="nf">_generate_download_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate download process section for CHIRPS dataset.</span>
+
+<span class="sd">        Generate VAMPIRE config file section for CHIRPS dataset download.</span>
+
+<span class="sd">        :param data_dir: Path for downloaded data. The data will be stored in this path under a directory with the interval name. If the</span>
+<span class="sd">            data_dir is None, the VAMPIRE default download directory will be used.</span>
+<span class="sd">        :type data_dir: string</span>
+<span class="sd">        :return: string containing config file download section.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    # download CHIRPS precipitation data</span>
+<span class="s2">    - process: CHIRPS</span>
+<span class="s2">      type: download</span>
+<span class="s2">      interval: </span><span class="si">{interval}</span><span class="s2"></span>
+<span class="s2">      output_dir: </span><span class="si">{output_dir}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">)</span>
+        <span class="c1"># if start and end dates are specified, only download between these dates</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">year</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y&quot;</span><span class="p">)</span>
+            <span class="n">month</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%m&quot;</span><span class="p">)</span>
+            <span class="c1"># use 1st of start_date month to make sure end month is also included</span>
+            <span class="n">_first_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">dates</span> <span class="o">=</span> <span class="n">dateutil</span><span class="o">.</span><span class="n">rrule</span><span class="o">.</span><span class="n">rrule</span><span class="p">(</span><span class="n">dateutil</span><span class="o">.</span><span class="n">rrule</span><span class="o">.</span><span class="n">MONTHLY</span><span class="p">,</span> <span class="n">dtstart</span><span class="o">=</span><span class="n">_first_date</span><span class="p">)</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">_first_date</span><span class="p">,</span>
+                                                                                              <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span><span class="p">,</span> <span class="n">inc</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      dates: [&quot;&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dates</span><span class="p">:</span>
+                <span class="n">config</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="si">{year}</span><span class="s1">-</span><span class="si">{month}</span><span class="s1">,&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y&quot;</span><span class="p">),</span> <span class="n">month</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%m&quot;</span><span class="p">))</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;]</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">config</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

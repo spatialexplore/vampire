@@ -1,0 +1,549 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.ArcGISServerImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.ArcGISServerImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">arcpy</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">xml.dom.minidom</span> <span class="k">as</span> <span class="nn">DOM</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ArcGISServerImpl"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl">[docs]</a><span class="k">class</span> <span class="nc">ArcGISServerImpl</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vp</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vp</span>
+        <span class="c1"># # LOG_FILENAME = &#39;Vampire_log.log&#39;</span>
+        <span class="c1"># # logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)</span>
+        <span class="c1"># date1 = time.strftime(&#39;%c&#39;)</span>
+        <span class="c1"># geodatabase = vp.get(&#39;geodatabase&#39;, &#39;config&#39;)</span>
+        <span class="c1"># config = ast.literal_eval(geodatabase)</span>
+        <span class="c1"># product = config[&#39;product&#39;]</span>
+        <span class="c1"># keycode = config[&#39;keycode&#39;]</span>
+        <span class="c1"># country = config[&#39;country&#39;]</span>
+        <span class="c1"># host = config[&#39;postgreHost&#39;]</span>
+        <span class="c1"># dba = config[&#39;dba&#39;]</span>
+        <span class="c1"># dbapass = config[&#39;dbapass&#39;]</span>
+        <span class="c1"># sdeuser = config[&#39;sdeuser&#39;]</span>
+        <span class="c1"># sdepass = config[&#39;sdepass&#39;]</span>
+        <span class="c1"># proj = config[&#39;proj&#39;]</span>
+        <span class="c1"># file_path = config[&#39;gdbpath&#39;]</span>
+        <span class="c1"># directory = file_path+&#39;\\&#39;+country</span>
+        <span class="c1"># storingConfig = config[&#39;storingConfig&#39;]</span>
+        <span class="c1"># datafolder = config[&#39;sourcedata&#39;] + &#39;\\&#39; + country</span>
+        <span class="c1">#</span>
+        <span class="c1"># server_url = config[&#39;server_url&#39;]</span>
+        <span class="c1"># use_arcgis_desktop_staging_folder = config[&#39;use_arcgis_desktop_staging_folder&#39;]</span>
+        <span class="c1"># username = config[&#39;username&#39;]</span>
+        <span class="c1"># password = config[&#39;password&#39;]</span>
+        <span class="c1"># ws = config[&#39;ws&#39;]</span>
+        <span class="c1"># sdeCatalog = config[&#39;sdeCatalog&#39;]</span>
+        <span class="c1"># template = config[&#39;template&#39;]</span>
+        <span class="c1"># summary = config[&#39;summary&#39;]</span>
+        <span class="c1"># tags = config[&#39;tags&#39;]</span>
+        <span class="c1"># description = config[&#39;description&#39;]</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="ArcGISServerImpl.publish"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.publish">[docs]</a>    <span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;storingConfig&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;file&#39;</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;using file geodatabase&quot;</span><span class="p">)</span>
+                <span class="c1"># create gdb directory if it doesn&#39;t exist</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">check_data_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;gdbpath&#39;</span><span class="p">))</span>
+                <span class="c1"># create file geodatabase if it doesn&#39;t exist</span>
+                <span class="n">_gdb_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_file_GDB</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">product_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;gdbpath&#39;</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">product</span><span class="o">.</span><span class="n">publish_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">_publish_name</span> <span class="o">=</span> <span class="n">product</span><span class="o">.</span><span class="n">publish_name</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_publish_name</span> <span class="o">=</span> <span class="n">product</span><span class="o">.</span><span class="n">product_name</span>
+                <span class="n">_mosaic_db</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_gdb_name</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">publish_name</span><span class="p">))</span>
+                <span class="n">_ags_name</span> <span class="o">=</span> <span class="n">_publish_name</span>
+                <span class="n">_layer</span> <span class="o">=</span> <span class="n">_mosaic_db</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;storingConfig&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;ent&#39;</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Using enterprise geodatabase&quot;</span><span class="p">)</span>
+                <span class="n">_enterprise_gdb_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">product</span><span class="o">.</span><span class="n">product_name</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">create_enterprise_GDB</span><span class="p">(</span><span class="n">_enterprise_gdb_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span><span class="s1">&#39;host&#39;</span><span class="p">),</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;dba&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;dbapass&#39;</span><span class="p">),</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;sdeuser&#39;</span><span class="p">),</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;sdepass&#39;</span><span class="p">),</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;keycode&#39;</span><span class="p">))</span>
+<span class="c1">#                gdb = &quot;Database Connections/&quot;+egdbname+&quot;.sde&quot;</span>
+                <span class="n">_gdb_name</span> <span class="o">=</span> <span class="s2">&quot;Database Connections/</span><span class="si">{0}</span><span class="s2">.sde&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_enterprise_gdb_name</span><span class="p">)</span>
+                <span class="n">_mosaic_db</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_gdb_name</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.sde.</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_enterprise_gdb_name</span><span class="p">,</span> <span class="n">_enterprise_gdb_name</span><span class="p">))</span>
+                <span class="n">_ags_name</span> <span class="o">=</span> <span class="n">_enterprise_gdb_name</span>
+                <span class="n">_layer</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;sdeCatalog&#39;</span><span class="p">),</span>
+                                                     <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.sde&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_enterprise_gdb_name</span><span class="p">)),</span> <span class="n">_enterprise_gdb_name</span><span class="p">)</span>
+            <span class="c1">#     countProduct = country.lower() + &quot;_&quot; + x</span>
+            <span class="c1">#     self.createagsfile(ws, countProduct, server_url, username, password)</span>
+            <span class="c1">#     sdeCon = sdeCatalog+countProduct+&#39;.sde/&#39;</span>
+            <span class="c1">#     fc = sdeCon+countProduct</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Unrecognised geodatabase storing config&#39;</span><span class="p">)</span>
+                <span class="k">return</span>
+<span class="c1">#                MDS = gdb + &#39;/&#39; + egdbname + &quot;.sde.&quot; + egdbname</span>
+<span class="c1">#                    gdbname = directory+&#39;\\&#39;+x+&#39;.gdb&#39;</span>
+<span class="c1">#                    MDS = gdbname + &#39;\\&#39; + x</span>
+                <span class="c1"># check if mosaic database exists, and create if necessary</span>
+            <span class="k">if</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">_mosaic_db</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Mosaic dataset </span><span class="si">{0}</span><span class="s2"> already exists&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_mosaic_db</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">create_mosaic_dataset</span><span class="p">(</span><span class="n">_gdb_name</span><span class="p">,</span> <span class="n">_mosaic_db</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Mosaic Dataset </span><span class="si">{0}</span><span class="s2"> created&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_mosaic_db</span><span class="p">))</span>
+            <span class="c1"># add product raster to mosaic dataset</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_raster_to_MDS</span><span class="p">(</span><span class="n">_mosaic_db</span><span class="p">,</span> <span class="n">product</span><span class="o">.</span><span class="n">product_filename</span><span class="p">)</span>
+            <span class="c1"># add start and end date fields to mosaic dataset if necessary</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_date_field</span><span class="p">(</span><span class="n">_mosaic_db</span><span class="p">)</span>
+            <span class="c1">#  compute statistics</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_mosaic_statistics</span><span class="p">(</span><span class="n">_mosaic_db</span><span class="p">)</span>
+            <span class="c1"># set start and end date for product in mosaic dataset</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_date_fields</span><span class="p">(</span><span class="n">_mosaic_db</span><span class="p">,</span> <span class="n">product</span><span class="p">)</span>
+            <span class="n">_ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;ws&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_ags_file</span><span class="p">(</span><span class="n">_ws</span><span class="p">,</span> <span class="n">_ags_name</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;server_url&#39;</span><span class="p">),</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;username&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">))</span>
+<span class="c1">#                    fc1 = os.path.join(directory, x+&#39;.gdb&#39;)</span>
+<span class="c1">#                    fc = os.path.join(fc1, x)</span>
+            <span class="k">if</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">_layer</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;data </span><span class="si">{0}</span><span class="s2"> is available&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_publish_name</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;data </span><span class="si">{0}</span><span class="s2"> is not available&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_publish_name</span><span class="p">))</span>
+            <span class="n">_connection_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_ws</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.ags&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_publish_name</span><span class="p">))</span>
+            <span class="n">arcpy</span><span class="o">.</span><span class="n">AddDataStoreItem</span><span class="p">(</span><span class="n">_connection_file</span><span class="p">,</span> <span class="s2">&quot;FOLDER&quot;</span><span class="p">,</span> <span class="n">_publish_name</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;gdbpath&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;gdbpath&#39;</span><span class="p">))</span>
+            <span class="n">arcpy</span><span class="o">.</span><span class="n">ValidateDataStoreItem</span><span class="p">(</span><span class="n">_connection_file</span><span class="p">,</span> <span class="s2">&quot;FOLDER&quot;</span><span class="p">,</span> <span class="n">_publish_name</span><span class="p">)</span>
+            <span class="n">_service_desc_draft</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_ws</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.sddraft&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_publish_name</span><span class="p">))</span>
+            <span class="n">_service_desc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_ws</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.sd&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_publish_name</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_image_SD_draft</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">_layer</span><span class="p">,</span> <span class="n">_service_desc_draft</span><span class="p">,</span>
+                                       <span class="n">_publish_name</span><span class="p">,</span> <span class="n">_connection_file</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">insert_RTF_file</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">_service_desc_draft</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_service_desc</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">analyze_SD_draft</span><span class="p">(</span><span class="n">_service_desc_draft</span><span class="p">,</span> <span class="n">_service_desc</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;file </span><span class="si">{0}</span><span class="s2"> already exists&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_service_desc</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_connection_file</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;file </span><span class="si">{0}</span><span class="s2"> does not exist&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_connection_file</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;file </span><span class="si">{0}</span><span class="s2"> already exists&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_connection_file</span><span class="p">))</span>
+                <span class="n">arcpy</span><span class="o">.</span><span class="n">UploadServiceDefinition_server</span><span class="p">(</span><span class="n">_service_desc</span><span class="p">,</span> <span class="n">_connection_file</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">_connection_file</span><span class="p">)</span>
+
+            <span class="c1"># elif self.vp.get(&#39;geodatabase&#39;, &#39;storingConfig&#39;) == &#39;ent&#39;:</span>
+            <span class="c1">#     logger.debug(&quot;Using enterprise geodatabase&quot;)</span>
+            <span class="c1">#     self.createEntGDB(host, x, dba, dbapass, sdeuser, sdepass, keycode)</span>
+            <span class="c1">#     egdbname = country.lower() + &#39;_&#39; + x</span>
+            <span class="c1">#     gdb = &quot;Database Connections/&quot;+egdbname+&quot;.sde&quot;</span>
+            <span class="c1">#     MDS = gdb + &#39;/&#39; + egdbname + &quot;.sde.&quot; + egdbname</span>
+            <span class="c1">#     if arcpy.Exists(MDS):</span>
+            <span class="c1">#         print(&quot;Mosaic dataset &quot;+MDS+&quot; already exist&quot;)</span>
+            <span class="c1">#     else:</span>
+            <span class="c1">#         self.createMosaicDataset(gdb,egdbname)</span>
+            <span class="c1">#         logging.debug(date1 +&quot;: Mosaic Dataset &quot;+egdbname+&quot; is created&quot;)</span>
+            <span class="c1">#</span>
+            <span class="c1">#     #print(MDS)</span>
+            <span class="c1">#     workspace = datafolder + &quot;/&quot; + x</span>
+            <span class="c1">#     self.addRastertoMDS(MDS, workspace)</span>
+            <span class="c1">#     self.update_mosaic_statistics(MDS)</span>
+            <span class="c1">#     self.addDateField(MDS)</span>
+            <span class="c1">#     self.updateDateField(MDS, x)</span>
+            <span class="c1">#</span>
+            <span class="c1">#     countProduct = country.lower() + &quot;_&quot; + x</span>
+            <span class="c1">#     self.createagsfile(ws, countProduct, server_url, username, password)</span>
+            <span class="c1">#     sdeCon = sdeCatalog+countProduct+&#39;.sde/&#39;</span>
+            <span class="c1">#     fc = sdeCon+countProduct</span>
+            <span class="c1">#     print(fc)</span>
+            <span class="c1">#     if arcpy.Exists(fc):</span>
+            <span class="c1">#         print(&quot;data &quot;+x+&quot; is available&quot;)</span>
+            <span class="c1">#     else:</span>
+            <span class="c1">#         print(&quot;data &quot;+x+&quot; is not availabe&quot;)</span>
+            <span class="c1">#     con = os.path.join(ws, x + &quot;.ags&quot;)</span>
+            <span class="c1">#     service = x</span>
+            <span class="c1">#     sddraft = os.path.join(ws, x + &quot;.sddraft&quot;)</span>
+            <span class="c1">#     sd = os.path.join(ws, x + &quot;.sd&quot;)</span>
+            <span class="c1">#     self.createImageSDDraft(fc, sddraft, service, con)</span>
+            <span class="c1">#     self.insertRTFFile(x, sddraft)</span>
+            <span class="c1">#     if not os.path.exists(sd):</span>
+            <span class="c1">#         self.analyzeSDDraft(sddraft, sd)</span>
+            <span class="c1">#     else:</span>
+            <span class="c1">#         print(&quot;file &quot;+sd+&quot; already exist&quot;)</span>
+            <span class="c1">#     if not os.path.exists(con):</span>
+            <span class="c1">#         print(&quot;file &quot;+con+&quot; is not exist&quot;)</span>
+            <span class="c1">#     else:</span>
+            <span class="c1">#         print(&quot;file &quot;+con+&quot; already exist&quot;)</span>
+            <span class="c1">#         arcpy.UploadServiceDefinition_server(sd, con)</span>
+            <span class="c1">#     print(con)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="ArcGISServerImpl.create_file_GDB"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.create_file_GDB">[docs]</a>    <span class="k">def</span> <span class="nf">create_file_GDB</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gdb_name</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">CreateFileGDB_management</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">gdb_name</span><span class="p">,</span> <span class="s2">&quot;CURRENT&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ArcGISServerImpl.create_enterprise_GDB"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.create_enterprise_GDB">[docs]</a>    <span class="k">def</span> <span class="nf">create_enterprise_GDB</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gdb_name</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">dba</span><span class="p">,</span> <span class="n">dbapass</span><span class="p">,</span> <span class="n">sdeuser</span><span class="p">,</span> <span class="n">sdepass</span><span class="p">,</span> <span class="n">keycode</span><span class="p">):</span>
+<span class="c1">#        gdb_name = country.lower()+&#39;_&#39;+product</span>
+        <span class="c1">#print(gdb_name)</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">CreateEnterpriseGeodatabase_management</span><span class="p">(</span><span class="s2">&quot;PostgreSQL&quot;</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">gdb_name</span><span class="p">,</span> <span class="s2">&quot;DATABASE_AUTH&quot;</span><span class="p">,</span> <span class="n">dba</span><span class="p">,</span> <span class="n">dbapass</span><span class="p">,</span>
+                                                     <span class="s2">&quot;SDE_SCHEMA&quot;</span><span class="p">,</span> <span class="n">sdeuser</span><span class="p">,</span> <span class="n">sdepass</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">keycode</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Enterprise Geodatabase </span><span class="si">{0}</span><span class="s2"> is created&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">gdb_name</span><span class="p">))</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">CreateDatabaseConnection_management</span><span class="p">(</span><span class="s2">&quot;Database Connections&quot;</span><span class="p">,</span>
+                                                  <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">.sde&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">gdb_name</span><span class="p">),</span>
+                                                  <span class="s2">&quot;POSTGRESQL&quot;</span><span class="p">,</span>
+                                                  <span class="n">host</span><span class="p">,</span>
+                                                  <span class="s2">&quot;DATABASE_AUTH&quot;</span><span class="p">,</span>
+                                                  <span class="n">sdeuser</span><span class="p">,</span>
+                                                  <span class="n">sdepass</span><span class="p">,</span>
+                                                  <span class="s2">&quot;SAVE_USERNAME&quot;</span><span class="p">,</span>
+                                                  <span class="n">gdb_name</span><span class="p">,</span>
+                                                  <span class="s2">&quot;#&quot;</span><span class="p">,</span>
+                                                  <span class="s2">&quot;POINT_IN_TIME&quot;</span><span class="p">,</span>
+                                                  <span class="s2">&quot;#&quot;</span><span class="p">,</span>
+                                                  <span class="s2">&quot;5/19/2017 8:43:41 AM&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Database connection for geodatabase </span><span class="si">{0}</span><span class="s2"> is created&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">gdb_name</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="ArcGISServerImpl.check_data_dir"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.check_data_dir">[docs]</a>    <span class="k">def</span> <span class="nf">check_data_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Geodatabase directory created&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Geodatabase directory already exists&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="ArcGISServerImpl.check_file_GDB"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.check_file_GDB">[docs]</a>    <span class="k">def</span> <span class="nf">check_file_GDB</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gdb_name</span><span class="p">,</span> <span class="n">directory</span><span class="p">):</span>
+        <span class="n">_file_GDB_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.gdb&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">gdb_name</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_file_GDB_path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_file_GDB</span><span class="p">(</span><span class="n">gdb_name</span><span class="p">,</span> <span class="n">directory</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;File Geodatabase &quot;</span> <span class="o">+</span> <span class="n">gdb_name</span> <span class="o">+</span> <span class="s2">&quot; created&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;File Geodatabase  &quot;</span> <span class="o">+</span> <span class="n">gdb_name</span> <span class="o">+</span> <span class="s2">&quot; already exists&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_file_GDB_path</span></div>
+
+<div class="viewcode-block" id="ArcGISServerImpl.create_mosaic_dataset"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.create_mosaic_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">create_mosaic_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gdb</span><span class="p">,</span> <span class="n">dataset</span><span class="p">):</span>
+        <span class="n">_proj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geodatabase&#39;</span><span class="p">,</span> <span class="s1">&#39;proj&#39;</span><span class="p">)</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">CreateMosaicDataset_management</span><span class="p">(</span><span class="n">gdb</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">_proj</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;NONE&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="ArcGISServerImpl.add_raster_to_MDS"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.add_raster_to_MDS">[docs]</a>    <span class="k">def</span> <span class="nf">add_raster_to_MDS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mds</span><span class="p">,</span> <span class="n">folder</span><span class="p">):</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">AddRastersToMosaicDataset_management</span><span class="p">(</span><span class="n">mds</span><span class="p">,</span> <span class="s2">&quot;Raster Dataset&quot;</span><span class="p">,</span> <span class="n">folder</span><span class="p">,</span>
+                                                   <span class="s2">&quot;UPDATE_CELL_SIZES&quot;</span><span class="p">,</span> <span class="s2">&quot;UPDATE_BOUNDARY&quot;</span><span class="p">,</span> <span class="s2">&quot;NO_OVERVIEWS&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;1500&quot;</span><span class="p">,</span>
+                                                   <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;SUBFOLDERS&quot;</span><span class="p">,</span> <span class="s2">&quot;OVERWRITE_DUPLICATES&quot;</span><span class="p">,</span> <span class="s2">&quot;NO_PYRAMIDS&quot;</span><span class="p">,</span> <span class="s2">&quot;NO_STATISTICS&quot;</span><span class="p">,</span>
+                                                   <span class="s2">&quot;NO_THUMBNAILS&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;NO_FORCE_SPATIAL_REFERENCE&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="ArcGISServerImpl.update_mosaic_statistics"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.update_mosaic_statistics">[docs]</a>    <span class="k">def</span> <span class="nf">update_mosaic_statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mosaic_dataset</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;updating mosaic statistics&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">arcpy</span><span class="o">.</span><span class="n">SetMosaicDatasetProperties_management</span><span class="p">(</span><span class="n">mosaic_dataset</span><span class="p">,</span> <span class="n">use_time</span><span class="o">=</span><span class="s2">&quot;ENABLED&quot;</span><span class="p">,</span> <span class="n">start_time_field</span><span class="o">=</span><span class="s1">&#39;start_date&#39;</span><span class="p">,</span>
+                                                        <span class="n">end_time_field</span><span class="o">=</span><span class="s1">&#39;end_date&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Set Mosaic Dataset Properties failed for </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mosaic_dataset</span><span class="p">))</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">management</span><span class="o">.</span><span class="n">CalculateStatistics</span><span class="p">(</span><span class="n">mosaic_dataset</span><span class="p">)</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">management</span><span class="o">.</span><span class="n">BuildPyramidsandStatistics</span><span class="p">(</span><span class="n">mosaic_dataset</span><span class="p">,</span> <span class="s1">&#39;INCLUDE_SUBDIRECTORIES&#39;</span><span class="p">,</span> <span class="s1">&#39;BUILD_PYRAMIDS&#39;</span><span class="p">,</span>
+                                                    <span class="s1">&#39;CALCULATE_STATISTICS&#39;</span><span class="p">)</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">RefreshCatalog</span><span class="p">(</span><span class="n">mosaic_dataset</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+    <span class="c1"># def eomday(self, year, month):</span>
+    <span class="c1">#     days_per_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]</span>
+    <span class="c1">#     d = days_per_month[month - 1]</span>
+    <span class="c1">#     if month == 2 and (year % 4 == 0 and year % 100 != 0 or year % 400 == 0):</span>
+    <span class="c1">#         d = 29</span>
+    <span class="c1">#     return d</span>
+    <span class="c1">#</span>
+    <span class="c1"># def get_year_month(self, name, product):</span>
+    <span class="c1">#     if product == &#39;rainfall_anomaly_1_month&#39;:</span>
+    <span class="c1">#         print(&quot;analomay&quot;)</span>
+    <span class="c1">#         productPattern = self.vp.get(&#39;CHIRPS_Rainfall_Anomaly&#39;, &#39;ra_regional_monthly_pattern&#39;)</span>
+    <span class="c1">#         print(&quot;product pattern : &quot;+productPattern)</span>
+    <span class="c1">#         regex = re.compile(productPattern)</span>
+    <span class="c1">#         result = regex.match(name)</span>
+    <span class="c1">#         f_year = result.group(&#39;year&#39;)</span>
+    <span class="c1">#         f_month = result.group(&#39;month&#39;)</span>
+    <span class="c1">#         lastday = eomday(int(f_year), int(f_month))</span>
+    <span class="c1">#         dateStart = date(int(f_year),int(f_month),1)</span>
+    <span class="c1">#         dateEnd = date(int(f_year),int(f_month),int(lastday))</span>
+    <span class="c1">#         return(dateStart, dateEnd)</span>
+    <span class="c1">#     elif product == &#39;spi_1_month&#39;:</span>
+    <span class="c1">#         print(&quot;spi 1 month&quot;)</span>
+    <span class="c1">#         productPattern = vp.get(&#39;CHIRPS_SPI&#39;, &#39;spi_regional_monthly_pattern&#39;)</span>
+    <span class="c1">#         print(&quot;product pattern : &quot;+productPattern)</span>
+    <span class="c1">#         regex = re.compile(productPattern)</span>
+    <span class="c1">#         result = regex.match(name)</span>
+    <span class="c1">#         f_year = result.group(&#39;year&#39;)</span>
+    <span class="c1">#         f_month = result.group(&#39;month&#39;)</span>
+    <span class="c1">#         lastday = eomday(int(f_year), int(f_month))</span>
+    <span class="c1">#         dateStart = date(int(f_year),int(f_month),1)</span>
+    <span class="c1">#         dateEnd = date(int(f_year),int(f_month),int(lastday))</span>
+    <span class="c1">#         return(dateStart, dateEnd)</span>
+    <span class="c1">#     elif product == &#39;rainfall_anomaly_3_month&#39;:</span>
+    <span class="c1">#         print(&quot;3 monthly rainfall anomaly&quot;)</span>
+    <span class="c1">#         productPattern = vp.get(&#39;CHIRPS_Rainfall_Anomaly&#39;, &#39;ra_regional_seasonal_pattern&#39;)</span>
+    <span class="c1">#         print(&quot;product pattern : &quot;+productPattern)</span>
+    <span class="c1">#         regex = re.compile(productPattern)</span>
+    <span class="c1">#         result = regex.match(name)</span>
+    <span class="c1">#         print(result)</span>
+    <span class="c1">#         f_year = result.group(&#39;year&#39;)</span>
+    <span class="c1">#         print(f_year)</span>
+    <span class="c1">#         f_season = result.group(&#39;season&#39;)</span>
+    <span class="c1">#         print(f_season, f_season[0:2])</span>
+    <span class="c1">#         if int(f_season[4:6]) &lt; int(f_season[0:2]):</span>
+    <span class="c1">#             print(int(f_season[4:6]), &quot; lebih kecil dari &quot;, int(f_season[0:2]))</span>
+    <span class="c1">#             f_year_end = int(f_year)+1</span>
+    <span class="c1">#         else:</span>
+    <span class="c1">#             print(int(f_season[4:6]), &quot; lebih besar dari &quot;, int(f_season[0:2]))</span>
+    <span class="c1">#             f_year_end = int(f_year)</span>
+    <span class="c1">#         lastday = eomday(int(f_year_end), int(f_season[4:6]))</span>
+    <span class="c1">#         dateStart = date(int(f_year),int(f_season[0:2]),1)</span>
+    <span class="c1">#         dateEnd = date(int(f_year_end),int(f_season[4:6]),int(lastday))</span>
+    <span class="c1">#         print(&quot;resturn &quot;, dateStart, dateEnd)</span>
+    <span class="c1">#         return(dateStart, dateEnd)</span>
+    <span class="c1">#     elif product == &#39;spi_3_month&#39;:</span>
+    <span class="c1">#         print(&quot;3 monthly spi&quot;)</span>
+    <span class="c1">#         productPattern = vp.get(&#39;CHIRPS_SPI&#39;, &#39;spi_regional_seasonal_pattern&#39;)</span>
+    <span class="c1">#         print(&quot;product pattern : &quot;+productPattern)</span>
+    <span class="c1">#         regex = re.compile(productPattern)</span>
+    <span class="c1">#         result = regex.match(name)</span>
+    <span class="c1">#         print(result)</span>
+    <span class="c1">#         f_year = result.group(&#39;year&#39;)</span>
+    <span class="c1">#         print(f_year)</span>
+    <span class="c1">#         f_season = result.group(&#39;season&#39;)</span>
+    <span class="c1">#         print(f_season, f_season[0:2])</span>
+    <span class="c1">#         if int(f_season[4:6]) &lt; int(f_season[0:2]):</span>
+    <span class="c1">#             print(int(f_season[4:6]), &quot; lebih kecil dari &quot;, int(f_season[0:2]))</span>
+    <span class="c1">#             f_year_end = int(f_year)+1</span>
+    <span class="c1">#         else:</span>
+    <span class="c1">#             print(int(f_season[4:6]), &quot; lebih besar dari &quot;, int(f_season[0:2]))</span>
+    <span class="c1">#             f_year_end = int(f_year)</span>
+    <span class="c1">#         lastday = eomday(int(f_year_end), int(f_season[4:6]))</span>
+    <span class="c1">#         dateStart = date(int(f_year),int(f_season[0:2]),1)</span>
+    <span class="c1">#         dateEnd = date(int(f_year_end),int(f_season[4:6]),int(lastday))</span>
+    <span class="c1">#         print(&quot;resturn &quot;, dateStart, dateEnd)</span>
+    <span class="c1">#         return(dateStart, dateEnd)</span>
+    <span class="c1">#     elif product == &#39;rainfall_anomaly_dekad&#39;:</span>
+    <span class="c1">#         print(&quot;Dekad rainfall anomaly&quot;)</span>
+    <span class="c1">#         productPattern = vp.get(&#39;CHIRPS_Rainfall_Anomaly&#39;, &#39;ra_regional_dekad_pattern&#39;)</span>
+    <span class="c1">#         regex = re.compile(productPattern)</span>
+    <span class="c1">#         result = regex.match(name)</span>
+    <span class="c1">#         f_year = result.group(&#39;year&#39;)</span>
+    <span class="c1">#         f_month = result.group(&#39;month&#39;)</span>
+    <span class="c1">#         f_dekad = result.group(&#39;dekad&#39;)</span>
+    <span class="c1">#         if f_dekad == &#39;1&#39;:</span>
+    <span class="c1">#             dateStart = date(int(f_year),int(f_month),1)</span>
+    <span class="c1">#             dateEnd = date(int(f_year),int(f_month),10)</span>
+    <span class="c1">#         elif f_dekad == &#39;2&#39;:</span>
+    <span class="c1">#             dateStart = date(int(f_year),int(f_month),11)</span>
+    <span class="c1">#             dateEnd = date(int(f_year),int(f_month),20)</span>
+    <span class="c1">#         elif f_dekad == &#39;3&#39;:</span>
+    <span class="c1">#             lastday = eomday(int(f_year), int(f_month))</span>
+    <span class="c1">#             dateStart = date(int(f_year),int(f_month),21)</span>
+    <span class="c1">#             dateEnd = date(int(f_year),int(f_month),lastday)</span>
+    <span class="c1">#         return(dateStart, dateEnd)</span>
+    <span class="c1">#     elif product == &#39;spi_dekad&#39;:</span>
+    <span class="c1">#         print(&quot;Dekad SPI&quot;)</span>
+    <span class="c1">#         productPattern = vp.get(&#39;CHIRPS_SPI&#39;, &#39;spi_regional_dekad_pattern&#39;)</span>
+    <span class="c1">#         regex = re.compile(productPattern)</span>
+    <span class="c1">#         result = regex.match(name)</span>
+    <span class="c1">#         f_year = result.group(&#39;year&#39;)</span>
+    <span class="c1">#         f_month = result.group(&#39;month&#39;)</span>
+    <span class="c1">#         f_dekad = result.group(&#39;dekad&#39;)</span>
+    <span class="c1">#         if f_dekad == &#39;1&#39;:</span>
+    <span class="c1">#             dateStart = date(int(f_year),int(f_month),1)</span>
+    <span class="c1">#             dateEnd = date(int(f_year),int(f_month),10)</span>
+    <span class="c1">#         elif f_dekad == &#39;2&#39;:</span>
+    <span class="c1">#             dateStart = date(int(f_year),int(f_month),11)</span>
+    <span class="c1">#             dateEnd = date(int(f_year),int(f_month),20)</span>
+    <span class="c1">#         elif f_dekad == &#39;3&#39;:</span>
+    <span class="c1">#             lastday = eomday(int(f_year), int(f_month))</span>
+    <span class="c1">#             dateStart = date(int(f_year),int(f_month),21)</span>
+    <span class="c1">#             dateEnd = date(int(f_year),int(f_month),lastday)</span>
+    <span class="c1">#         return(dateStart, dateEnd)</span>
+    <span class="c1">#     else:</span>
+    <span class="c1">#         return(None, None)</span>
+
+
+<div class="viewcode-block" id="ArcGISServerImpl.add_date_field"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.add_date_field">[docs]</a>    <span class="k">def</span> <span class="nf">add_date_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mosaic_dataset</span><span class="p">):</span>
+        <span class="n">_field_name</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;start_date&quot;</span><span class="p">,</span> <span class="s2">&quot;end_date&quot;</span><span class="p">]</span>
+        <span class="n">_field_type</span> <span class="o">=</span> <span class="s2">&quot;DATE&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">_field_name</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">ListFields</span><span class="p">(</span><span class="n">mosaic_dataset</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Field already exists&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">arcpy</span><span class="o">.</span><span class="n">AddField_management</span><span class="p">(</span><span class="n">mosaic_dataset</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">_field_type</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="ArcGISServerImpl.update_date_fields"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.update_date_fields">[docs]</a>    <span class="k">def</span> <span class="nf">update_date_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mosaic_dataset</span><span class="p">,</span> <span class="n">product</span><span class="p">):</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Name&#39;</span><span class="p">,</span> <span class="s1">&#39;start_date&#39;</span><span class="p">,</span> <span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;product : &quot;</span><span class="o">+</span><span class="n">product</span><span class="o">.</span><span class="n">product_name</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">UpdateCursor</span><span class="p">(</span><span class="n">mosaic_dataset</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span> <span class="k">as</span> <span class="n">cursor</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">cursor</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cursor</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">_filename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;.tif&quot;</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;filename: &quot;</span><span class="o">+</span><span class="n">_filename</span><span class="p">)</span>
+<span class="c1">#                    start_date, end_date = self.get_year_month(_filename, productX)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;tes &quot;</span><span class="p">,</span> <span class="n">product</span><span class="o">.</span><span class="n">valid_from_date</span><span class="p">,</span> <span class="n">product</span><span class="o">.</span><span class="n">valid_to_date</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">product</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;cant find match naming template&quot;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">valid_from_date</span><span class="p">,</span> <span class="n">product</span><span class="o">.</span><span class="n">valid_to_date</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;tes&quot;</span><span class="p">)</span>
+                        <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">product</span><span class="o">.</span><span class="n">valid_from_date</span>
+                        <span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">product</span><span class="o">.</span><span class="n">valid_to_date</span>
+                <span class="k">elif</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;row1 is none&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">cursor</span><span class="o">.</span><span class="n">updateRow</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="ArcGISServerImpl.create_ags_file"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.create_ags_file">[docs]</a>    <span class="k">def</span> <span class="nf">create_ags_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="n">product_name</span><span class="p">,</span> <span class="n">server_url</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">mapping</span><span class="o">.</span><span class="n">CreateGISServerConnectionFile</span><span class="p">(</span><span class="s2">&quot;PUBLISH_GIS_SERVICES&quot;</span><span class="p">,</span>
+                                                <span class="n">ws</span><span class="p">,</span> <span class="n">product_name</span><span class="p">,</span>
+                                                <span class="n">server_url</span><span class="p">,</span>
+                                                <span class="s2">&quot;ARCGIS_SERVER&quot;</span><span class="p">,</span>
+                                                <span class="kc">False</span><span class="p">,</span>
+                                                <span class="n">ws</span><span class="p">,</span>
+                                                <span class="n">username</span><span class="p">,</span>
+                                                <span class="n">password</span><span class="p">,</span>
+                                                <span class="s2">&quot;SAVE_USERNAME&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Connection Server file is created&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="ArcGISServerImpl.create_image_SD_draft"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.create_image_SD_draft">[docs]</a>    <span class="k">def</span> <span class="nf">create_image_SD_draft</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">layer</span><span class="p">,</span> <span class="n">sd_draft</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">connection_file</span><span class="p">):</span>
+        <span class="n">_product_summary</span> <span class="o">=</span> <span class="n">product</span><span class="o">.</span><span class="n">summary</span>
+        <span class="n">_product_tags</span> <span class="o">=</span> <span class="n">product</span><span class="o">.</span><span class="n">tags</span>
+<span class="c1">#        summaryP = summary[product]</span>
+<span class="c1">#        tagsP = tags[product]</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">CreateImageSDDraft</span><span class="p">(</span><span class="n">raster_or_mosaic_layer</span><span class="o">=</span><span class="n">layer</span><span class="p">,</span> <span class="n">out_sddraft</span><span class="o">=</span><span class="n">sd_draft</span><span class="p">,</span> <span class="n">service_name</span><span class="o">=</span><span class="n">service</span><span class="p">,</span>
+                                 <span class="n">server_type</span><span class="o">=</span><span class="s1">&#39;FROM_CONNECTION_FILE&#39;</span><span class="p">,</span> <span class="n">connection_file_path</span><span class="o">=</span><span class="n">connection_file</span><span class="p">,</span>
+                                 <span class="n">copy_data_to_server</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                 <span class="n">folder_name</span><span class="o">=</span><span class="s1">&#39;Climate&#39;</span><span class="p">,</span> <span class="n">summary</span><span class="o">=</span><span class="n">_product_summary</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">_product_tags</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;SDDraft file for </span><span class="si">{0}</span><span class="s2"> is created&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">product_name</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="ArcGISServerImpl.analyze_SD_draft"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.analyze_SD_draft">[docs]</a>    <span class="k">def</span> <span class="nf">analyze_SD_draft</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sd_draft</span><span class="p">,</span> <span class="n">sd</span><span class="p">):</span>
+        <span class="n">_analysis</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">mapping</span><span class="o">.</span><span class="n">AnalyzeForSD</span><span class="p">(</span><span class="n">sd_draft</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Service Definition analysis&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;messages&#39;</span><span class="p">,</span> <span class="s1">&#39;warnings&#39;</span><span class="p">,</span> <span class="s1">&#39;errors&#39;</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;---- </span><span class="si">{0}</span><span class="s1"> ---&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">upper</span><span class="p">()))</span>
+            <span class="n">_vars</span> <span class="o">=</span> <span class="n">_analysis</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">for</span> <span class="p">((</span><span class="n">message</span><span class="p">,</span> <span class="n">code</span><span class="p">),</span> <span class="n">layer_list</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_vars</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;    </span><span class="si">{0}</span><span class="s2"> (CODE </span><span class="si">{1}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">code</span><span class="p">))</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;       applies to:&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layer_list</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">_analysis</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="p">{}:</span>
+            <span class="c1"># Execute StageService</span>
+            <span class="n">arcpy</span><span class="o">.</span><span class="n">StageService_server</span><span class="p">(</span><span class="n">sd_draft</span><span class="p">,</span> <span class="n">sd</span><span class="p">)</span>
+            <span class="c1"># Execute UploadServiceDefinition</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># if the sddraft analysis contained errors, display them</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">_analysis</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="ArcGISServerImpl.insert_RTF_file"><a class="viewcode-back" href="../../../vampire.processing.ArcGISServerImpl.html#vampire.processing.ArcGISServerImpl.ArcGISServerImpl.insert_RTF_file">[docs]</a>    <span class="k">def</span> <span class="nf">insert_RTF_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">sd_draft</span><span class="p">):</span>
+        <span class="n">_file_RTF</span> <span class="o">=</span> <span class="n">product</span><span class="o">.</span><span class="n">template_file</span> <span class="c1">#template[product]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;_file_RTF : </span><span class="si">{0}</span><span class="s1"> in </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_file_RTF</span><span class="p">,</span> <span class="n">sd_draft</span><span class="p">))</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">DOM</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">sd_draft</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s2">&quot;PropertySetProperty&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s2">&quot;Key&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">y</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">childNodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">nodeValue</span> <span class="o">==</span> <span class="s2">&quot;rasterFunctions&quot;</span><span class="p">:</span>
+                    <span class="n">price</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s2">&quot;Value&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">price</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">firstChild</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">p</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">createTextNode</span><span class="p">(</span><span class="n">_file_RTF</span><span class="p">))</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RTF data </span><span class="si">{0}</span><span class="s2"> is added&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_file_RTF</span><span class="p">))</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">p</span><span class="o">.</span><span class="n">firstChild</span><span class="o">.</span><span class="n">replaceWholeText</span><span class="p">(</span><span class="n">_file_RTF</span><span class="p">)</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RTF data </span><span class="si">{0}</span><span class="s2"> is added&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_file_RTF</span><span class="p">))</span>
+        <span class="n">services___</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s1">&#39;TypeName&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">service__</span> <span class="ow">in</span> <span class="n">services___</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">service__</span><span class="o">.</span><span class="n">firstChild</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="s1">&#39;WMSServer&#39;</span><span class="p">:</span>
+                <span class="n">service__</span><span class="o">.</span><span class="n">parentNode</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="s1">&#39;Enabled&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">firstChild</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="s1">&#39;true&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sd_draft</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">doc</span><span class="o">.</span><span class="n">writexml</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

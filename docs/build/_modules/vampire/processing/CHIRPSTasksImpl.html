@@ -1,0 +1,439 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.CHIRPSTasksImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.CHIRPSTasksImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">import</span> <span class="nn">ftputil</span>
+
+<span class="kn">import</span> <span class="nn">BaseTaskImpl</span>
+<span class="kn">import</span> <span class="nn">directory_utils</span>
+<span class="kn">import</span> <span class="nn">VampireDefaults</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">calculate_statistics_arc</span> <span class="k">as</span> <span class="nn">calculate_statistics</span>
+    <span class="kn">import</span> <span class="nn">precipitation_analysis_arc</span> <span class="k">as</span> <span class="nn">precip_analysis</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">calculate_statistics_os</span> <span class="k">as</span> <span class="nn">calculate_statistics</span>
+    <span class="kn">import</span> <span class="nn">precipitation_analysis_os</span> <span class="k">as</span> <span class="nn">precip_analysis</span>
+
+
+<div class="viewcode-block" id="CHIRPSTasksImpl"><a class="viewcode-back" href="../../../vampire.processing.CHIRPSTasksImpl.html#vampire.processing.CHIRPSTasksImpl.CHIRPSTasksImpl">[docs]</a><span class="k">class</span> <span class="nc">CHIRPSTasksImpl</span><span class="p">():</span>
+    <span class="n">subclasses</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="CHIRPSTasksImpl.register_subclass"><a class="viewcode-back" href="../../../vampire.processing.CHIRPSTasksImpl.html#vampire.processing.CHIRPSTasksImpl.CHIRPSTasksImpl.register_subclass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">register_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">product_type</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">subclass</span><span class="p">):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">product_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">subclass</span>
+            <span class="k">return</span> <span class="n">subclass</span>
+        <span class="k">return</span> <span class="n">decorator</span></div>
+
+<div class="viewcode-block" id="CHIRPSTasksImpl.create"><a class="viewcode-back" href="../../../vampire.processing.CHIRPSTasksImpl.html#vampire.processing.CHIRPSTasksImpl.CHIRPSTasksImpl.create">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">process_type</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">process_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad process type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">process_type</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">vampire_defaults</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">VampireDefaults</span><span class="o">.</span><span class="n">VampireDefaults</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">process_type</span><span class="p">](</span><span class="n">params</span><span class="p">,</span> <span class="n">vp</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="CHIRPSDownloadTask"><a class="viewcode-back" href="../../../vampire.processing.CHIRPSTasksImpl.html#vampire.processing.CHIRPSTasksImpl.CHIRPSDownloadTask">[docs]</a><span class="nd">@CHIRPSTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;download&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">CHIRPSDownloadTask</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CHIRPSDownloadTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising CHIRPS download task&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="CHIRPSDownloadTask.process"><a class="viewcode-back" href="../../../vampire.processing.CHIRPSTasksImpl.html#vampire.processing.CHIRPSTasksImpl.CHIRPSDownloadTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Downloading CHIRPS data&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No ouput directory &#39;output_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="n">_dates</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_start_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_end_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_overwrite</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="s1">&#39;dates&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_dates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;dates&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;start_date&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_start_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;end_date&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_end_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;overwrite&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_overwrite</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">download_data</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;interval&#39;</span><span class="p">],</span> <span class="n">dates</span><span class="o">=</span><span class="n">_dates</span><span class="p">,</span> <span class="n">start_date</span><span class="o">=</span><span class="n">_start_date</span><span class="p">,</span>
+                         <span class="n">end_date</span><span class="o">=</span><span class="n">_end_date</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">_overwrite</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CHIRPSDownloadTask.download_data"><a class="viewcode-back" href="../../../vampire.processing.CHIRPSTasksImpl.html#vampire.processing.CHIRPSTasksImpl.CHIRPSDownloadTask.download_data">[docs]</a>    <span class="k">def</span> <span class="nf">download_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">dates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">start_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Download CHIRPS precipitation data for given interval.</span>
+
+<span class="sd">        Download CHIRPS precipitation data for given interval. Will download all available data unless start</span>
+<span class="sd">        and/or end dates are provided.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        output_dir : str</span>
+<span class="sd">            Filename of raster file</span>
+<span class="sd">        interval : str</span>
+<span class="sd">            Filename of vector file</span>
+<span class="sd">        dates : str</span>
+<span class="sd">            Name of field labelling the zones within vector file</span>
+<span class="sd">        start_date : str</span>
+<span class="sd">            Filename of output table (.dbf or .csv)</span>
+<span class="sd">        end_date : str</span>
+<span class="sd">            F</span>
+<span class="sd">        overwrite : boolean</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">            Returns None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_ftp_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;ftp_dir_</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+        <span class="n">files_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_dir</span><span class="p">):</span>
+            <span class="c1"># output directory does not exist, create it first</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">ftputil</span><span class="o">.</span><span class="n">FTPHost</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;ftp_address&#39;</span><span class="p">),</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;ftp_user&#39;</span><span class="p">),</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;ftp_password&#39;</span><span class="p">))</span> <span class="k">as</span> <span class="n">ftp_host</span><span class="p">:</span>
+            <span class="n">ftp_host</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">_ftp_dir</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;daily&#39;</span><span class="p">:</span>
+                <span class="c1"># daily files are in directory by year so create new list of files</span>
+                <span class="c1"># loop through years in dates and get from the correct directory</span>
+                <span class="n">_years</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">_ftp_years</span> <span class="o">=</span> <span class="n">ftp_host</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">ftp_host</span><span class="o">.</span><span class="n">curdir</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">start_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">end_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># have both start and end dates, create list of years</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">start_date</span><span class="o">.</span><span class="n">year</span><span class="o">+</span><span class="p">(</span><span class="n">end_date</span><span class="o">.</span><span class="n">year</span><span class="o">-</span><span class="n">start_date</span><span class="o">.</span><span class="n">year</span><span class="p">)):</span>
+                            <span class="n">_years</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">start_date</span><span class="o">.</span><span class="n">year</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># have start date but no end date. Find last year available and download all until then</span>
+                        <span class="k">for</span> <span class="n">fd</span> <span class="ow">in</span> <span class="n">_ftp_years</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">start_date</span><span class="o">.</span><span class="n">year</span><span class="p">:</span>
+                                <span class="n">_years</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">fd</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># no start date</span>
+                    <span class="k">if</span> <span class="n">end_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># have end date but no start date. Find all years until end_date</span>
+                        <span class="k">for</span> <span class="n">fd</span> <span class="ow">in</span> <span class="n">_ftp_years</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">end_date</span><span class="o">.</span><span class="n">year</span><span class="p">:</span>
+                                <span class="n">_years</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">fd</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># no start or end date.</span>
+                        <span class="k">if</span> <span class="n">dates</span><span class="p">:</span>
+                            <span class="c1"># have list of dates</span>
+                            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dates</span><span class="p">:</span>
+                                <span class="n">_years</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="n">_years</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">_years</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">_years</span><span class="p">:</span>
+                    <span class="n">ftp_host</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">ftp_host</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_ftp_dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+                    <span class="n">_files</span> <span class="o">=</span> <span class="n">ftp_host</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">ftp_host</span><span class="o">.</span><span class="n">curdir</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">_files</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">_files</span><span class="p">:</span>
+                            <span class="n">_f_abs</span> <span class="o">=</span> <span class="n">ftp_host</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ftp_host</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="n">f</span><span class="p">)</span>
+                            <span class="n">all_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_f_abs</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">all_files</span> <span class="o">=</span> <span class="n">ftp_host</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">ftp_host</span><span class="o">.</span><span class="n">curdir</span><span class="p">)</span>
+            <span class="n">regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;global_</span><span class="si">{0}</span><span class="s1">_pattern&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">interval</span><span class="p">)))</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">all_files</span><span class="p">:</span>
+                <span class="n">download</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+                <span class="n">f_date</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;monthly&#39;</span> <span class="ow">or</span> <span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;dekad&#39;</span> <span class="ow">or</span> <span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;daily&#39;</span><span class="p">:</span>
+                        <span class="n">f_year</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)</span>
+                        <span class="n">f_month</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;month&#39;</span><span class="p">)</span>
+                        <span class="n">f_day</span> <span class="o">=</span> <span class="mi">1</span>
+                        <span class="k">if</span> <span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;daily&#39;</span><span class="p">:</span>
+                            <span class="n">f_day</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">)</span>
+                        <span class="n">f_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">f_year</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">f_month</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">f_day</span><span class="p">))</span>
+                    <span class="k">elif</span> <span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;seasonal&#39;</span><span class="p">:</span>
+                        <span class="n">f_year</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)</span>
+                        <span class="n">f_month</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;season&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+                        <span class="n">f_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">f_year</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">f_month</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;Interval not recognised.&quot;</span>
+                    <span class="k">if</span> <span class="n">dates</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">-</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f_year</span><span class="p">,</span> <span class="n">f_month</span><span class="p">)</span> <span class="ow">in</span> <span class="n">dates</span><span class="p">:</span>
+                            <span class="n">download</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">elif</span> <span class="p">(</span><span class="n">start_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">end_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+                        <span class="n">download</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">elif</span> <span class="n">start_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># have end_date, check date is before</span>
+                        <span class="k">if</span> <span class="n">f_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">f_date</span> <span class="o">&lt;=</span> <span class="n">end_date</span><span class="p">:</span>
+                                <span class="n">download</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">elif</span> <span class="n">end_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># have start_date, check date is after</span>
+                        <span class="k">if</span> <span class="n">f_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">f_date</span> <span class="o">&gt;=</span> <span class="n">start_date</span><span class="p">:</span>
+                                <span class="n">download</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># have both start and end date</span>
+                        <span class="k">if</span> <span class="n">f_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">f_date</span> <span class="o">&gt;=</span> <span class="n">start_date</span> <span class="ow">and</span> <span class="n">f_date</span> <span class="o">&lt;=</span> <span class="n">end_date</span><span class="p">:</span>
+                                <span class="n">download</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">ftp_host</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+                            <span class="n">local_f</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">local_f</span><span class="p">)</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
+                                <span class="n">ftp_host</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">local_f</span><span class="p">)</span>  <span class="c1"># remote, local</span>
+                                <span class="n">files_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;File </span><span class="si">{0}</span><span class="s1"> not available for download.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">files_list</span></div></div>
+
+
+<div class="viewcode-block" id="CHIRPSLongtermAverageTask"><a class="viewcode-back" href="../../../vampire.processing.CHIRPSTasksImpl.html#vampire.processing.CHIRPSTasksImpl.CHIRPSLongtermAverageTask">[docs]</a><span class="nd">@CHIRPSTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;longterm_average&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">CHIRPSLongtermAverageTask</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CHIRPSLongtermAverageTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="CHIRPSLongtermAverageTask.process"><a class="viewcode-back" href="../../../vampire.processing.CHIRPSTasksImpl.html#vampire.processing.CHIRPSTasksImpl.CHIRPSLongtermAverageTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Calculating CHIRPS long-term average&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No ouput directory &#39;output_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;dates&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">dates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;dates&#39;</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">input_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No input directory &#39;input_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;functions&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">funcs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;functions&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">funcs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;AVG&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;file_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculate_longterm_stats</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;interval&#39;</span><span class="p">],</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="n">pattern</span><span class="p">,</span>
+                                    <span class="n">function_list</span><span class="o">=</span><span class="n">funcs</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+    <span class="c1"># Compute statistics for all files within a directory. Computes average unless other functions are provided.</span>
+<div class="viewcode-block" id="CHIRPSLongtermAverageTask.calculate_longterm_stats"><a class="viewcode-back" href="../../../vampire.processing.CHIRPSTasksImpl.html#vampire.processing.CHIRPSTasksImpl.CHIRPSLongtermAverageTask.calculate_longterm_stats">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_longterm_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">base_path</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">function_list</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;AVG&#39;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;global_</span><span class="si">{0}</span><span class="s1">_pattern&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_pattern</span> <span class="o">=</span> <span class="n">pattern</span>
+
+        <span class="n">_all_files</span> <span class="o">=</span> <span class="n">vampire</span><span class="o">.</span><span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="n">_pattern</span><span class="p">)</span>
+        <span class="n">_files_list</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">_months_list</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">_yrs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">_base_name</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">_all_files</span><span class="p">:</span>
+            <span class="n">_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">_result</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">_pattern</span><span class="p">,</span> <span class="n">_fname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_result</span><span class="o">.</span><span class="n">groups</span><span class="p">(</span><span class="s1">&#39;country&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_base_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_</span><span class="si">{1}</span><span class="s1">-</span><span class="si">{2}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;country&#39;</span><span class="p">),</span>
+                                                  <span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;base_name&#39;</span><span class="p">),</span>
+                                                  <span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;version&#39;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_base_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">-</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;base_name&#39;</span><span class="p">),</span> <span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;version&#39;</span><span class="p">))</span>
+            <span class="n">_yrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">interval</span> <span class="o">==</span> <span class="s1">&#39;monthly&#39;</span><span class="p">:</span>
+                <span class="n">_files_list</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;month&#39;</span><span class="p">),</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">interval</span> <span class="o">==</span> <span class="s1">&#39;dekad&#39;</span><span class="p">:</span>
+                <span class="n">_files_list</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;month&#39;</span><span class="p">),</span> <span class="p">{})</span>
+                <span class="n">_months_list</span> <span class="o">=</span> <span class="n">_files_list</span><span class="p">[</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;month&#39;</span><span class="p">)]</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;dekad&#39;</span><span class="p">),</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">interval</span> <span class="o">==</span> <span class="s1">&#39;seasonal&#39;</span><span class="p">:</span>
+                <span class="n">_files_list</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;season&#39;</span><span class="p">),</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;Interval not recognised.&quot;</span>
+
+        <span class="n">_years</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">_yrs</span><span class="p">)</span>
+        <span class="n">_syr</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">_years</span><span class="p">)</span> <span class="c1">#1981</span>
+        <span class="n">_eyr</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">_years</span><span class="p">)</span>
+        <span class="n">_numyrs</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">_eyr</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">_syr</span><span class="p">))</span>
+        <span class="n">_dekads</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">]</span>
+        <span class="n">_months</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;01&#39;</span><span class="p">,</span> <span class="s1">&#39;02&#39;</span><span class="p">,</span> <span class="s1">&#39;03&#39;</span><span class="p">,</span> <span class="s1">&#39;04&#39;</span><span class="p">,</span> <span class="s1">&#39;05&#39;</span><span class="p">,</span> <span class="s1">&#39;06&#39;</span><span class="p">,</span> <span class="s1">&#39;07&#39;</span><span class="p">,</span> <span class="s1">&#39;08&#39;</span><span class="p">,</span> <span class="s1">&#39;09&#39;</span><span class="p">,</span> <span class="s1">&#39;10&#39;</span><span class="p">,</span> <span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">]</span>
+        <span class="n">_seasons</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;010203&#39;</span><span class="p">,</span><span class="s1">&#39;020304&#39;</span><span class="p">,</span><span class="s1">&#39;030405&#39;</span><span class="p">,</span><span class="s1">&#39;040506&#39;</span><span class="p">,</span> <span class="s1">&#39;050607&#39;</span><span class="p">,</span> <span class="s1">&#39;060708&#39;</span><span class="p">,</span> <span class="s1">&#39;070809&#39;</span><span class="p">,</span> <span class="s1">&#39;080910&#39;</span><span class="p">,</span> <span class="s1">&#39;091011&#39;</span><span class="p">,</span> <span class="s1">&#39;101112&#39;</span><span class="p">,</span> <span class="s1">&#39;111201&#39;</span><span class="p">,</span> <span class="s1">&#39;120102&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">interval</span> <span class="o">==</span> <span class="s1">&#39;monthly&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">_months</span><span class="p">:</span>
+                <span class="c1"># for each month, calculate long term average</span>
+                <span class="k">if</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">_files_list</span><span class="p">:</span>
+                    <span class="n">fl</span> <span class="o">=</span> <span class="n">_files_list</span><span class="p">[</span><span class="n">m</span><span class="p">]</span>
+                    <span class="n">newfilename</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.</span><span class="si">{1}</span><span class="s1">-</span><span class="si">{2}</span><span class="s1">.</span><span class="si">{3}</span><span class="s1">.monthly.</span><span class="si">{4}</span><span class="s1">yrs&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_base_name</span><span class="p">,</span> <span class="n">_syr</span><span class="p">,</span> <span class="n">_eyr</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">_numyrs</span><span class="p">)</span>
+                    <span class="n">newfl</span> <span class="o">=</span> <span class="n">vampire</span><span class="o">.</span><span class="n">directory_utils</span><span class="o">.</span><span class="n">unzip_file_list</span><span class="p">(</span><span class="n">fl</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">calculate_stats</span><span class="p">(</span><span class="n">newfl</span><span class="p">,</span> <span class="n">newfilename</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">function_list</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">interval</span> <span class="o">==</span> <span class="s1">&#39;seasonal&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">_seasons</span><span class="p">:</span>
+                <span class="c1"># for each season, calculate long term average</span>
+                <span class="k">if</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">_files_list</span><span class="p">:</span>
+                    <span class="n">fl</span> <span class="o">=</span> <span class="n">_files_list</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+                    <span class="n">newfilename</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.</span><span class="si">{1}</span><span class="s1">-</span><span class="si">{2}</span><span class="s1">.</span><span class="si">{3}</span><span class="s1">.seasonal.</span><span class="si">{4}</span><span class="s1">yrs&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_base_name</span><span class="p">,</span> <span class="n">_syr</span><span class="p">,</span> <span class="n">_eyr</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">_numyrs</span><span class="p">)</span>
+                    <span class="n">newfl</span> <span class="o">=</span> <span class="n">vampire</span><span class="o">.</span><span class="n">directory_utils</span><span class="o">.</span><span class="n">unzip_file_list</span><span class="p">(</span><span class="n">fl</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">calculate_stats</span><span class="p">(</span><span class="n">newfl</span><span class="p">,</span> <span class="n">newfilename</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">function_list</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">interval</span> <span class="o">==</span> <span class="s1">&#39;dekad&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">_months</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">_dekads</span><span class="p">:</span>
+                    <span class="c1"># for each dekad of each month, calculate long term average</span>
+                    <span class="k">if</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">_files_list</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">_files_list</span><span class="p">[</span><span class="n">m</span><span class="p">]:</span>
+                            <span class="n">fl</span> <span class="o">=</span> <span class="n">_files_list</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">d</span><span class="p">]</span>
+                            <span class="n">newfilename</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.</span><span class="si">{1}</span><span class="s1">-</span><span class="si">{2}</span><span class="s1">.</span><span class="si">{3}</span><span class="s1">.</span><span class="si">{4}</span><span class="s1">.dekad.</span><span class="si">{5}</span><span class="s1">yrs&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_base_name</span><span class="p">,</span> <span class="n">_syr</span><span class="p">,</span> <span class="n">_eyr</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">_numyrs</span><span class="p">)</span>
+                            <span class="n">newfl</span> <span class="o">=</span> <span class="n">vampire</span><span class="o">.</span><span class="n">directory_utils</span><span class="o">.</span><span class="n">unzip_file_list</span><span class="p">(</span><span class="n">fl</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">calculate_stats</span><span class="p">(</span><span class="n">newfl</span><span class="p">,</span> <span class="n">newfilename</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">function_list</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;Interval not recognised.&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+    <span class="c1"># helper function to calculate statistics for a list of files.</span>
+<div class="viewcode-block" id="CHIRPSLongtermAverageTask.calculate_stats"><a class="viewcode-back" href="../../../vampire.processing.CHIRPSTasksImpl.html#vampire.processing.CHIRPSTasksImpl.CHIRPSLongtermAverageTask.calculate_stats">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_list</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">function_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Calculate statistics for a list of raster files and save results to output directory.</span>
+
+<span class="sd">        For each raster in the list, calculate each statistic in the list of functions. All resulting</span>
+<span class="sd">        rasters are saved in the output directory with the new filename and statistic function name.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_list : list</span>
+<span class="sd">            Filename of raster file</span>
+<span class="sd">        new_filename : str</span>
+<span class="sd">            Filename of output file</span>
+<span class="sd">        output_dir : str</span>
+<span class="sd">            Name of directory to save output files in</span>
+<span class="sd">        function_list : list</span>
+<span class="sd">            List of statistics to calculate. Valid statistic functions are AVG, SUM, STD, MIN and MAX</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">            Returns None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">function_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">f</span> <span class="o">==</span> <span class="s1">&#39;AVG&#39;</span><span class="p">:</span>
+                <span class="n">newfile</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.avg.tif&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_filename</span><span class="p">)</span>
+                <span class="n">ofl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">newfile</span><span class="p">)</span>
+                <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_average</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">ofl</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">f</span> <span class="o">==</span> <span class="s1">&#39;STD&#39;</span><span class="p">:</span>
+                <span class="n">newfile</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.std.tif&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_filename</span><span class="p">)</span>
+                <span class="n">ofl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">newfile</span><span class="p">)</span>
+                <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_std_dev</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">ofl</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">f</span> <span class="o">==</span> <span class="s1">&#39;MAX&#39;</span><span class="p">:</span>
+                <span class="n">newfile</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.max.tif&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_filename</span><span class="p">)</span>
+                <span class="n">ofl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">newfile</span><span class="p">)</span>
+                <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_max</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">ofl</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">f</span> <span class="o">==</span> <span class="s1">&#39;MIN&#39;</span><span class="p">:</span>
+                <span class="n">newfile</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.min.tif&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_filename</span><span class="p">)</span>
+                <span class="n">ofl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">newfile</span><span class="p">)</span>
+                <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_min</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">ofl</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">f</span> <span class="o">==</span> <span class="s1">&#39;SUM&#39;</span><span class="p">:</span>
+                <span class="n">newfile</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.sum.tif&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_filename</span><span class="p">)</span>
+                <span class="n">ofl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">newfile</span><span class="p">)</span>
+                <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_sum</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">ofl</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="n">f</span><span class="p">,</span> <span class="s1">&#39; is not a valid function.&#39;</span>
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

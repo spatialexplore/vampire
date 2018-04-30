@@ -1,0 +1,170 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.VampireDefaults &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.VampireDefaults</h1><div class="highlight"><pre>
+<span></span><span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;rochelle&#39;</span>
+<span class="c1">#!/usr/bin/env python</span>
+
+<span class="kn">import</span> <span class="nn">ast</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">import</span> <span class="nn">ExtParser</span>
+
+
+<div class="viewcode-block" id="VampireDefaults"><a class="viewcode-back" href="../../vampire.VampireDefaults.html#vampire.VampireDefaults.VampireDefaults">[docs]</a><span class="k">class</span> <span class="nc">VampireDefaults</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># set up logging</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;Vampire&#39;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;vampire.log&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> - </span><span class="si">%(name)s</span><span class="s1"> - </span><span class="si">%(levelname)s</span><span class="s1"> - </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
+                            <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span> <span class="n">filemode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+
+
+        <span class="c1"># load default values from .ini file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">ExtParser</span><span class="o">.</span><span class="n">ExtParser</span><span class="p">()</span>
+        <span class="n">cur_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">&#39;vampire.ini&#39;</span><span class="p">)</span>
+        <span class="n">ini_files</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;vampire.ini&#39;</span><span class="p">,</span>
+                     <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">&#39;..</span><span class="se">\\</span><span class="s1">vampire.ini&#39;</span><span class="p">),</span>
+                     <span class="n">cur_dir</span><span class="p">]</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">ini_files</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Failed to open/find vampire.ini in </span><span class="si">{0}</span><span class="s2">, </span><span class="si">{1}</span><span class="s2"> and </span><span class="si">{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ini_files</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ini_files</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ini_files</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">msg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">countries</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="s1">&#39;country&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">countries</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">k</span><span class="o">.</span><span class="n">title</span><span class="p">(),</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">country_codes_l</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">country_codes</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">:</span>
+            <span class="n">cc</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="s1">&#39;chirps_boundary_file&#39;</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)):</span>
+                <span class="n">_chirps_boundary_file</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))[</span><span class="s1">&#39;chirps_boundary_file&#39;</span><span class="p">]</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;.*\$\{(?P&lt;param&gt;.*)\}.*&#39;</span><span class="p">,</span> <span class="n">_chirps_boundary_file</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">p</span><span class="p">:</span>
+                    <span class="c1"># has a reference</span>
+                    <span class="n">_chirps_boundary_file</span> <span class="o">=</span> <span class="n">_chirps_boundary_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;${&#39;</span><span class="o">+</span><span class="n">p</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;param&#39;</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;}&#39;</span><span class="p">,</span>
+                                                            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;param&#39;</span><span class="p">)))</span>
+                    <span class="n">cc</span><span class="p">[</span><span class="s1">&#39;chirps_boundary_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_chirps_boundary_file</span>
+            <span class="k">if</span> <span class="s1">&#39;modis_boundary_file&#39;</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)):</span>
+                <span class="n">_modis_boundary_file</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))[</span><span class="s1">&#39;modis_boundary_file&#39;</span><span class="p">]</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;.*\$\{(?P&lt;param&gt;.*)\}.*&#39;</span><span class="p">,</span> <span class="n">_modis_boundary_file</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">p</span><span class="p">:</span>
+                    <span class="c1"># has a reference</span>
+                    <span class="n">_modis_boundary_file</span> <span class="o">=</span> <span class="n">_modis_boundary_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;${&#39;</span><span class="o">+</span><span class="n">p</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;param&#39;</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;}&#39;</span><span class="p">,</span>
+                                                            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;param&#39;</span><span class="p">)))</span>
+                    <span class="n">cc</span><span class="p">[</span><span class="s1">&#39;modis_boundary_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_modis_boundary_file</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">cc</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">country_codes</span><span class="p">[</span><span class="n">cc</span><span class="p">[</span><span class="s1">&#39;abbreviation&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">c</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">country_codes_l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cc</span><span class="p">[</span><span class="s1">&#39;abbreviation&#39;</span><span class="p">])</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="VampireDefaults.get"><a class="viewcode-back" href="../../vampire.VampireDefaults.html#vampire.VampireDefaults.VampireDefaults.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VampireDefaults.get_home_country"><a class="viewcode-back" href="../../vampire.VampireDefaults.html#vampire.VampireDefaults.VampireDefaults.get_home_country">[docs]</a>    <span class="k">def</span> <span class="nf">get_home_country</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VampireDefaults.get_country"><a class="viewcode-back" href="../../vampire.VampireDefaults.html#vampire.VampireDefaults.VampireDefaults.get_country">[docs]</a>    <span class="k">def</span> <span class="nf">get_country</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">country</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">countries</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">[</span><span class="n">country</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="VampireDefaults.get_country_code"><a class="viewcode-back" href="../../vampire.VampireDefaults.html#vampire.VampireDefaults.VampireDefaults.get_country_code">[docs]</a>    <span class="k">def</span> <span class="nf">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">country</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">country_codes</span>
+        <span class="k">if</span> <span class="n">country</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">[</span><span class="n">country</span><span class="p">][</span><span class="s1">&#39;abbreviation&#39;</span><span class="p">]</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="VampireDefaults.get_country_name"><a class="viewcode-back" href="../../vampire.VampireDefaults.html#vampire.VampireDefaults.VampireDefaults.get_country_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_country_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country_code</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">country_code</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">countries</span><span class="p">[</span><span class="n">c</span><span class="p">][</span><span class="s1">&#39;abbreviation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">c</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="VampireDefaults.print_defaults"><a class="viewcode-back" href="../../vampire.VampireDefaults.html#vampire.VampireDefaults.VampireDefaults.print_defaults">[docs]</a>    <span class="k">def</span> <span class="nf">print_defaults</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">_sections</span></div></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

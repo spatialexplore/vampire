@@ -1,0 +1,169 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.CHIRPSLongtermAverageProductImpl module &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vampire.config_products.CHIRPSLongtermAverageProductImpl">
+<span id="vampire-config-products-chirpslongtermaverageproductimpl-module"></span><h1>vampire.config_products.CHIRPSLongtermAverageProductImpl module<a class="headerlink" href="#module-vampire.config_products.CHIRPSLongtermAverageProductImpl" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="vampire.config_products.CHIRPSLongtermAverageProductImpl.CHIRPSLongtermAverageProductImpl">
+<em class="property">class </em><code class="descclassname">vampire.config_products.CHIRPSLongtermAverageProductImpl.</code><code class="descname">CHIRPSLongtermAverageProductImpl</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/CHIRPSLongtermAverageProductImpl.html#CHIRPSLongtermAverageProductImpl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.CHIRPSLongtermAverageProductImpl.CHIRPSLongtermAverageProductImpl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="vampire.config_products.RasterProductImpl.html#vampire.config_products.RasterProductImpl.RasterProductImpl" title="vampire.config_products.RasterProductImpl.RasterProductImpl"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.RasterProductImpl.RasterProductImpl</span></code></a></p>
+<p>CHIRPS long-term average.</p>
+<p>Data handling for generating CHIRPS long-term averages.</p>
+<dl class="method">
+<dt id="vampire.config_products.CHIRPSLongtermAverageProductImpl.CHIRPSLongtermAverageProductImpl.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>input_dir=None</em>, <em>output_dir=None</em>, <em>input_pattern=None</em>, <em>output_pattern=None</em>, <em>functions=None</em>, <em>download=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/CHIRPSLongtermAverageProductImpl.html#CHIRPSLongtermAverageProductImpl.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.CHIRPSLongtermAverageProductImpl.CHIRPSLongtermAverageProductImpl.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a config file process for CHIRPS long-term average product.</p>
+<p>Generate VAMPIRE config file processes to generate long-term averages from CHIRPS data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>input_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory path for CHIRPS precipitation files. Default is None.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path for product output. If the output_dir is None, the VAMPIRE default rainfall anomaly product directory will be used.</li>
+<li><strong>input_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern for finding CHIRPS precipitation files. Default is None.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern for specifying output filename. Used in conjuction with input_pattern. Default is None.</li>
+<li><strong>functions</strong> (<em>list of string</em>) – List of functions to calculate. Valid options include ‘AVG’, ‘MIN’, ‘MAX’, ‘STD’.</li>
+<li><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating whether data should be downloaded or not.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Returns string containing the configuration file process.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.CHIRPSLongtermAverageProductImpl.CHIRPSLongtermAverageProductImpl.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/CHIRPSLongtermAverageProductImpl.html#CHIRPSLongtermAverageProductImpl.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.CHIRPSLongtermAverageProductImpl.CHIRPSLongtermAverageProductImpl.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate VAMPIRE config file header for CHIRPS long-term average datasets.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Returns config file header section.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.CHIRPSLongtermAverageProductImpl.CHIRPSLongtermAverageProductImpl.generate_longterm_average_section">
+<code class="descname">generate_longterm_average_section</code><span class="sig-paren">(</span><em>input_dir</em>, <em>output_dir</em>, <em>input_pattern</em>, <em>output_pattern</em>, <em>functions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/CHIRPSLongtermAverageProductImpl.html#CHIRPSLongtermAverageProductImpl.generate_longterm_average_section"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.CHIRPSLongtermAverageProductImpl.CHIRPSLongtermAverageProductImpl.generate_longterm_average_section" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file string for CHIRPS long-term average product.</p>
+<p>Generate VAMPIRE config file string to generate long-term averages from CHIRPS data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>input_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory path for CHIRPS precipitation files. Default is None.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path for product output. If the output_dir is None, the VAMPIRE default rainfall anomaly product directory will be used.</li>
+<li><strong>input_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern for finding CHIRPS precipitation files. Default is None.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern for specifying output filename. Used in conjuction with input_pattern. Default is None.</li>
+<li><strong>functions</strong> (<em>list of string</em>) – List of functions to calculate. Valid options include ‘AVG’, ‘MIN’, ‘MAX’, ‘STD’.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Returns string containing the configuration file process.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/vampire.config_products.CHIRPSLongtermAverageProductImpl.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

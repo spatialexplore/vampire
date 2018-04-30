@@ -1,0 +1,196 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.VHITaskImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.VHITaskImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">BaseTaskImpl</span>
+<span class="kn">import</span> <span class="nn">directory_utils</span> <span class="k">as</span> <span class="nn">directory_utils</span>
+<span class="kn">import</span> <span class="nn">filename_utils</span> <span class="k">as</span> <span class="nn">filename_utils</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">vegetation_analysis_arc</span> <span class="k">as</span> <span class="nn">vegetation_analysis</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">vegetation_analysis_os</span> <span class="k">as</span> <span class="nn">vegetation_analysis</span>
+
+<div class="viewcode-block" id="VHITaskImpl"><a class="viewcode-back" href="../../../vampire.processing.VHITaskImpl.html#vampire.processing.VHITaskImpl.VHITaskImpl">[docs]</a><span class="k">class</span> <span class="nc">VHITaskImpl</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise RainfallAnomalyTaskImpl object.</span>
+
+<span class="sd">    Abstract implementation class for processing rainfall anomaly.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">VHITaskImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising Vegetation Health Index task&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="VHITaskImpl.process"><a class="viewcode-back" href="../../../vampire.processing.VHITaskImpl.html#vampire.processing.VHITaskImpl.VHITaskImpl.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Compute Vegetation Health Index&quot;</span><span class="p">)</span>
+        <span class="n">_vci_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_vci_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_vci_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_tci_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_tci_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_tci_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_out_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="s1">&#39;VCI_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_vci_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;VCI_file&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;VCI_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No VCI file &#39;VCI_file&#39; or pattern &#39;VCI_pattern&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;VCI_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">_vci_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;VCI_dir&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_vci_dir</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">_vci_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;VCI_pattern&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;TCI_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_tci_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;TCI_file&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;TCI_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No TCI file &#39;TCI_file&#39; or pattern &#39;TCI_pattern&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;TCI_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">_tci_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;TCI_dir&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_tci_dir</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">_tci_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;TCI_pattern&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;output_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_out_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_file&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;output_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No output file &#39;output_file&#39; or pattern &#39;output_pattern&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;output_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_output_dir</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_pattern&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">calc_vhi</span><span class="p">(</span><span class="n">vci_filename</span><span class="o">=</span><span class="n">_vci_file</span><span class="p">,</span> <span class="n">vci_dir</span><span class="o">=</span><span class="n">_vci_dir</span><span class="p">,</span> <span class="n">vci_pattern</span><span class="o">=</span><span class="n">_vci_pattern</span><span class="p">,</span>
+                    <span class="n">tci_filename</span><span class="o">=</span><span class="n">_tci_file</span><span class="p">,</span> <span class="n">tci_dir</span><span class="o">=</span><span class="n">_tci_dir</span><span class="p">,</span> <span class="n">tci_pattern</span><span class="o">=</span><span class="n">_tci_pattern</span><span class="p">,</span>
+                    <span class="n">dst_filename</span><span class="o">=</span><span class="n">_out_file</span><span class="p">,</span> <span class="n">dst_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">dst_pattern</span><span class="o">=</span><span class="n">_output_pattern</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VHITaskImpl.calc_vhi"><a class="viewcode-back" href="../../../vampire.processing.VHITaskImpl.html#vampire.processing.VHITaskImpl.VHITaskImpl.calc_vhi">[docs]</a>    <span class="k">def</span> <span class="nf">calc_vhi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vci_filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vci_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vci_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">tci_filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tci_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tci_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">dst_filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dst_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dst_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering calc_vhi&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">vci_filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># get filename from pattern and directory</span>
+            <span class="n">files_list</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">vci_dir</span><span class="p">,</span> <span class="n">vci_pattern</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_vci_filename</span> <span class="o">=</span> <span class="n">files_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot find matching Vegetation Condition Index file in directory&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_vci_filename</span> <span class="o">=</span> <span class="n">vci_filename</span>
+        <span class="k">if</span> <span class="n">tci_filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># get filename from pattern and directory</span>
+            <span class="n">files_list</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">tci_dir</span><span class="p">,</span> <span class="n">tci_pattern</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_tci_filename</span> <span class="o">=</span> <span class="n">files_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot find matching Temperature Condition Index file in directory&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_tci_filename</span> <span class="o">=</span> <span class="n">tci_filename</span>
+        <span class="k">if</span> <span class="n">dst_filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># get new filename from directory and pattern</span>
+            <span class="n">_dst_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dst_dir</span><span class="p">,</span> <span class="n">filename_utils</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">_vci_filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span> <span class="n">vci_pattern</span><span class="p">,</span> <span class="n">dst_pattern</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_dst_filename</span> <span class="o">=</span> <span class="n">dst_filename</span>
+        <span class="k">if</span> <span class="n">dst_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dst_dir</span><span class="p">):</span>
+            <span class="c1"># destination directory does not exist, create it first</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dst_dir</span><span class="p">)</span>
+        <span class="n">vegetation_analysis</span><span class="o">.</span><span class="n">calc_VHI</span><span class="p">(</span><span class="n">vci_filename</span><span class="o">=</span><span class="n">_vci_filename</span><span class="p">,</span>
+                                     <span class="n">tci_filename</span><span class="o">=</span><span class="n">_tci_filename</span><span class="p">,</span>
+                                     <span class="n">dst_filename</span><span class="o">=</span><span class="n">_dst_filename</span>
+                                     <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;leaving calc_vhi&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

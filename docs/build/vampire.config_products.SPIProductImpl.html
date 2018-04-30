@@ -1,0 +1,119 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.SPIProductImpl module &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vampire.config_products.SPIProductImpl">
+<span id="vampire-config-products-spiproductimpl-module"></span><h1>vampire.config_products.SPIProductImpl module<a class="headerlink" href="#module-vampire.config_products.SPIProductImpl" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="vampire.config_products.SPIProductImpl.SPIProductImpl">
+<em class="property">class </em><code class="descclassname">vampire.config_products.SPIProductImpl.</code><code class="descname">SPIProductImpl</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/SPIProductImpl.html#SPIProductImpl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.SPIProductImpl.SPIProductImpl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="vampire.config_products.RasterProductImpl.html#vampire.config_products.RasterProductImpl.RasterProductImpl" title="vampire.config_products.RasterProductImpl.RasterProductImpl"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.RasterProductImpl.RasterProductImpl</span></code></a></p>
+<p>Initialise SPIProductImpl.</p>
+<p>Implementation class for SPIProduct.
+Initialise object parameters.</p>
+<dl class="docutils">
+<dt>country <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>Region of dataset - country name or ‘global’.</dd>
+<dt>product_date <span class="classifier-delimiter">:</span> <span class="classifier">datetime</span></dt>
+<dd>Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding
+the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,
+the product_date refers to the start of the season (3 month period).</dd>
+<dt>interval <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal</dd>
+<dt>vampire_defaults <span class="classifier-delimiter">:</span> <span class="classifier">object</span></dt>
+<dd>VAMPIREDefaults object containing VAMPIRE system default values.</dd>
+</dl>
+<dl class="method">
+<dt id="vampire.config_products.SPIProductImpl.SPIProductImpl.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>output_dir=None</em>, <em>cur_file=None</em>, <em>cur_dir=None</em>, <em>cur_pattern=None</em>, <em>lta_file=None</em>, <em>lta_dir=None</em>, <em>lta_pattern=None</em>, <em>ltsd_file=None</em>, <em>ltsd_dir=None</em>, <em>ltsd_pattern=None</em>, <em>output_file=None</em>, <em>output_pattern=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/SPIProductImpl.html#SPIProductImpl.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.SPIProductImpl.SPIProductImpl.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.SPIProductImpl.SPIProductImpl.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/SPIProductImpl.html#SPIProductImpl.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.SPIProductImpl.SPIProductImpl.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/vampire.config_products.SPIProductImpl.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

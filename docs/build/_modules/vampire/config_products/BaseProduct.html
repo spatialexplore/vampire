@@ -1,0 +1,1066 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.BaseProduct &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_products.BaseProduct</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Data Products module.</span>
+
+<span class="sd">    Provides classes for each data product supported within Vampire. New products should be added here.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">VampireDefaults</span>
+<span class="kn">import</span> <span class="nn">RainfallAnomalyProductImpl</span>
+<span class="kn">import</span> <span class="nn">SPIProductImpl</span>
+<span class="kn">import</span> <span class="nn">VCIProductImpl</span>
+<span class="kn">import</span> <span class="nn">TCIProductImpl</span>
+<span class="kn">import</span> <span class="nn">VHIProductImpl</span>
+<span class="kn">import</span> <span class="nn">MODISEVILongtermAverageProductImpl</span>
+<span class="kn">import</span> <span class="nn">MODISLSTLongtermAverageProductImpl</span>
+<span class="kn">import</span> <span class="nn">CHIRPSLongtermAverageProductImpl</span>
+<span class="kn">import</span> <span class="nn">DaysSinceLastRainProductImpl</span>
+<span class="kn">import</span> <span class="nn">FloodForecastProductImpl</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BaseProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.BaseProduct">[docs]</a><span class="k">class</span> <span class="nc">BaseProduct</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Base class for data product configuration objects.</span>
+
+<span class="sd">    Manages registration of data product configurations and creation of data product configuration objects.</span>
+<span class="sd">    Data product configurations provide the ability to generate config file sections related to the specific</span>
+<span class="sd">    data product (e.g. product generation, publishing of data product to database or GIS server).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">subclasses</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="BaseProduct.register_subclass"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.BaseProduct.register_subclass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">register_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">product_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Register product with the product manager.</span>
+
+<span class="sd">        Registers the data product identified by product_type with the data product manager.</span>
+<span class="sd">        This allows the appropriate product to be created automatically when requested.</span>
+
+<span class="sd">        :param product_type: Product name.</span>
+<span class="sd">        :type product_type: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">subclass</span><span class="p">):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">product_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">subclass</span>
+            <span class="k">return</span> <span class="n">subclass</span>
+        <span class="k">return</span> <span class="n">decorator</span></div>
+
+<div class="viewcode-block" id="BaseProduct.create"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.BaseProduct.create">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">product_type</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create data product of the specified type.</span>
+
+<span class="sd">        Creates the data product identified by product_type and sets required values.</span>
+
+<span class="sd">        :param product_type: Product name.</span>
+<span class="sd">        :type product_type: string</span>
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        :return: Data product object of type specified (a registered subclass of BaseProduct).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">product_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad product type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product_type</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">vampire_defaults</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">VampireDefaults</span><span class="o">.</span><span class="n">VampireDefaults</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">product_type</span><span class="p">](</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vp</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="VCIProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.VCIProduct">[docs]</a><span class="nd">@BaseProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;vci&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">VCIProduct</span><span class="p">(</span><span class="n">BaseProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Vegetation Condition Index data product configuration.</span>
+
+<span class="sd">    Manages generation of configuration file sections for Vegetation Condition Index data products including product</span>
+<span class="sd">    generation and publishing.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of VCI data product.</span>
+
+<span class="sd">        Initialises the VCI data product. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">VCIProductImpl</span><span class="o">.</span><span class="n">VCIProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get full path to the output product file name. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_file</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get directory name for product output. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_dir</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get output product file name pattern (regular expression used to search for the product file). &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_pattern</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span>
+
+<div class="viewcode-block" id="VCIProduct.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.VCIProduct.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to VCI that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="VCIProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.VCIProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evi_cur_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evi_cur_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evi_cur_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">evi_max_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evi_max_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evi_max_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">evi_min_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evi_min_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evi_min_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating VCI.</span>
+
+<span class="sd">        Generate config file entries required to create VCI for the specified country, date and interval.</span>
+
+<span class="sd">        :param evi_cur_file: Enhanced Vegetation Index (EVI) file for the product date.</span>
+<span class="sd">        :type evi_cur_file: string</span>
+<span class="sd">        :param evi_cur_dir: Directory where the EVI file for the product date is located.</span>
+<span class="sd">        :type evi_cur_dir: string</span>
+<span class="sd">        :param evi_cur_pattern: Regular expression pattern to used to find the EVI file for the product date.</span>
+<span class="sd">        :type evi_cur_pattern: string</span>
+<span class="sd">        :param evi_max_file: EVI long-term maximum file.</span>
+<span class="sd">        :type evi_max_file: string</span>
+<span class="sd">        :param evi_max_dir: Directory where the long-term maximum EVI file is located.</span>
+<span class="sd">        :type evi_max_dir: string</span>
+<span class="sd">        :param evi_max_pattern: Regular expression pattern to used to find the EVI long-term maximum file.</span>
+<span class="sd">        :type evi_max_pattern: string</span>
+<span class="sd">        :param evi_min_file: EVI long-term minimum file.</span>
+<span class="sd">        :type evi_min_file: string</span>
+<span class="sd">        :param evi_min_dir: Directory where the long-term maximum EVI file is located.</span>
+<span class="sd">        :type evi_min_dir: string</span>
+<span class="sd">        :param evi_min_pattern: Regular expression pattern to used to find the EVI long-term minimum file.</span>
+<span class="sd">        :type evi_min_pattern: string</span>
+<span class="sd">        :param output_filename: Filename for VCI output file.</span>
+<span class="sd">        :type output_filename: string</span>
+<span class="sd">        :param output_dir: Directory to save the VCI output file.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the VCI output file name. May refer to elements within the evi_cur_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :return: Config file sections required for generating VCI.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">evi_cur_file</span><span class="p">,</span> <span class="n">evi_cur_dir</span><span class="p">,</span> <span class="n">evi_cur_pattern</span><span class="p">,</span> <span class="n">evi_max_file</span><span class="p">,</span> <span class="n">evi_max_dir</span><span class="p">,</span>
+                                         <span class="n">evi_max_pattern</span><span class="p">,</span> <span class="n">evi_min_file</span><span class="p">,</span> <span class="n">evi_min_dir</span><span class="p">,</span> <span class="n">evi_min_pattern</span><span class="p">,</span> <span class="n">output_filename</span><span class="p">,</span>
+                                         <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="TCIProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.TCIProduct">[docs]</a><span class="nd">@BaseProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;tci&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">TCIProduct</span><span class="p">(</span><span class="n">BaseProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Temperature Condition Index data product configuration.</span>
+
+<span class="sd">    Manages generation of configuration file sections for Temperature Condition Index data products including product</span>
+<span class="sd">    generation.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of TCI data product.</span>
+
+<span class="sd">        Initialises the TCI data product. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">TCIProductImpl</span><span class="o">.</span><span class="n">TCIProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get full path to the output product file name. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_file</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get directory name for product output. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_dir</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get output product file name pattern (regular expression used to search for the product file). &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_pattern</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span>
+
+<div class="viewcode-block" id="TCIProduct.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.TCIProduct.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to TCI that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TCIProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.TCIProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lst_cur_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lst_cur_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lst_cur_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">lst_max_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lst_max_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lst_max_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">lst_min_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lst_min_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lst_min_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating VCI.</span>
+
+<span class="sd">        Generate config file entries required to create VCI for the specified country, date and interval.</span>
+
+<span class="sd">        :param lst_cur_file: Land Surface Temperature (LST) file for the product date.</span>
+<span class="sd">        :type lst_cur_file: string</span>
+<span class="sd">        :param lst_cur_dir: Directory where the LST file for the product date is located.</span>
+<span class="sd">        :type lst_cur_dir: string</span>
+<span class="sd">        :param lst_cur_pattern: Regular expression pattern to used to find the LST file for the product date.</span>
+<span class="sd">        :type lst_cur_pattern: string</span>
+<span class="sd">        :param lst_max_file: LST long-term maximum file.</span>
+<span class="sd">        :type lst_max_file: string</span>
+<span class="sd">        :param lst_max_dir: Directory where the long-term maximum LST file is located.</span>
+<span class="sd">        :type lst_max_dir: string</span>
+<span class="sd">        :param lst_max_pattern: Regular expression pattern to used to find the LST long-term maximum file.</span>
+<span class="sd">        :type lst_max_pattern: string</span>
+<span class="sd">        :param lst_min_file: LST long-term minimum file.</span>
+<span class="sd">        :type lst_min_file: string</span>
+<span class="sd">        :param lst_min_dir: Directory where the long-term maximum LST file is located.</span>
+<span class="sd">        :type lst_min_dir: string</span>
+<span class="sd">        :param lst_min_pattern: Regular expression pattern to used to find the LST long-term minimum file.</span>
+<span class="sd">        :type lst_min_pattern: string</span>
+<span class="sd">        :param output_filename: Filename for TCI output file.</span>
+<span class="sd">        :type output_filename: string</span>
+<span class="sd">        :param output_dir: Directory to save the TCI output file.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the TCI output file name. May refer to elements within the lst_cur_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :return: Config file sections required for generating TCI.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">lst_cur_file</span><span class="p">,</span> <span class="n">lst_cur_dir</span><span class="p">,</span> <span class="n">lst_cur_pattern</span><span class="p">,</span> <span class="n">lst_max_file</span><span class="p">,</span> <span class="n">lst_max_dir</span><span class="p">,</span>
+                                         <span class="n">lst_max_pattern</span><span class="p">,</span> <span class="n">lst_min_file</span><span class="p">,</span> <span class="n">lst_min_dir</span><span class="p">,</span> <span class="n">lst_min_pattern</span><span class="p">,</span> <span class="n">output_filename</span><span class="p">,</span>
+                                         <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="VHIProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.VHIProduct">[docs]</a><span class="nd">@BaseProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;vhi&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">VHIProduct</span><span class="p">(</span><span class="n">BaseProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Vegetation Health Index data product configuration.</span>
+
+<span class="sd">    Manages generation of configuration file sections for Vegetation Health Index data products including product</span>
+<span class="sd">    generation, masking the product using a boundary, and publishing.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of VHI data product.</span>
+
+<span class="sd">        Initialises the VHI data product. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">VHIProductImpl</span><span class="o">.</span><span class="n">VHIProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get full path to the output product file name. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_file</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get directory name for product output. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_dir</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get output product file name pattern (regular expression used to search for the product file). &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_pattern</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span>
+
+<div class="viewcode-block" id="VHIProduct.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.VHIProduct.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to VHI that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="VHIProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.VHIProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tci_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tci_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tci_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">vci_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vci_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vci_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">reproject</span><span class="o">=</span><span class="s1">&#39;TCI&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating VCI.</span>
+
+<span class="sd">        Generate config file entries required to create VCI for the specified country, date and interval.</span>
+
+<span class="sd">        :param tci_file: Temperature Condition Index (TCI) file for the product date.</span>
+<span class="sd">        :type tci_file: string</span>
+<span class="sd">        :param tci_dir: Directory where the TCI file for the product date is located.</span>
+<span class="sd">        :type tci_dir: string</span>
+<span class="sd">        :param tci_pattern: Regular expression pattern to used to find the TCI file for the product date.</span>
+<span class="sd">        :type tci_pattern: string</span>
+<span class="sd">        :param vci_file: Vegetation Condition Index (VCI) file for the product date.</span>
+<span class="sd">        :type vci_file: string</span>
+<span class="sd">        :param vci_dir: Directory where the VCI file is located.</span>
+<span class="sd">        :type vci_dir: string</span>
+<span class="sd">        :param vci_pattern: Regular expression pattern to used to find the VCI file for the product date.</span>
+<span class="sd">        :type vci_pattern: string</span>
+<span class="sd">        :param output_filename: Filename for VCI output file.</span>
+<span class="sd">        :type output_filename: string</span>
+<span class="sd">        :param output_dir: Directory to save the VCI output file.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the VCI output file name. May refer to elements within the evi_cur_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :param reproject: Data source to use for output resolution. The output product file will be reprojected to match the specified source. Valid options are &#39;TCI&#39; and &#39;VCI&#39;. The default value is &#39;TCI&#39;.</span>
+<span class="sd">        :type reproject: string</span>
+<span class="sd">        :return: Config file sections required for generating VHI.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">tci_file</span><span class="p">,</span> <span class="n">tci_dir</span><span class="p">,</span> <span class="n">tci_pattern</span><span class="p">,</span> <span class="n">vci_file</span><span class="p">,</span> <span class="n">vci_dir</span><span class="p">,</span> <span class="n">vci_pattern</span><span class="p">,</span>
+                                         <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">,</span> <span class="n">reproject</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VHIProduct.generate_mask_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.VHIProduct.generate_mask_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_mask_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">boundary_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_field</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config section to mask VHI data product by a boundary.</span>
+
+<span class="sd">        Generates configuration file section to mask the VHI output file using a shapefile boundary.</span>
+
+<span class="sd">        :param boundary_file: Name of boundary file (shapefile) to use as mask.</span>
+<span class="sd">        :type boundary_file: string</span>
+<span class="sd">        :param boundary_dir: Directory where the TCI file for the product date is located.</span>
+<span class="sd">        :type boundary_dir: string</span>
+<span class="sd">        :param boundary_pattern: Regular expression pattern to used to find the boundary file.</span>
+<span class="sd">        :type boundary_pattern: string</span>
+<span class="sd">        :param boundary_field:</span>
+<span class="sd">        :type boundary_field: string</span>
+<span class="sd">        :param output_filename: Filename for masked VHI output file.</span>
+<span class="sd">        :type output_filename: string</span>
+<span class="sd">        :param output_dir: Directory to save the masked VHI output file.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the masked VHI output file name.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :return: Config file sections required for generating VHI boundary mask.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_mask_config</span><span class="p">(</span><span class="n">boundary_file</span><span class="o">=</span><span class="n">boundary_file</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="o">=</span><span class="n">boundary_dir</span><span class="p">,</span>
+                                              <span class="n">boundary_pattern</span><span class="o">=</span><span class="n">boundary_pattern</span><span class="p">,</span> <span class="n">boundary_field</span><span class="o">=</span><span class="n">boundary_field</span><span class="p">,</span>
+                                              <span class="n">output_file</span><span class="o">=</span><span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+                                              <span class="n">output_pattern</span><span class="o">=</span><span class="n">output_pattern</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VHIProduct.generate_publish_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.VHIProduct.generate_publish_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_publish_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config section to publish VHI data product.</span>
+
+<span class="sd">        Generates configuration file section to publish the VHI output file to a GIS server.</span>
+
+<span class="sd">        :return: Config file sections required for publishing VHI.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">()</span></div></div>
+
+<div class="viewcode-block" id="RainfallAnomalyProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.RainfallAnomalyProduct">[docs]</a><span class="nd">@BaseProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;rainfall_anomaly&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RainfallAnomalyProduct</span><span class="p">(</span><span class="n">BaseProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Rainfall Anomaly data product configuration.</span>
+
+<span class="sd">    Manages generation of configuration file sections for Rainfall Anomaly data products including product</span>
+<span class="sd">    generation and publishing.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of Rainfall Anomaly data product.</span>
+
+<span class="sd">        Initialises the Rainfall Anomaly data product. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">RainfallAnomalyProductImpl</span><span class="o">.</span><span class="n">RainfallAnomalyProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get full path to the output product file name. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_file</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get directory name for product output. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_dir</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get output product file name pattern (regular expression used to search for the product file). &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_pattern</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span>
+
+<div class="viewcode-block" id="RainfallAnomalyProduct.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.RainfallAnomalyProduct.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to Rainfall Anomaly that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="RainfallAnomalyProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.RainfallAnomalyProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cur_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cur_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cur_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">lta_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lta_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lta_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating Rainfall Anomaly.</span>
+
+<span class="sd">        Generate config file entries required to create Rainfall Anomaly for the specified country, date and interval.</span>
+
+<span class="sd">        :param output_dir: Directory to save the Rainfall Anomaly output file.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param cur_file: Precipitation file for the product date.</span>
+<span class="sd">        :type cur_file: string</span>
+<span class="sd">        :param cur_dir: Directory where the precipitation file for the product date is located.</span>
+<span class="sd">        :type cur_dir: string</span>
+<span class="sd">        :param cur_pattern: Regular expression pattern to used to find the precipitation file for the product date.</span>
+<span class="sd">        :type cur_pattern: string</span>
+<span class="sd">        :param lta_file: Long-term average precipitation file for the product date.</span>
+<span class="sd">        :type lta_file: string</span>
+<span class="sd">        :param lta_dir: Directory where the long-term average precipitation file is located.</span>
+<span class="sd">        :type lta_dir: string</span>
+<span class="sd">        :param lta_pattern: Regular expression pattern to used to find the long-term average precipitation file for the product date.</span>
+<span class="sd">        :type lta_pattern: string</span>
+<span class="sd">        :param output_filename: Filename for Rainfall Anomaly output file.</span>
+<span class="sd">        :type output_filename: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the Rainfall Anomaly output file name. May refer to elements within the cur_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :return: Config file sections required for generating Rainfall Anomaly.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">cur_file</span><span class="p">,</span> <span class="n">cur_dir</span><span class="p">,</span> <span class="n">cur_pattern</span><span class="p">,</span>
+                        <span class="n">lta_file</span><span class="p">,</span> <span class="n">lta_dir</span><span class="p">,</span> <span class="n">lta_pattern</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span>
+                        <span class="n">output_pattern</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RainfallAnomalyProduct.generate_publish_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.RainfallAnomalyProduct.generate_publish_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_publish_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config section to publish Rainfall Anomaly data product.</span>
+
+<span class="sd">        Generates configuration file section to publish the Rainfall Anomaly output file to a GIS server.</span>
+
+<span class="sd">        :return: Config file sections required for publishing Rainfall Anomaly.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="SPIProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.SPIProduct">[docs]</a><span class="nd">@BaseProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;spi&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">SPIProduct</span><span class="p">(</span><span class="n">BaseProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Standardized Precipitation Index data product configuration.</span>
+
+<span class="sd">    Manages generation of configuration file sections for Standardized Precipitation Index data products including product</span>
+<span class="sd">    generation and publishing.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of SPI data product.</span>
+
+<span class="sd">        Initialises the SPI data product. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">SPIProductImpl</span><span class="o">.</span><span class="n">SPIProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get full path to the output product file name. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_file</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get directory name for product output. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_dir</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get output product file name pattern (regular expression used to search for the product file). &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_pattern</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span>
+
+<div class="viewcode-block" id="SPIProduct.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.SPIProduct.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to SPI that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SPIProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.SPIProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cur_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cur_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cur_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">lta_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lta_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lta_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ltsd_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ltsd_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">ltsd_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating Standardized Precipitation Index (SPI).</span>
+
+<span class="sd">        Generate config file entries required to create SPI for the specified country, date and interval.</span>
+
+<span class="sd">        :param output_dir: Directory to save the SPI output file.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param cur_file: Precipitation file for the product date.</span>
+<span class="sd">        :type cur_file: string</span>
+<span class="sd">        :param cur_dir: Directory where the precipitation file for the product date is located.</span>
+<span class="sd">        :type cur_dir: string</span>
+<span class="sd">        :param cur_pattern: Regular expression pattern to used to find the precipitation file for the product date.</span>
+<span class="sd">        :type cur_pattern: string</span>
+<span class="sd">        :param lta_file: Long-term average precipitation file for the product date.</span>
+<span class="sd">        :type lta_file: string</span>
+<span class="sd">        :param lta_dir: Directory where the long-term average precipitation file is located.</span>
+<span class="sd">        :type lta_dir: string</span>
+<span class="sd">        :param lta_pattern: Regular expression pattern to used to find the long-term average precipitation file for the product date.</span>
+<span class="sd">        :type lta_pattern: string</span>
+<span class="sd">        :param ltsd_file: Long-term standard deviation precipitation file for the product date.</span>
+<span class="sd">        :type ltsd_file: string</span>
+<span class="sd">        :param ltsd_dir: Directory where the long-term standard deviation precipitation file is located.</span>
+<span class="sd">        :type ltsd_dir: string</span>
+<span class="sd">        :param ltsd_pattern: Regular expression pattern to used to find the long-term standard deviation precipitation file for the product date.</span>
+<span class="sd">        :type ltsd_pattern: string</span>
+<span class="sd">        :param output_file: Filename for SPI output file.</span>
+<span class="sd">        :type output_file: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the SPI output file name. May refer to elements within the cur_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :return: Config file sections required for generating SPI.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">cur_file</span><span class="p">,</span> <span class="n">cur_dir</span><span class="p">,</span> <span class="n">cur_pattern</span><span class="p">,</span>
+                        <span class="n">lta_file</span><span class="p">,</span> <span class="n">lta_dir</span><span class="p">,</span> <span class="n">lta_pattern</span><span class="p">,</span> <span class="n">ltsd_file</span><span class="p">,</span> <span class="n">ltsd_dir</span><span class="p">,</span> <span class="n">ltsd_pattern</span><span class="p">,</span>
+                        <span class="n">output_file</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SPIProduct.generate_publish_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.SPIProduct.generate_publish_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_publish_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config section to publish Standardised Precipitation Index data product.</span>
+
+<span class="sd">        Generates configuration file section to publish the Standardised Precipitation Index output file to a GIS server.</span>
+
+<span class="sd">        :return: Config file sections required for publishing Standardised Precipitation Index.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="MODISEVILongtermAverageProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct">[docs]</a><span class="nd">@BaseProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;evi_longterm_average&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MODISEVILongtermAverageProduct</span><span class="p">(</span><span class="n">BaseProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; MODIS Enhanced Vegetation Index Long-term Average data product configuration.</span>
+
+<span class="sd">    Manages generation of configuration file sections for MODIS Enhanced Vegetation Index Long-term Average data products including product</span>
+<span class="sd">    generation.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of MODIS EVI long-term average data product.</span>
+
+<span class="sd">        Initialises the MODIS EVI long-term average data product. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">MODISEVILongtermAverageProductImpl</span><span class="o">.</span><span class="n">MODISEVILongtermAverageProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get full path to the output product file name. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_file</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get directory name for product output. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_dir</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get output product file name pattern (regular expression used to search for the product file). &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_pattern</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span>
+
+<div class="viewcode-block" id="MODISEVILongtermAverageProduct.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to MODIS EVI long-term average that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="MODISEVILongtermAverageProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">functions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating long-term statistics for MODIS EVI data.</span>
+
+<span class="sd">        Generate config file entries required to create long-term statistics for MODIS Enhanced Vegetation Index</span>
+<span class="sd">        (EVI) for the specified country and interval. Statistics include average, minimum, maximum, standard deviation.</span>
+
+<span class="sd">        :param input_dir: Directory where the MODIS EVI files are located.</span>
+<span class="sd">        :type input_dir: string</span>
+<span class="sd">        :param output_dir: Directory to save the SPI output file.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param input_pattern: Regular expression pattern to used to find the files to be included in the long-term statistics calculations.</span>
+<span class="sd">        :type input_pattern: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the EVI statistics output file name. May refer to elements within the input_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :param functions: List of functions to be calculated. Options are &#39;AVG&#39;, &#39;MIN&#39;, &#39;MAX&#39;, &#39;STD&#39;.</span>
+<span class="sd">        :type functions: string</span>
+<span class="sd">        :param download: Flag specifying whether the data needs to be downloaded first. If true, appropriate download configuration sections will be generated.</span>
+<span class="sd">        :type download: bool</span>
+<span class="sd">        :return: Config file sections required for generating MODIS EVI long-term statistics.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">input_pattern</span><span class="o">=</span><span class="n">input_pattern</span><span class="p">,</span>
+                        <span class="n">output_pattern</span><span class="o">=</span><span class="n">output_pattern</span><span class="p">,</span> <span class="n">functions</span><span class="o">=</span><span class="n">functions</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="n">download</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="MODISLSTLongtermAverageProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct">[docs]</a><span class="nd">@BaseProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;lst_longterm_average&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MODISLSTLongtermAverageProduct</span><span class="p">(</span><span class="n">BaseProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; MODIS Land Surface Temperature Long-term Average data product configuration.</span>
+
+<span class="sd">    Manages generation of configuration file sections for MODIS Land Surface Temperature Long-term Average data products including product</span>
+<span class="sd">    generation and publishing.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of MODIS LST long-term average data product.</span>
+
+<span class="sd">        Initialises the MODIS LST long-term average data product. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">MODISLSTLongtermAverageProductImpl</span><span class="o">.</span><span class="n">MODISLSTLongtermAverageProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get full path to the output product file name. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_file</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get directory name for product output. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_dir</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get output product file name pattern (regular expression used to search for the product file). &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_pattern</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span>
+
+<div class="viewcode-block" id="MODISLSTLongtermAverageProduct.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to LST long-term average that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="MODISLSTLongtermAverageProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">functions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating MODIS LST long-term statistics.</span>
+
+<span class="sd">        Generate config file entries required to create long-term statistics from MODIS Land Surface Temperature data for the specified country, date and interval.</span>
+
+<span class="sd">        :param input_dir: Directory where the MODIS LST files are located.</span>
+<span class="sd">        :type input_dir: string</span>
+<span class="sd">        :param output_dir: Directory to save the long-term statistics output files.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param input_pattern: Regular expression pattern to used to find the files to be included in the long-term statistics calculations.</span>
+<span class="sd">        :type input_pattern: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the LST statistics output file name. May refer to elements within the input_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :param functions: List of functions to be calculated. Options are &#39;AVG&#39;, &#39;MIN&#39;, &#39;MAX&#39;, &#39;STD&#39;.</span>
+<span class="sd">        :type functions: string</span>
+<span class="sd">        :param download: Flag specifying whether the data needs to be downloaded first. If true, appropriate download configuration sections will be generated.</span>
+<span class="sd">        :type download: bool</span>
+<span class="sd">        :return: Config file sections required for generating MODIS LST long-term averages.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">input_pattern</span><span class="o">=</span><span class="n">input_pattern</span><span class="p">,</span>
+                        <span class="n">output_pattern</span><span class="o">=</span><span class="n">output_pattern</span><span class="p">,</span> <span class="n">functions</span><span class="o">=</span><span class="n">functions</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="n">download</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="CHIRPSLongtermAverageProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct">[docs]</a><span class="nd">@BaseProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;chirps_longterm_average&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">CHIRPSLongtermAverageProduct</span><span class="p">(</span><span class="n">BaseProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; CHIRPS long-term statistics data product configuration.</span>
+
+<span class="sd">    Manages generation of configuration file sections for CHIRPS long-term statistics data products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of CHIRPS long-term statistics data product.</span>
+
+<span class="sd">        Initialises the CHIRPS long-term statistics data product. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">CHIRPSLongtermAverageProductImpl</span><span class="o">.</span><span class="n">CHIRPSLongtermAverageProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get full path to the output product file name. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_file</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get directory name for product output. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_dir</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get output product file name pattern (regular expression used to search for the product file). &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_pattern</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span>
+
+<div class="viewcode-block" id="CHIRPSLongtermAverageProduct.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to CHIRPS long-term statistics that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="CHIRPSLongtermAverageProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">functions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating CHIRPS long-term statistics.</span>
+
+<span class="sd">        Generate config file entries required to create long-term statistics from CHIRPS rainfall data for the specified country, date and interval.</span>
+
+<span class="sd">        :param input_dir: Directory where the CHIRPS precipitation files are located.</span>
+<span class="sd">        :type input_dir: string</span>
+<span class="sd">        :param output_dir: Directory to save the CHIRPS long-term statistics output file(s).</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param input_pattern: Regular expression pattern to used to find the files to be included in the long-term statistics calculations.</span>
+<span class="sd">        :type input_pattern: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the long-term statistics output file name(s). May refer to elements within the input_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :param functions: List of functions to be calculated. Options are &#39;AVG&#39;, &#39;MIN&#39;, &#39;MAX&#39;, &#39;STD&#39;.</span>
+<span class="sd">        :type functions: string</span>
+<span class="sd">        :param download: Flag specifying whether the data needs to be downloaded first. If true, appropriate download configuration sections will be generated.</span>
+<span class="sd">        :type download: bool</span>
+<span class="sd">        :return: Config file sections required for generating CHIRPS long-term statistics.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">input_pattern</span><span class="o">=</span><span class="n">input_pattern</span><span class="p">,</span>
+                        <span class="n">output_pattern</span><span class="o">=</span><span class="n">output_pattern</span><span class="p">,</span> <span class="n">functions</span><span class="o">=</span><span class="n">functions</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="n">download</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="DaysSinceLastRainProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.DaysSinceLastRainProduct">[docs]</a><span class="nd">@BaseProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;days_since_last_rain&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">DaysSinceLastRainProduct</span><span class="p">(</span><span class="n">BaseProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Days Since Last Rain data product configuration.</span>
+
+<span class="sd">    Manages generation of configuration file sections for Days Since Last Rain data products including product</span>
+<span class="sd">    generation and publishing.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of Days Since Last Rain data product.</span>
+
+<span class="sd">        Initialises the Days Since Last Rain data product. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">DaysSinceLastRainProductImpl</span><span class="o">.</span><span class="n">DaysSinceLastRainProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get full path to the output product file name. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_file</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get directory name for product output. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_dir</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get output product file name pattern (regular expression used to search for the product file). &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_pattern</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span>
+
+<div class="viewcode-block" id="DaysSinceLastRainProduct.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.DaysSinceLastRainProduct.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to Days Since Last Rain that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DaysSinceLastRainProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.DaysSinceLastRainProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_days</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate a config file process for the Days Since Last Rain product.</span>
+
+<span class="sd">        Generate VAMPIRE config file processes for the product including download and crop if specified.</span>
+
+<span class="sd">        :param data_dir: Directory path for precipitation files. Default is None.</span>
+<span class="sd">        :type data_dir: string</span>
+<span class="sd">        :param output_dir: Path for product output. If the output_dir is None, the VAMPIRE default Days Since Last Rain product directory will be used.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param file_pattern: Regular expression pattern for finding current precipitation file. Default is None.</span>
+<span class="sd">        :type file_pattern: string</span>
+<span class="sd">        :param threshold: Rainfall threshold value.</span>
+<span class="sd">        :type threshold: float</span>
+<span class="sd">        :param max_days: Number of days to evaluate for days since last rain.</span>
+<span class="sd">        :type max_days: int</span>
+<span class="sd">        :param download: Flag indicating whether data should be downloaded.</span>
+<span class="sd">        :type download: bool</span>
+<span class="sd">        :param crop: Flag indicating whether data should be cropped to a boundary.</span>
+<span class="sd">        :type crop: bool</span>
+<span class="sd">        :param crop_dir: Directory for output of cropped files.</span>
+<span class="sd">        :type crop_dir: string</span>
+
+<span class="sd">        :return: Returns string containing the configuration file process.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">file_pattern</span><span class="o">=</span><span class="n">file_pattern</span><span class="p">,</span>
+                                         <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span> <span class="n">max_days</span><span class="o">=</span><span class="n">max_days</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="n">download</span><span class="p">,</span>
+                                         <span class="n">crop</span><span class="o">=</span><span class="n">crop</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="n">crop_dir</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DaysSinceLastRainProduct.generate_publish_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.DaysSinceLastRainProduct.generate_publish_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_publish_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config section to publish Days Since Last Rain data product.</span>
+
+<span class="sd">        Generates configuration file section to publish the Days Since Last Rain output file to a GIS server.</span>
+
+<span class="sd">        :return: Config file sections required for publishing Days Since Last Rain.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="FloodForecastProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.FloodForecastProduct">[docs]</a><span class="nd">@BaseProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;flood_forecast&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">FloodForecastProduct</span><span class="p">(</span><span class="n">BaseProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Flood Forecast data product configuration.</span>
+
+<span class="sd">    Manages generation of configuration file sections for Flood Forecast data products including product</span>
+<span class="sd">    generation and publishing.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of Flood Forecast data product.</span>
+
+<span class="sd">        Initialises the Flood Forecast data product. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">FloodForecastProductImpl</span><span class="o">.</span><span class="n">FloodForecastProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output product file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get full path to the output product file name. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_file</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get directory name for product output. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_dir</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get output product file name pattern (regular expression used to search for the product file). &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product_pattern</span>
+
+<div class="viewcode-block" id="FloodForecastProduct.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.FloodForecastProduct.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to Flood Forecast that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="FloodForecastProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.FloodForecastProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">days</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating Flood Forecasts.</span>
+
+<span class="sd">        Generate config file entries required to create Flood Forecasts for the specified country, date and interval.</span>
+
+<span class="sd">        :param data_dir: Directory where the GFS files for the product date are located.</span>
+<span class="sd">        :type data_dir: string</span>
+<span class="sd">        :param output_dir: Directory to save the Flood Forecast output files.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param file_pattern: Regular expression pattern to used to find the GFS file for the product date.</span>
+<span class="sd">        :type file_pattern: string</span>
+<span class="sd">        :param days: Number of days to forecast for.</span>
+<span class="sd">        :type days: int</span>
+<span class="sd">        :return: Config file sections required for generating Flood Forecasts.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">file_pattern</span><span class="o">=</span><span class="n">file_pattern</span><span class="p">,</span>
+                                         <span class="n">accumulate_days</span><span class="o">=</span><span class="n">days</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FloodForecastProduct.generate_publish_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseProduct.html#vampire.config_products.BaseProduct.FloodForecastProduct.generate_publish_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_publish_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config section to publish Flood Forecast data product.</span>
+
+<span class="sd">        Generates configuration file section to publish the Flood Forecast output file to a GIS server.</span>
+
+<span class="sd">        :return: Config file sections required for publishing Flood Forecasts.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">()</span></div></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

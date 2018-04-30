@@ -1,0 +1,131 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.filename_utils &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.filename_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">calendar</span>
+<span class="kn">import</span> <span class="nn">regex</span>
+
+<span class="k">def</span> <span class="nf">_get_month_from_day_of_year</span><span class="p">(</span><span class="n">doy</span><span class="p">,</span> <span class="n">year</span><span class="p">):</span>
+    <span class="n">date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">doy</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">month</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%m&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">month</span>
+
+<span class="k">def</span> <span class="nf">_get_day_from_day_of_year</span><span class="p">(</span><span class="n">doy</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">ignore_leap_year</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">calendar</span><span class="o">.</span><span class="n">isleap</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ignore_leap_year</span> <span class="ow">and</span> <span class="n">doy</span> <span class="o">&gt;</span> <span class="mi">60</span><span class="p">:</span>
+        <span class="n">doy</span> <span class="o">=</span> <span class="n">doy</span><span class="o">-</span><span class="mi">1</span>
+    <span class="n">date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">doy</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">day</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">day</span>
+
+<div class="viewcode-block" id="generate_output_filename"><a class="viewcode-back" href="../../vampire.filename_utils.html#vampire.filename_utils.generate_output_filename">[docs]</a><span class="k">def</span> <span class="nf">generate_output_filename</span><span class="p">(</span><span class="n">input_filename</span><span class="p">,</span> <span class="n">in_pattern</span><span class="p">,</span> <span class="n">out_pattern</span><span class="p">,</span> <span class="n">ignore_leap_year</span><span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">_r_in</span> <span class="o">=</span> <span class="n">regex</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">in_pattern</span><span class="p">)</span>
+    <span class="n">_m</span> <span class="o">=</span> <span class="n">_r_in</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">input_filename</span><span class="p">)</span>
+    <span class="c1"># get named parameters from output</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">regex</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;{\w+}&#39;</span><span class="p">,</span> <span class="n">out_pattern</span><span class="p">)</span>
+    <span class="c1"># create new dictionary with parameter and value pairs</span>
+    <span class="n">ddict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_m</span><span class="p">:</span>
+        <span class="n">new_filename</span> <span class="o">=</span> <span class="n">input_filename</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># remove {}</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">():</span>
+                <span class="n">ddict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">_m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()[</span><span class="n">k</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># check if need to convert day of year into month, day or vice versa</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;month&#39;</span> <span class="ow">and</span> <span class="s1">&#39;dayofyear&#39;</span> <span class="ow">in</span> <span class="n">_m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">():</span>
+                    <span class="n">ddict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">_get_month_from_day_of_year</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">_m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()[</span><span class="s1">&#39;dayofyear&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">_m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()[</span><span class="s1">&#39;year&#39;</span><span class="p">])))</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;day&#39;</span> <span class="ow">and</span> <span class="s1">&#39;dayofyear&#39;</span> <span class="ow">in</span> <span class="n">_m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">():</span>
+                    <span class="n">ddict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">_get_day_from_day_of_year</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">_m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()[</span><span class="s1">&#39;dayofyear&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">_m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()[</span><span class="s1">&#39;year&#39;</span><span class="p">]),</span> <span class="n">ignore_leap_year</span><span class="p">))</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;dayofyear&#39;</span> <span class="ow">and</span> <span class="s1">&#39;month&#39;</span> <span class="ow">in</span> <span class="n">_m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;day&#39;</span> <span class="ow">in</span> <span class="n">_m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">():</span>
+                    <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">_m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()[</span><span class="s1">&#39;year&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">_m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()[</span><span class="s1">&#39;month&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">_m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()[</span><span class="s1">&#39;day&#39;</span><span class="p">]))</span>
+                    <span class="n">ddict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">ddict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span> <span class="c1"># empty string as default</span>
+        <span class="n">new_filename</span> <span class="o">=</span> <span class="n">out_pattern</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">ddict</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;old_filename: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">input_filename</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;new_filename: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">new_filename</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

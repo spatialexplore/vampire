@@ -1,0 +1,233 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.calculate_statistics_os module &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vampire.processing.calculate_statistics_os">
+<span id="vampire-processing-calculate-statistics-os-module"></span><h1>vampire.processing.calculate_statistics_os module<a class="headerlink" href="#module-vampire.processing.calculate_statistics_os" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="vampire.processing.calculate_statistics_os.calc_average">
+<code class="descclassname">vampire.processing.calculate_statistics_os.</code><code class="descname">calc_average</code><span class="sig-paren">(</span><em>file_list</em>, <em>avg_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/calculate_statistics_os.html#calc_average"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.calculate_statistics_os.calc_average" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate pixel-by-pixel average of list of rasters and save result as new raster.</p>
+<p>For each pixel, calculate the mean of values in the list of rasters.</p>
+<dl class="docutils">
+<dt>file_list <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>List of raster filenames</dd>
+<dt>avg_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of output file</dd>
+</dl>
+<dl class="docutils">
+<dt>None</dt>
+<dd>Returns None</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.calculate_statistics_os.calc_average_of_day_night">
+<code class="descclassname">vampire.processing.calculate_statistics_os.</code><code class="descname">calc_average_of_day_night</code><span class="sig-paren">(</span><em>day_file</em>, <em>night_file</em>, <em>avg_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/calculate_statistics_os.html#calc_average_of_day_night"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.calculate_statistics_os.calc_average_of_day_night" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate pixel-by-pixel average of land surface temperature day and night rasters and save result as new raster.</p>
+<p>For each pixel, calculate the mean of values in the two rasters.</p>
+<dl class="docutils">
+<dt>day_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of day file</dd>
+<dt>night_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of night file</dd>
+<dt>avg_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of output file</dd>
+</dl>
+<dl class="docutils">
+<dt>None</dt>
+<dd>Returns None</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.calculate_statistics_os.calc_max">
+<code class="descclassname">vampire.processing.calculate_statistics_os.</code><code class="descname">calc_max</code><span class="sig-paren">(</span><em>file_list</em>, <em>max_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/calculate_statistics_os.html#calc_max"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.calculate_statistics_os.calc_max" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate pixel-by-pixel maximum of list of rasters and save result as new raster.</p>
+<p>For each pixel, calculate the maximum of values in the list of rasters.</p>
+<dl class="docutils">
+<dt>file_list <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>List of raster filenames</dd>
+<dt>max_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of output file</dd>
+</dl>
+<dl class="docutils">
+<dt>None</dt>
+<dd>Returns None</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.calculate_statistics_os.calc_min">
+<code class="descclassname">vampire.processing.calculate_statistics_os.</code><code class="descname">calc_min</code><span class="sig-paren">(</span><em>file_list</em>, <em>min_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/calculate_statistics_os.html#calc_min"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.calculate_statistics_os.calc_min" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate pixel-by-pixel minimum of list of rasters and save result as new raster.</p>
+<p>For each pixel, calculate the minimum of values in the list of rasters.</p>
+<dl class="docutils">
+<dt>file_list <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>List of raster filenames</dd>
+<dt>min_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of output file</dd>
+</dl>
+<dl class="docutils">
+<dt>None</dt>
+<dd>Returns None</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.calculate_statistics_os.calc_std_dev">
+<code class="descclassname">vampire.processing.calculate_statistics_os.</code><code class="descname">calc_std_dev</code><span class="sig-paren">(</span><em>file_list</em>, <em>sd_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/calculate_statistics_os.html#calc_std_dev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.calculate_statistics_os.calc_std_dev" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate pixel-by-pixel standard deviation of list of rasters and save result as new raster.</p>
+<p>For each pixel, calculate the standard deviation of values in the list of rasters.</p>
+<dl class="docutils">
+<dt>file_list <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>List of raster filenames</dd>
+<dt>sd_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of output file</dd>
+</dl>
+<dl class="docutils">
+<dt>None</dt>
+<dd>Returns None</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.calculate_statistics_os.calc_sum">
+<code class="descclassname">vampire.processing.calculate_statistics_os.</code><code class="descname">calc_sum</code><span class="sig-paren">(</span><em>file_list</em>, <em>sum_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/calculate_statistics_os.html#calc_sum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.calculate_statistics_os.calc_sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate pixel-by-pixel sum of list of rasters and save result as new raster.</p>
+<p>For each pixel, calculate the sum of values in the list of rasters.</p>
+<dl class="docutils">
+<dt>file_list <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>List of raster filenames</dd>
+<dt>sum_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of output file</dd>
+</dl>
+<dl class="docutils">
+<dt>None</dt>
+<dd>Returns None</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.calculate_statistics_os.calc_zonal_statistics">
+<code class="descclassname">vampire.processing.calculate_statistics_os.</code><code class="descname">calc_zonal_statistics</code><span class="sig-paren">(</span><em>raster_file</em>, <em>polygon_file</em>, <em>zone_field</em>, <em>output_table</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/calculate_statistics_os.html#calc_zonal_statistics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.calculate_statistics_os.calc_zonal_statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate zonal statistics for a raster and vector and save result as .csv file.</p>
+<p>For each polygon in the vector file, calculate set of statistics from the raster (sum, mean, max, min, count).</p>
+<dl class="docutils">
+<dt>raster_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of raster file</dd>
+<dt>polygon_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of vector file</dd>
+<dt>zone_field <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Name of field labelling the zones within vector file</dd>
+<dt>output_table <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of output table (.csv)</dd>
+</dl>
+<dl class="docutils">
+<dt>None</dt>
+<dd>Returns None</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.calculate_statistics_os.mosaic_rasters">
+<code class="descclassname">vampire.processing.calculate_statistics_os.</code><code class="descname">mosaic_rasters</code><span class="sig-paren">(</span><em>raster_file_list</em>, <em>output_dir</em>, <em>output_file</em>, <em>mosaic_method</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/calculate_statistics_os.html#mosaic_rasters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.calculate_statistics_os.mosaic_rasters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mosaic the list of files using the specified method and save to output_file.</p>
+<dl class="docutils">
+<dt>raster_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of raster file</dd>
+<dt>polygon_file <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of vector file</dd>
+<dt>zone_field <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Name of field labelling the zones within vector file</dd>
+<dt>output_table <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of output table (.dbf or .csv)</dd>
+</dl>
+<dl class="docutils">
+<dt>None</dt>
+<dd>Returns None</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/vampire.processing.calculate_statistics_os.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

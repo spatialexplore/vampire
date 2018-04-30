@@ -1,0 +1,347 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.FloodForecastProductImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_products.FloodForecastProductImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">ast</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+
+<span class="kn">import</span> <span class="nn">BaseDataset</span>
+<span class="kn">import</span> <span class="nn">RasterProductImpl</span>
+<span class="kn">import</span> <span class="nn">RasterDatasetImpl</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FloodForecastProductImpl"><a class="viewcode-back" href="../../../vampire.config_products.FloodForecastProductImpl.html#vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl">[docs]</a><span class="k">class</span> <span class="nc">FloodForecastProductImpl</span><span class="p">(</span><span class="n">RasterProductImpl</span><span class="o">.</span><span class="n">RasterProductImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Implementation of Flood Area Impact config file process generation.</span>
+
+<span class="sd">    Implementation class for generating config file entries for Area impact of Flood Forecasting data product.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialise FloodForecastProductImpl.</span>
+
+<span class="sd">        Implementation class for FloodForecastProduct.</span>
+<span class="sd">        Initialise object parameters.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        country : string</span>
+<span class="sd">            Region of dataset - country name or &#39;global&#39;.</span>
+<span class="sd">        product_date : datetime</span>
+<span class="sd">            Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding</span>
+<span class="sd">            the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,</span>
+<span class="sd">            the product_date refers to the start of the season (3 month period).</span>
+<span class="sd">        interval : string</span>
+<span class="sd">            Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal</span>
+<span class="sd">        vampire_defaults : object</span>
+<span class="sd">            VAMPIREDefaults object containing VAMPIRE system default values.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FloodForecastProductImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;flood_forecast&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">country</span> <span class="o">=</span> <span class="n">country</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">product_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+<span class="c1">#        self.product = self.vp.get(&#39;MODIS&#39;, &#39;vegetation_product&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">day_of_year</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span>
+<span class="c1">#        if self.interval is None:</span>
+<span class="c1">#            self.interval = self.vp.get(&#39;MODIS_PRODUCTS&#39;, &#39;{product}.interval&#39;.format(product=self.product))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">gfs_dataset</span> <span class="o">=</span> <span class="n">BaseDataset</span><span class="o">.</span><span class="n">BaseDataset</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">dataset_type</span><span class="o">=</span><span class="s1">&#39;GFS&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
+                                                          <span class="n">product_date</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="p">,</span>
+                                                          <span class="n">vampire_defaults</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gfs_dataset</span><span class="o">.</span><span class="n">start_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gfs_dataset</span><span class="o">.</span><span class="n">end_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publish_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="FloodForecastProductImpl.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.FloodForecastProductImpl.html#vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to Flood Forecast that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span></div>
+
+<div class="viewcode-block" id="FloodForecastProductImpl.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.FloodForecastProductImpl.html#vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                        <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">file_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">threshold_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">threshold_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">threshold_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">accumulate_days</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">flood_years</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span>
+                        <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating Flood Forecasts.</span>
+
+<span class="sd">        Generate config file entries required to create Flood Forecasts for the specified country, date and interval.</span>
+
+<span class="sd">        :param data_dir: Directory where the GFS files for the product date are located.</span>
+<span class="sd">        :type data_dir: string</span>
+<span class="sd">        :param file_pattern: Regular expression pattern to used to find the GFS file for the product date.</span>
+<span class="sd">        :type file_pattern: string</span>
+<span class="sd">        :param threshold_file:</span>
+<span class="sd">        :type threshold_file: string</span>
+<span class="sd">        :param threshold_dir:</span>
+<span class="sd">        :type threshold_dir: string</span>
+<span class="sd">        :param threshold_pattern:</span>
+<span class="sd">        :type threshold_pattern: string</span>
+<span class="sd">        :param accumulate_days: Number of days to forecast for.</span>
+<span class="sd">        :type accumulate_days: int</span>
+<span class="sd">        :param flood_years:</span>
+<span class="sd">        :type flood_years: int</span>
+<span class="sd">        :param output_file:</span>
+<span class="sd">        :type output_file: string</span>
+<span class="sd">        :param output_dir: Directory to save the Flood Forecast output files.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param output_pattern:</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :return: Config file sections required for generating Flood Forecasts.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">accumulate_days</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_days</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;forecast_days&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_days</span> <span class="o">=</span> <span class="n">accumulate_days</span>
+
+        <span class="n">_num_forecasts</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;forecast_period&#39;</span><span class="p">))</span> <span class="o">-</span> <span class="n">_days</span> <span class="o">+</span><span class="mi">1</span>
+
+        <span class="n">config</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    ## Processing chain begin - Compute Flood Forecast</span><span class="se">\n</span><span class="s2">&quot;&quot;&quot;</span>
+        <span class="n">_cfg_section</span><span class="p">,</span> <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gfs_dataset</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">accumulate_days</span><span class="o">=</span><span class="n">_days</span><span class="p">)</span>
+        <span class="n">config</span> <span class="o">+=</span> <span class="n">_cfg_section</span>
+
+        <span class="k">if</span> <span class="n">data_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_data_dir</span> <span class="o">=</span> <span class="n">_output_dir</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_data_dir</span> <span class="o">=</span> <span class="n">data_dir</span>
+
+
+        <span class="k">if</span> <span class="n">flood_years</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_flood_years</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;flood_years&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_flood_years</span> <span class="o">=</span> <span class="n">flood_years</span>
+
+        <span class="n">_flood_years_values</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;flood_years_values&#39;</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;product_dir&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+            <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;output_pattern&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">output_pattern</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="n">_output_dir</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="n">_output_pattern</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_file</span> <span class="o">=</span> <span class="n">output_file</span>
+
+        <span class="k">if</span> <span class="n">threshold_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_threshold_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;threshold_dir&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_threshold_dir</span> <span class="o">=</span> <span class="n">threshold_dir</span>
+        <span class="n">_file_pattern</span> <span class="o">=</span> <span class="n">file_pattern</span>
+        <span class="k">if</span> <span class="n">_file_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_file_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GFS&#39;</span><span class="p">,</span> <span class="s1">&#39;regional_accum_pattern&#39;</span><span class="p">)</span>
+            <span class="c1"># replace generic year in pattern with the specific one needed so the correct file is found.</span>
+            <span class="n">_file_pattern</span> <span class="o">=</span> <span class="n">_file_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+            <span class="n">_file_pattern</span> <span class="o">=</span> <span class="n">_file_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+            <span class="n">_file_pattern</span> <span class="o">=</span> <span class="n">_file_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;day&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">f</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">_flood_years</span><span class="p">,</span> <span class="n">_flood_years_values</span><span class="p">):</span>
+            <span class="n">_threshold_file</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">threshold_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_threshold_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;threshold_pattern&#39;</span><span class="p">)</span>
+                <span class="n">_threshold_pattern</span> <span class="o">=</span> <span class="n">_threshold_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;num_years&gt;\d{2,4})&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0:0&gt;2}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_threshold_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">_threshold_file</span> <span class="o">=</span> <span class="n">threshold_file</span>
+
+            <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_flood_forecast_section</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="n">_data_dir</span><span class="p">,</span> <span class="n">file_pattern</span><span class="o">=</span><span class="n">_file_pattern</span><span class="p">,</span>
+                                                           <span class="n">threshold_file</span><span class="o">=</span><span class="n">_threshold_file</span><span class="p">,</span> <span class="n">threshold_dir</span><span class="o">=</span><span class="n">_threshold_dir</span><span class="p">,</span>
+                                                           <span class="n">threshold_pattern</span><span class="o">=</span><span class="n">_threshold_pattern</span><span class="p">,</span>
+                                                           <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span>
+                                                           <span class="n">output_pattern</span><span class="o">=</span><span class="n">_output_pattern</span><span class="p">,</span> <span class="n">num_years</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">output_value</span><span class="o">=</span><span class="n">v</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;flood_forecast_pattern&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;day&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_num_forecasts</span><span class="p">):</span>
+            <span class="c1"># mosaic all the flood return periods for this set of days</span>
+            <span class="n">_mosaic_pattern</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">_forecast_days</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="n">_num_forecasts</span><span class="p">)))</span>
+            <span class="n">_mosaic_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;output_mosaic_pattern&#39;</span><span class="p">)</span>
+            <span class="n">_mosaic_output_pattern</span> <span class="o">=</span> <span class="n">_mosaic_output_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{forecast_day}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_forecast_days</span><span class="p">))</span>
+
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">_flood_years</span><span class="p">:</span>
+                <span class="n">_forecast_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span>
+                <span class="n">_forecast_pattern</span> <span class="o">=</span> <span class="n">_forecast_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;num_years&gt;\d{2,4})&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0:0&gt;2}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+                <span class="n">_forecast_pattern</span> <span class="o">=</span> <span class="n">_forecast_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;forecast_period&gt;fd\d</span><span class="si">{3}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                                                              <span class="s1">&#39;fd</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_forecast_days</span><span class="p">))</span>
+                <span class="n">_mosaic_pattern</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">|</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_mosaic_pattern</span><span class="p">,</span> <span class="n">_forecast_pattern</span><span class="p">)</span>
+            <span class="n">_mosaic_pattern</span> <span class="o">=</span> <span class="n">_mosaic_pattern</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>  <span class="c1"># remove initial &#39;|&#39;</span>
+            <span class="n">_raster</span> <span class="o">=</span> <span class="n">RasterDatasetImpl</span><span class="o">.</span><span class="n">RasterDatasetImpl</span><span class="p">()</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="n">_raster</span><span class="o">.</span><span class="n">generate_mosaic_section</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">file_pattern</span><span class="o">=</span><span class="n">_mosaic_pattern</span><span class="p">,</span>
+                                                      <span class="n">output_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">_mosaic_output_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;flood_mosaic_pattern&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;day&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">config</span></div>
+
+<div class="viewcode-block" id="FloodForecastProductImpl.generate_flood_forecast_section"><a class="viewcode-back" href="../../../vampire.config_products.FloodForecastProductImpl.html#vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl.generate_flood_forecast_section">[docs]</a>    <span class="k">def</span> <span class="nf">generate_flood_forecast_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">file_pattern</span><span class="p">,</span>
+                                        <span class="n">threshold_file</span><span class="p">,</span> <span class="n">threshold_dir</span><span class="p">,</span> <span class="n">threshold_pattern</span><span class="p">,</span>
+                                        <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">,</span> <span class="n">num_years</span><span class="p">,</span> <span class="n">output_value</span><span class="p">):</span>
+        <span class="n">cfg_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    # Compute flood forecast</span>
+<span class="s2">    - process: Analysis</span>
+<span class="s2">      type: flood_alert&quot;&quot;&quot;</span>
+        <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      num_years: </span><span class="si">{num_years}</span><span class="s2"></span>
+<span class="s2">      output_value: </span><span class="si">{output_value}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_years</span><span class="o">=</span><span class="n">num_years</span><span class="p">,</span> <span class="n">output_value</span><span class="o">=</span><span class="n">output_value</span><span class="p">)</span>
+        <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      forecast_dir: </span><span class="si">{forecast_dir}</span><span class="s2"></span>
+<span class="s2">      forecast_pattern: &#39;</span><span class="si">{forecast_pattern}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">forecast_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">forecast_pattern</span><span class="o">=</span><span class="n">file_pattern</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">threshold_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      threshold_file: </span><span class="si">{threshold_file}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">threshold_file</span><span class="o">=</span><span class="n">threshold_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      threshold_dir: </span><span class="si">{threshold_dir}</span><span class="s2"></span>
+<span class="s2">      threshold_pattern: &#39;</span><span class="si">{threshold_pattern}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">threshold_dir</span><span class="o">=</span><span class="n">threshold_dir</span><span class="p">,</span> <span class="n">threshold_pattern</span><span class="o">=</span><span class="n">threshold_pattern</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      output_file: </span><span class="si">{output_file}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_file</span><span class="o">=</span><span class="n">output_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      output_dir: </span><span class="si">{output_dir}</span><span class="s2"></span>
+<span class="s2">      output_pattern: &#39;</span><span class="si">{output_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">      &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">output_pattern</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cfg_string</span></div>
+
+
+<div class="viewcode-block" id="FloodForecastProductImpl.generate_publish_config"><a class="viewcode-back" href="../../../vampire.config_products.FloodForecastProductImpl.html#vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl.generate_publish_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_publish_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config section to publish Flood Forecast data product.</span>
+
+<span class="sd">        Generates configuration file section to publish the Flood Forecast output file to a GIS server.</span>
+
+<span class="sd">        :return: Config file sections required for publishing Flood Forecasts.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cfg_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&quot;&quot;&quot;</span>
+        <span class="n">_days</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;forecast_days&#39;</span><span class="p">))</span>
+        <span class="n">_num_forecasts</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;forecast_period&#39;</span><span class="p">))</span> <span class="o">-</span> <span class="n">_days</span> <span class="o">+</span><span class="mi">1</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span>
+        <span class="n">_valid_from</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span>
+        <span class="n">_valid_to</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_num_forecasts</span><span class="p">):</span>
+            <span class="n">_forecast_days</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="n">_num_forecasts</span><span class="p">)))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;forecast_period&gt;fd\d</span><span class="si">{3}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                                                              <span class="s1">&#39;fd</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_forecast_days</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publish_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span>
+<span class="c1">#            self.publish_name = &#39;{0}_{1}&#39;.format(self.product_name, _forecast_days)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="n">_valid_from</span><span class="p">()</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="n">_valid_from</span><span class="p">()</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">i</span><span class="o">+</span><span class="n">_num_forecasts</span><span class="p">)</span>
+            <span class="n">cfg_string</span> <span class="o">+=</span> <span class="nb">super</span><span class="p">(</span><span class="n">FloodForecastProductImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="n">_product_pattern</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span>
+<span class="c1">#            self.valid_from_date = _valid_from</span>
+<span class="c1">#            self.valid_to_date = _valid_to</span>
+
+        <span class="k">return</span> <span class="n">cfg_string</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,235 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.RasterDatasetImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_products.RasterDatasetImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RasterDatasetImpl"><a class="viewcode-back" href="../../../vampire.config_products.RasterDatasetImpl.html#vampire.config_products.RasterDatasetImpl.RasterDatasetImpl">[docs]</a><span class="k">class</span> <span class="nc">RasterDatasetImpl</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise RasterDatasetImpl object.</span>
+
+<span class="sd">    Abstract implementation class for Raster datasets.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising Raster dataset&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="sd">&quot;&quot;&quot; Generate crop process section for raster datasets.</span>
+
+<span class="sd">    Generate VAMPIRE config file process for raster dataset cropping.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_dir : string</span>
+<span class="sd">        Path for raster file.</span>
+<span class="sd">    output_dir : string</span>
+<span class="sd">        Path for output of cropped file.</span>
+<span class="sd">    file_pattern : string</span>
+<span class="sd">        Pattern to match to find input file.</span>
+<span class="sd">    output_pattern : string</span>
+<span class="sd">        Pattern to use with input file pattern to generate output filename.</span>
+<span class="sd">    boundary_file : string</span>
+<span class="sd">        Path to boundary file to be used to clip the raster.</span>
+<span class="sd">    no_data : boolean</span>
+<span class="sd">        Flag indicating whether areas clipped out of the raster should be set to No Data.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    string</span>
+<span class="sd">        Returns string containing the configuration file process.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RasterDatasetImpl.generate_crop_section"><a class="viewcode-back" href="../../../vampire.config_products.RasterDatasetImpl.html#vampire.config_products.RasterDatasetImpl.RasterDatasetImpl.generate_crop_section">[docs]</a>    <span class="k">def</span> <span class="nf">generate_crop_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">file_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">,</span> <span class="n">boundary_file</span><span class="p">,</span>
+                              <span class="n">no_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">file_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    # Crop data</span>
+<span class="s2">    - process: Raster</span>
+<span class="s2">      type: crop</span>
+<span class="s2">      input_dir: </span><span class="si">{input_dir}</span><span class="s2"></span>
+<span class="s2">      output_dir: </span><span class="si">{output_dir}</span><span class="s2"></span>
+<span class="s2">      file_pattern: &#39;</span><span class="si">{file_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">      output_pattern: &#39;</span><span class="si">{output_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">      boundary_file: </span><span class="si">{boundary_file}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                           <span class="n">input_dir</span><span class="o">=</span><span class="n">input_dir</span><span class="p">,</span>
+                           <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+                           <span class="n">file_pattern</span><span class="o">=</span><span class="n">file_pattern</span><span class="p">,</span>
+                           <span class="n">output_pattern</span><span class="o">=</span><span class="n">output_pattern</span><span class="p">,</span>
+                           <span class="n">boundary_file</span><span class="o">=</span><span class="n">boundary_file</span>
+                           <span class="p">)</span>
+        <span class="k">if</span> <span class="n">no_data</span><span class="p">:</span>
+            <span class="n">file_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      no_data:</span>
+<span class="s2">      &quot;&quot;&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">file_string</span> <span class="o">+=</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">file_string</span></div>
+
+<div class="viewcode-block" id="RasterDatasetImpl.generate_mask_section"><a class="viewcode-back" href="../../../vampire.config_products.RasterDatasetImpl.html#vampire.config_products.RasterDatasetImpl.RasterDatasetImpl.generate_mask_section">[docs]</a>    <span class="k">def</span> <span class="nf">generate_mask_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_file</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">input_pattern</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">,</span>
+                              <span class="n">boundary_file</span><span class="p">,</span> <span class="n">boundary_raster</span><span class="p">,</span> <span class="n">no_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">cfg_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    # Mask data with boundary</span>
+<span class="s2">    - process: Raster</span>
+<span class="s2">      type: apply_mask&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">input_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      raster_file: </span><span class="si">{input_file}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      raster_dir: </span><span class="si">{input_dir}</span><span class="s2"></span>
+<span class="s2">      raster_pattern: &#39;</span><span class="si">{file_pattern}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">file_pattern</span><span class="o">=</span><span class="n">input_pattern</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">boundary_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      polygon_file: </span><span class="si">{boundary_file}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">boundary_file</span><span class="o">=</span><span class="n">boundary_file</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">boundary_raster</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      boundary_raster: </span><span class="si">{boundary_raster}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">boundary_raster</span><span class="o">=</span><span class="n">boundary_raster</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      output_file: </span><span class="si">{output_file}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_file</span><span class="o">=</span><span class="n">output_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      output_dir: </span><span class="si">{output_dir}</span><span class="s2"></span>
+<span class="s2">      output_pattern: &#39;</span><span class="si">{output_pattern}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+                                                   <span class="n">output_pattern</span><span class="o">=</span><span class="n">output_pattern</span><span class="p">,)</span>
+        <span class="k">if</span> <span class="n">no_data</span><span class="p">:</span>
+            <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      no_data:</span>
+<span class="s2">          &quot;&quot;&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">          &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cfg_string</span></div>
+
+    <span class="sd">&quot;&quot;&quot; Generate crop process section for raster datasets.</span>
+
+<span class="sd">    Generate VAMPIRE config file process for raster dataset cropping.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_dir : string</span>
+<span class="sd">        Path for raster file.</span>
+<span class="sd">    output_dir : string</span>
+<span class="sd">        Path for output of cropped file.</span>
+<span class="sd">    file_pattern : string</span>
+<span class="sd">        Pattern to match to find input file.</span>
+<span class="sd">    output_pattern : string</span>
+<span class="sd">        Pattern to use with input file pattern to generate output filename.</span>
+<span class="sd">    boundary_file : string</span>
+<span class="sd">        Path to boundary file to be used to clip the raster.</span>
+<span class="sd">    no_data : boolean</span>
+<span class="sd">        Flag indicating whether areas clipped out of the raster should be set to No Data.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    string</span>
+<span class="sd">        Returns string containing the configuration file process.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RasterDatasetImpl.generate_mosaic_section"><a class="viewcode-back" href="../../../vampire.config_products.RasterDatasetImpl.html#vampire.config_products.RasterDatasetImpl.RasterDatasetImpl.generate_mosaic_section">[docs]</a>    <span class="k">def</span> <span class="nf">generate_mosaic_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">file_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">,</span> <span class="n">mosaic_method</span><span class="o">=</span><span class="s1">&#39;MAXIMUM&#39;</span><span class="p">,</span>
+                              <span class="n">no_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">file_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    # mosaic data</span>
+<span class="s2">    - process: Raster</span>
+<span class="s2">      type: mosaic</span>
+<span class="s2">      input_dir: </span><span class="si">{input_dir}</span><span class="s2"></span>
+<span class="s2">      output_dir: </span><span class="si">{output_dir}</span><span class="s2"></span>
+<span class="s2">      file_pattern: &#39;</span><span class="si">{file_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">      output_pattern: &#39;</span><span class="si">{output_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">      mosaic_method: </span><span class="si">{mosaic_method}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                           <span class="n">input_dir</span><span class="o">=</span><span class="n">input_dir</span><span class="p">,</span>
+                           <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+                           <span class="n">file_pattern</span><span class="o">=</span><span class="n">file_pattern</span><span class="p">,</span>
+                           <span class="n">output_pattern</span><span class="o">=</span><span class="n">output_pattern</span><span class="p">,</span>
+                           <span class="n">mosaic_method</span><span class="o">=</span><span class="n">mosaic_method</span>
+                           <span class="p">)</span>
+        <span class="k">if</span> <span class="n">no_data</span><span class="p">:</span>
+            <span class="n">file_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      no_data:</span>
+<span class="s2">      &quot;&quot;&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">file_string</span> <span class="o">+=</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">file_string</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

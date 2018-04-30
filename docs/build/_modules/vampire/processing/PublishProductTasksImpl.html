@@ -1,0 +1,747 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.PublishProductTasksImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.PublishProductTasksImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">directory_utils</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">VampireDefaults</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="PublishProductTasksImpl"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishProductTasksImpl">[docs]</a><span class="k">class</span> <span class="nc">PublishProductTasksImpl</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">subclasses</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="PublishProductTasksImpl.register_subclass"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishProductTasksImpl.register_subclass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">register_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">product_type</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">subclass</span><span class="p">):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">product_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">subclass</span>
+            <span class="k">return</span> <span class="n">subclass</span>
+        <span class="k">return</span> <span class="n">decorator</span></div>
+
+<div class="viewcode-block" id="PublishProductTasksImpl.create"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishProductTasksImpl.create">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">product_type</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">product_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad product type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product_type</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">vampire_defaults</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">VampireDefaults</span><span class="o">.</span><span class="n">VampireDefaults</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">product_type</span><span class="p">](</span><span class="n">params</span><span class="p">,</span> <span class="n">vp</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="PublishableProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishableProduct">[docs]</a><span class="k">class</span> <span class="nc">PublishableProduct</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__product_dir</span>
+    <span class="nd">@product_dir</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">product_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__product_dir</span> <span class="o">=</span> <span class="n">op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__product_name</span>
+    <span class="nd">@product_name</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">product_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__product_name</span> <span class="o">=</span> <span class="n">op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__product_filename</span>
+    <span class="nd">@product_filename</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">product_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__product_filename</span> <span class="o">=</span> <span class="n">op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">destination_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__destination_filename</span>
+    <span class="nd">@destination_filename</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">destination_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__destination_filename</span> <span class="o">=</span> <span class="n">op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ingestion_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ingestion_date</span>
+    <span class="nd">@ingestion_date</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">ingestion_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__ingestion_date</span> <span class="o">=</span> <span class="n">op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__valid_from_date</span>
+    <span class="nd">@valid_from_date</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__valid_from_date</span> <span class="o">=</span> <span class="n">op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__valid_to_date</span>
+    <span class="nd">@valid_to_date</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__valid_to_date</span> <span class="o">=</span> <span class="n">op</span>
+
+
+<div class="viewcode-block" id="PublishableProduct.publish"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishableProduct.publish">[docs]</a>    <span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">return</span></div></div>
+
+<div class="viewcode-block" id="PublishableRasterProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishableRasterProduct">[docs]</a><span class="k">class</span> <span class="nc">PublishableRasterProduct</span><span class="p">(</span><span class="n">PublishableProduct</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising PublishableRasterProduct&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishableRasterProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summary</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__summary</span>
+    <span class="nd">@summary</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__summary</span> <span class="o">=</span> <span class="n">op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tags</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__tags</span>
+    <span class="nd">@tags</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__tags</span> <span class="o">=</span> <span class="n">op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">template_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__template_file</span>
+    <span class="nd">@template_file</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">template_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__template_file</span> <span class="o">=</span> <span class="n">op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__product_filename</span>
+    <span class="nd">@product_filename</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">product_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__product_filename</span> <span class="o">=</span> <span class="n">op</span></div>
+
+
+<div class="viewcode-block" id="PublishableTabularProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishableTabularProduct">[docs]</a><span class="k">class</span> <span class="nc">PublishableTabularProduct</span><span class="p">(</span><span class="n">PublishableProduct</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising PublishableRasterProduct&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishableTabularProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">database</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__database</span>
+    <span class="nd">@database</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__database</span> <span class="o">=</span> <span class="n">op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">table_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__table_name</span>
+    <span class="nd">@table_name</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">table_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__table_name</span> <span class="o">=</span> <span class="n">op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">schema</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__schema</span>
+    <span class="nd">@schema</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__schema</span> <span class="o">=</span> <span class="n">op</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__product_filename</span>
+    <span class="nd">@product_filename</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">product_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__product_filename</span> <span class="o">=</span> <span class="n">op</span></div>
+
+
+
+
+<div class="viewcode-block" id="PublishRainfallAnomalyProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishRainfallAnomalyProduct">[docs]</a><span class="nd">@PublishProductTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;rainfall_anomaly&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishRainfallAnomalyProduct</span><span class="p">(</span><span class="n">PublishableRasterProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishRainfallAnomalyProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;output_dir&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">],</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summary</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()),</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;summary&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">, </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;tags&#39;</span><span class="p">),</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country&#39;</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;template_file&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;rainfall_anomaly&#39;</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_pattern&#39;</span><span class="p">]</span>
+        <span class="n">_product_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_dir&#39;</span><span class="p">],</span> <span class="n">_product_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="n">_product_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1">#        self.product_filename = &#39;lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif&#39; % self.product_date.strftime(&#39;%Y.%m.%d&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publish_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;publish_name&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publish_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;publish_name&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span>
+        <span class="c1"># if using geoserver, need to modify destination filename so if can parse the date</span>
+        <span class="c1"># ie. to have no full stops and be in the format YYYYmmdd</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;gis_server&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;geoserver&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span><span class="p">)</span>
+            <span class="c1"># find date in destination filename and remove full stops</span>
+            <span class="n">regex</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">new_date</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;monthly&#39;</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{2}</span><span class="s1">&#39;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;seasonal&#39;</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{6}</span><span class="s1">&#39;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;dekad&#39;</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{2}</span><span class="s1">.\d</span><span class="si">{1}</span><span class="s1">&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">new_date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span><span class="p">)</span>
+<span class="c1">#        self.destination_filename = &#39;lka_cli_chirps-v2.0.%s.ratio_anom.tif&#39; % self.product_date.strftime(&#39;%Y%m%d&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="c1">#- datetime.timedelta(days=int(self.vampire.get(&#39;CHIRPS_Rainfall_Anomaly&#39;, &#39;interval&#39;)))</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PublishVHIProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishVHIProduct">[docs]</a><span class="nd">@PublishProductTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;vhi&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishVHIProduct</span><span class="p">(</span><span class="n">PublishableRasterProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise PublishVHIProduct object.</span>
+
+<span class="sd">    Implementation class for publishing VHI products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishVHIProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_product_dir&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">],</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summary</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;interval&#39;</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()),</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;summary&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">, </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;tags&#39;</span><span class="p">),</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country&#39;</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;template_file&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_pattern&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="n">_product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">).(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">).(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y.%m.</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)))</span>
+        <span class="n">_product_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span><span class="p">,</span> <span class="n">_product_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="n">_product_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="c1">#        self.product_filename = &#39;lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif&#39; % self.product_date.strftime(&#39;%Y.%m.%d&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;product_name&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span>
+        <span class="c1"># if using geoserver, need to modify destination filename so if can parse the date</span>
+        <span class="c1"># ie. to have no full stops and be in the format YYYYmmdd</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;gis_server&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;geoserver&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span><span class="p">)</span>
+            <span class="c1"># find date in destination filename and remove full stops</span>
+            <span class="n">regex</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">new_date</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;monthly&#39;</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{2}</span><span class="s1">&#39;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;seasonal&#39;</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{6}</span><span class="s1">&#39;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;dekad&#39;</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{2}</span><span class="s1">.\d</span><span class="si">{1}</span><span class="s1">&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">new_date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span>
+            <span class="c1">#self.product_date - datetime.timedelta(days=int(self.vampire.get(&#39;MODIS_VHI&#39;, &#39;interval&#39;)))</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PublishSPIProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishSPIProduct">[docs]</a><span class="nd">@PublishProductTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;spi&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishSPIProduct</span><span class="p">(</span><span class="n">PublishableRasterProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishSPIProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_SPI&#39;</span><span class="p">,</span> <span class="s1">&#39;output_dir&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">],</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summary</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_SPI&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()),</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_SPI&#39;</span><span class="p">,</span> <span class="s1">&#39;summary&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">, </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_SPI&#39;</span><span class="p">,</span> <span class="s1">&#39;tags&#39;</span><span class="p">),</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire_tmp&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country&#39;</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_SPI&#39;</span><span class="p">,</span> <span class="s1">&#39;template_file&#39;</span><span class="p">)</span>
+
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_pattern&#39;</span><span class="p">]</span>
+        <span class="n">_product_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_dir&#39;</span><span class="p">],</span> <span class="n">_product_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="n">_product_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1">#        self.product_filename = &#39;lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif&#39; % self.product_date.strftime(&#39;%Y.%m.%d&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;spi&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publish_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;publish_name&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publish_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;publish_name&#39;</span><span class="p">]</span>
+<span class="c1">#        if self.product_date.day &lt; 11:</span>
+<span class="c1">#            _dekad = 1</span>
+<span class="c1">#        elif self.product_date.day &lt; 21:</span>
+<span class="c1">#            _dekad = 2</span>
+<span class="c1">#        else:</span>
+<span class="c1">#            _dekad = 3</span>
+<span class="c1">#        self.date_string = &#39;{0}.{1}&#39;.format(self.product_date.strftime(&#39;%Y.%m&#39;), _dekad)</span>
+<span class="c1">#        self.product_filename = &#39;lka_cli_chirps-v2.0.%s.spi.tif&#39; % self.date_string</span>
+<span class="c1">#        self.product_name = &#39;spi&#39;</span>
+
+        <span class="c1"># if using geoserver, need to modify destination filename so if can parse the date</span>
+        <span class="c1"># ie. to have no full stops and be in the format YYYYmmdd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;gis_server&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;geoserver&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span><span class="p">)</span>
+            <span class="c1"># find date in destination filename and remove full stops</span>
+            <span class="n">regex</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">new_date</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_SPI&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;monthly&#39;</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{2}</span><span class="s1">&#39;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_SPI&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;seasonal&#39;</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{6}</span><span class="s1">&#39;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_SPI&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;dekad&#39;</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{2}</span><span class="s1">.\d</span><span class="si">{1}</span><span class="s1">&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">new_date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span><span class="p">)</span>
+<span class="c1">#        self.destination_filename = &#39;lka_cli_chirps-v2.0.%s.spi.tif&#39; % self.product_date.strftime(&#39;%Y%m%d&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="c1">#- datetime.timedelta(days=int(self.vp.get(&#39;CHIRPS_SPI&#39;, &#39;interval&#39;)))</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PublishMaskedVHIProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishMaskedVHIProduct">[docs]</a><span class="nd">@PublishProductTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;vhi_masked&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishMaskedVHIProduct</span><span class="p">(</span><span class="n">PublishableRasterProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishMaskedVHIProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_product_dir&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">],</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summary</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;interval&#39;</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()),</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;summary&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">, </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;tags&#39;</span><span class="p">),</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country&#39;</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;template_file&#39;</span><span class="p">)</span>
+<span class="c1">#        self.product_filename = &#39;lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif&#39; % self.product_date.strftime(&#39;%Y.%m.%d&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;vhi_mask&#39;</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_pattern&#39;</span><span class="p">]</span>
+        <span class="n">_product_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_dir&#39;</span><span class="p">],</span> <span class="n">_product_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="n">_product_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1">#        self.product_filename = &#39;lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif&#39; % self.product_date.strftime(&#39;%Y.%m.%d&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publish_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;publish_name&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">publish_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;publish_name&#39;</span><span class="p">]</span>
+
+        <span class="c1"># if using geoserver, need to modify destination filename so if can parse the date</span>
+        <span class="c1"># ie. to have no full stops and be in the format YYYYmmdd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;gis_server&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;geoserver&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span><span class="p">)</span>
+            <span class="c1"># find date in destination filename and remove full stops</span>
+            <span class="n">regex</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">new_date</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;monthly&#39;</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{2}</span><span class="s1">&#39;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;seasonal&#39;</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{6}</span><span class="s1">&#39;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_VHI&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;dekad&#39;</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{2}</span><span class="s1">.\d</span><span class="si">{1}</span><span class="s1">&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">new_date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span><span class="p">)</span>
+<span class="c1">#        self.destination_filename = &#39;lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_masked.tif&#39; % self.product_date.strftime(&#39;%Y%m%d&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="c1">#- datetime.timedelta(days=int(self.vampire.get(&#39;MODIS_VHI&#39;, &#39;interval&#39;)))</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PublishFloodForecastProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishFloodForecastProduct">[docs]</a><span class="nd">@PublishProductTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;flood_forecast&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishFloodForecastProduct</span><span class="p">(</span><span class="n">PublishableRasterProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishFloodForecastProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;product_dir&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">],</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summary</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;interval&#39;</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()),</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;summary&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">, </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;tags&#39;</span><span class="p">),</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country&#39;</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;template_file&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_pattern&#39;</span><span class="p">]</span>
+        <span class="c1"># _product_pattern = self.vp.get(&#39;FLOOD_FORECAST&#39;, &#39;flood_mosaic_pattern&#39;)</span>
+        <span class="c1"># _product_pattern = _product_pattern.replace(&#39;(?P&lt;year&gt;\d{4}).(?P&lt;month&gt;\d{2}).(?P&lt;day&gt;\d{2})&#39;, &#39;{0}&#39;.format(self.product_date.strftime(&#39;%Y.%m.%d&#39;)))</span>
+<span class="c1">#        _product_files = directory_utils.get_matching_files(self.product_dir, _product_pattern)</span>
+        <span class="n">_product_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_dir&#39;</span><span class="p">],</span> <span class="n">_product_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="n">_product_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="c1">#        self.product_filename = &#39;lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif&#39; % self.product_date.strftime(&#39;%Y.%m.%d&#39;)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FLOOD_FORECAST&#39;</span><span class="p">,</span> <span class="s1">&#39;product_name&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">publish_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;publish_name&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;_f\</span><span class="si">{3}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span><span class="p">)</span>
+        <span class="c1"># if using geoserver, need to modify destination filename so if can parse the date</span>
+        <span class="c1"># ie. to have no full stops and be in the format YYYYmmdd</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;gis_server&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;geoserver&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span><span class="p">)</span>
+            <span class="c1"># find date in destination filename and remove full stops</span>
+            <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{2}</span><span class="s1">.\d</span><span class="si">{2}</span><span class="s1">&#39;</span>
+            <span class="n">new_date</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">new_date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+            <span class="c1">#self.product_date - datetime.timedelta(days=int(self.vampire.get(&#39;MODIS_VHI&#39;, &#39;interval&#39;)))</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PublishDSLRProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishDSLRProduct">[docs]</a><span class="nd">@PublishProductTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;days_since_last_rain&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishDSLRProduct</span><span class="p">(</span><span class="n">PublishableRasterProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising PublishDSLRProduct task&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishDSLRProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Days_Since_Last_Rain&#39;</span><span class="p">,</span> <span class="s1">&#39;output_dir&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">],</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summary</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Days_Since_Last_Rain&#39;</span><span class="p">,</span> <span class="s1">&#39;interval&#39;</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()),</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Days_Since_Last_Rain&#39;</span><span class="p">,</span> <span class="s1">&#39;summary&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">, </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Days_Since_Last_Rain&#39;</span><span class="p">,</span> <span class="s1">&#39;tags&#39;</span><span class="p">),</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country&#39;</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Days_Since_Last_Rain&#39;</span><span class="p">,</span> <span class="s1">&#39;template_file&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Days_Since_Last_Rain&#39;</span><span class="p">,</span> <span class="s1">&#39;regional_dslr_pattern&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="n">_product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">).(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">).(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y.%m.</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)))</span>
+        <span class="n">_product_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span><span class="p">,</span> <span class="n">_product_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="n">_product_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="c1">#        self.product_filename = &#39;lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI.tif&#39; % self.product_date.strftime(&#39;%Y.%m.%d&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;days_since_last_rain&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span>
+        <span class="c1"># if using geoserver, need to modify destination filename so if can parse the date</span>
+        <span class="c1"># ie. to have no full stops and be in the format YYYYmmdd</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;gis_server&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;geoserver&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span><span class="p">)</span>
+            <span class="c1"># find date in destination filename and remove full stops</span>
+            <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d</span><span class="si">{4}</span><span class="s1">.\d</span><span class="si">{2}</span><span class="s1">.\d</span><span class="si">{2}</span><span class="s1">&#39;</span>
+            <span class="n">new_date</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">new_date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="c1">#datetime.datetime.strptime(self.valid_from_date, &#39;%d/%m/%Y&#39;)</span>
+            <span class="c1">#self.product_date - datetime.timedelta(days=int(self.vampire.get(&#39;MODIS_VHI&#39;, &#39;interval&#39;)))</span>
+        <span class="k">return</span></div>
+
+
+
+<div class="viewcode-block" id="PublishVHIAreaImpactProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishVHIAreaImpactProduct">[docs]</a><span class="nd">@PublishProductTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;vhi_impact_area&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishVHIAreaImpactProduct</span><span class="p">(</span><span class="n">PublishableTabularProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising Area Impact product.&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishVHIAreaImpactProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_output_dir&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">],</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_db&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_area_table&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_area_schema&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_schema&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_area_pattern&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="n">_product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">).(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">).(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y.%m.</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)))</span>
+        <span class="n">_product_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span><span class="p">,</span> <span class="n">_product_pattern</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="n">_product_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;vhi_impact_area&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PublishVHIPopnImpactProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishVHIPopnImpactProduct">[docs]</a><span class="nd">@PublishProductTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;vhi_impact_popn&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishVHIPopnImpactProduct</span><span class="p">(</span><span class="n">PublishableTabularProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising Popn Impact product.&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishVHIPopnImpactProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+<span class="c1">#        self.params = params</span>
+<span class="c1">#        self.vp = vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_output_dir&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">],</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_db&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_popn_table&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_popn_schema&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_schema&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_popn_pattern&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="n">_product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">).(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">).(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y.%m.</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)))</span>
+        <span class="n">_product_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span><span class="p">,</span> <span class="n">_product_pattern</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="n">_product_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1">#&#39;lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif&#39; % self.product_date.strftime(&#39;%Y.%m.%d&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;vhi_impact_popn&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PublishFloodAreaImpactProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishFloodAreaImpactProduct">[docs]</a><span class="nd">@PublishProductTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;flood_impact_area&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishFloodAreaImpactProduct</span><span class="p">(</span><span class="n">PublishableTabularProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialize Publish Flood Area Impact product.&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishFloodAreaImpactProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;flood_output_dir&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">],</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_db&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;table&#39;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">table_name</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;table&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">table_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;flood_impact_area_table&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_area_schema&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_schema&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_pattern&#39;</span><span class="p">]</span> <span class="c1">#self.vp.get(&#39;hazard_impact&#39;, &#39;flood_area_pattern&#39;)</span>
+<span class="c1">#        _product_pattern = _product_pattern.replace(&#39;(?P&lt;year&gt;\d{4}).(?P&lt;month&gt;\d{2}).(?P&lt;day&gt;\d{2})&#39;, &#39;{0}&#39;.format(self.product_date.strftime(&#39;%Y.%m.%d&#39;)))</span>
+        <span class="n">_product_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_dir&#39;</span><span class="p">],</span> <span class="n">_product_pattern</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="n">_product_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;flood_impact_area&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PublishFloodPopnImpactProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishFloodPopnImpactProduct">[docs]</a><span class="nd">@PublishProductTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;flood_impact_popn&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishFloodPopnImpactProduct</span><span class="p">(</span><span class="n">PublishableTabularProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialize Publish Flood Population Impact product.&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishFloodPopnImpactProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;flood_output_dir&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">],</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_db&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;table&#39;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">table_name</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;table&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">table_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;flood_impact_popn_table&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_popn_schema&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_schema&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_pattern&#39;</span><span class="p">]</span> <span class="c1">#self.vp.get(&#39;hazard_impact&#39;, &#39;flood_popn_pattern&#39;)</span>
+<span class="c1">#        _product_pattern = _product_pattern.replace(&#39;(?P&lt;year&gt;\d{4}).(?P&lt;month&gt;\d{2}).(?P&lt;day&gt;\d{2})&#39;, &#39;{0}&#39;.format(self.product_date.strftime(&#39;%Y.%m.%d&#39;)))</span>
+        <span class="n">_product_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span><span class="p">,</span> <span class="n">_product_pattern</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="n">_product_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;flood_impact_popn&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span>
+        <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="PublishDSLRAreaImpactProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishDSLRAreaImpactProduct">[docs]</a><span class="nd">@PublishProductTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;days_since_last_rain_impact_area&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishDSLRAreaImpactProduct</span><span class="p">(</span><span class="n">PublishableTabularProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising Area Impact product.&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishDSLRAreaImpactProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;dslr_output_dir&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">],</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_db&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;dslr_impact_area_table&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;dslr_impact_area_schema&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_schema&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;dslr_area_pattern&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="n">_product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">).(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">).(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y.%m.</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)))</span>
+        <span class="n">_product_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span><span class="p">,</span> <span class="n">_product_pattern</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="n">_product_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;dslr_impact_area&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PublishDSLRPopnImpactProduct"><a class="viewcode-back" href="../../../vampire.processing.PublishProductTasksImpl.html#vampire.processing.PublishProductTasksImpl.PublishDSLRPopnImpactProduct">[docs]</a><span class="nd">@PublishProductTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;days_since_last_rain_impact_popn&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishDSLRPopnImpactProduct</span><span class="p">(</span><span class="n">PublishableTabularProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising Popn Impact product.&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PublishDSLRPopnImpactProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+<span class="c1">#        self.params = params</span>
+<span class="c1">#        self.vp = vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;dslr_output_dir&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">],</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">/%m/%Y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_db&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;dslr_impact_popn_table&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_popn_schema&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_schema&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;dslr_popn_pattern&#39;</span><span class="p">)</span>
+        <span class="n">_product_pattern</span> <span class="o">=</span> <span class="n">_product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">).(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">).(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y.%m.</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)))</span>
+        <span class="n">_product_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span><span class="p">,</span> <span class="n">_product_pattern</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span> <span class="o">=</span> <span class="n">_product_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1">#&#39;lka_phy_MOD13Q1.%s.250m_16_days_EVI_EVI_VCI_VHI_cropmask.tif&#39; % self.product_date.strftime(&#39;%Y.%m.%d&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;dslr_impact_popn&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span>
+        <span class="k">return</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

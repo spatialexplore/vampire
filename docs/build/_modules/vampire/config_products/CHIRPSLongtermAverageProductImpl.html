@@ -1,0 +1,227 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.CHIRPSLongtermAverageProductImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_products.CHIRPSLongtermAverageProductImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">BaseDataset</span>
+<span class="kn">import</span> <span class="nn">RasterProductImpl</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CHIRPSLongtermAverageProductImpl"><a class="viewcode-back" href="../../../vampire.config_products.CHIRPSLongtermAverageProductImpl.html#vampire.config_products.CHIRPSLongtermAverageProductImpl.CHIRPSLongtermAverageProductImpl">[docs]</a><span class="k">class</span> <span class="nc">CHIRPSLongtermAverageProductImpl</span><span class="p">(</span><span class="n">RasterProductImpl</span><span class="o">.</span><span class="n">RasterProductImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; CHIRPS long-term average.</span>
+
+<span class="sd">    Data handling for generating CHIRPS long-term averages.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialise MODISEVILongtermAverageProductImpl.</span>
+
+<span class="sd">        Implementation class for MODISEVILongtermAverageProduct.</span>
+<span class="sd">        Initialise object parameters.</span>
+
+<span class="sd">        :param country: Region of dataset - country name or &#39;global&#39;.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding</span>
+<span class="sd">            the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,</span>
+<span class="sd">            the product_date refers to the start of the season (3 month period).</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        :param region: Default is None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CHIRPSLongtermAverageProductImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">country</span> <span class="o">=</span> <span class="n">country</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">product_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;An interval is needed for computing CHIRPS longterm average.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># set product_date to None to retrieve all available data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chirps_dataset</span> <span class="o">=</span> <span class="n">BaseDataset</span><span class="o">.</span><span class="n">BaseDataset</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">dataset_type</span><span class="o">=</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
+                                                             <span class="n">product_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                             <span class="n">vampire_defaults</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="CHIRPSLongtermAverageProductImpl.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.CHIRPSLongtermAverageProductImpl.html#vampire.config_products.CHIRPSLongtermAverageProductImpl.CHIRPSLongtermAverageProductImpl.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate VAMPIRE config file header for CHIRPS long-term average datasets.</span>
+
+<span class="sd">        :return: Returns config file header section.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chirps_dataset</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">config</span></div>
+
+
+<div class="viewcode-block" id="CHIRPSLongtermAverageProductImpl.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.CHIRPSLongtermAverageProductImpl.html#vampire.config_products.CHIRPSLongtermAverageProductImpl.CHIRPSLongtermAverageProductImpl.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">functions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate a config file process for CHIRPS long-term average product.</span>
+
+<span class="sd">        Generate VAMPIRE config file processes to generate long-term averages from CHIRPS data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        :param input_dir: Directory path for CHIRPS precipitation files. Default is None.</span>
+<span class="sd">        :type input_dir: string</span>
+<span class="sd">        :param output_dir: Path for product output. If the output_dir is None, the VAMPIRE default rainfall anomaly product directory will be used.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param input_pattern: Regular expression pattern for finding CHIRPS precipitation files. Default is None.</span>
+<span class="sd">        :type input_pattern: string</span>
+<span class="sd">        :param output_pattern: Pattern for specifying output filename. Used in conjuction with input_pattern. Default is None.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :param functions: List of functions to calculate. Valid options include &#39;AVG&#39;, &#39;MIN&#39;, &#39;MAX&#39;, &#39;STD&#39;.</span>
+<span class="sd">        :type functions: list of string</span>
+<span class="sd">        :param download: Flag indicating whether data should be downloaded or not.</span>
+<span class="sd">        :type download: bool</span>
+
+<span class="sd">        :return: Returns string containing the configuration file process.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    ## Processing chain begin - Compute CHIRPS long-term average</span><span class="se">\n</span><span class="s2">&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chirps_dataset</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="n">download</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">input_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_input_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;data_dir&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_input_dir</span> <span class="o">=</span> <span class="n">input_dir</span>
+        <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country_product_dir&#39;</span><span class="p">),</span> <span class="s1">&#39;StatisticsBy</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+        <span class="k">if</span> <span class="n">input_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_input_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;regional_</span><span class="si">{0}</span><span class="s1">_pattern&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_input_pattern</span> <span class="o">=</span> <span class="n">input_pattern</span>
+        <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Longterm_Average&#39;</span><span class="p">,</span> <span class="s1">&#39;regional_lta_</span><span class="si">{0}</span><span class="s1">_pattern&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">output_pattern</span>
+        <span class="k">if</span> <span class="n">functions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_functions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;AVG&#39;</span><span class="p">,</span> <span class="s1">&#39;STD&#39;</span><span class="p">,</span> <span class="s1">&#39;MIN&#39;</span><span class="p">,</span> <span class="s1">&#39;MAX&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_functions</span> <span class="o">=</span> <span class="n">functions</span>
+
+        <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_longterm_average_section</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">_input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span>
+                                                         <span class="n">input_pattern</span><span class="o">=</span><span class="n">_input_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">_output_pattern</span><span class="p">,</span>
+                                                         <span class="n">functions</span><span class="o">=</span><span class="n">_functions</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">config</span></div>
+
+<div class="viewcode-block" id="CHIRPSLongtermAverageProductImpl.generate_longterm_average_section"><a class="viewcode-back" href="../../../vampire.config_products.CHIRPSLongtermAverageProductImpl.html#vampire.config_products.CHIRPSLongtermAverageProductImpl.CHIRPSLongtermAverageProductImpl.generate_longterm_average_section">[docs]</a>    <span class="k">def</span> <span class="nf">generate_longterm_average_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">input_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">,</span> <span class="n">functions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file string for CHIRPS long-term average product.</span>
+
+<span class="sd">        Generate VAMPIRE config file string to generate long-term averages from CHIRPS data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        :param input_dir: Directory path for CHIRPS precipitation files. Default is None.</span>
+<span class="sd">        :type input_dir: string</span>
+<span class="sd">        :param output_dir: Path for product output. If the output_dir is None, the VAMPIRE default rainfall anomaly product directory will be used.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param input_pattern: Regular expression pattern for finding CHIRPS precipitation files. Default is None.</span>
+<span class="sd">        :type input_pattern: string</span>
+<span class="sd">        :param output_pattern: Pattern for specifying output filename. Used in conjuction with input_pattern. Default is None.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :param functions: List of functions to calculate. Valid options include &#39;AVG&#39;, &#39;MIN&#39;, &#39;MAX&#39;, &#39;STD&#39;.</span>
+<span class="sd">        :type functions: list of string</span>
+
+<span class="sd">        :return: Returns string containing the configuration file process.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cfg_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    - process: CHIRPS</span>
+<span class="s2">      type: longterm_average</span>
+<span class="s2">      interval: </span><span class="si">{interval}</span><span class="s2"></span>
+<span class="s2">      input_dir: </span><span class="si">{input_dir}</span><span class="s2"></span>
+<span class="s2">      output_dir: </span><span class="si">{output_dir}</span><span class="s2"></span>
+<span class="s2">      file_pattern: &#39;</span><span class="si">{file_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span> <span class="n">input_dir</span><span class="o">=</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+                   <span class="n">file_pattern</span><span class="o">=</span><span class="n">input_pattern</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cfg_string</span></div></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

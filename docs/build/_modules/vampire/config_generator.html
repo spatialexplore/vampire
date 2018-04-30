@@ -1,0 +1,300 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_generator &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_generator</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">errno</span>
+<span class="kn">import</span> <span class="nn">optparse</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="kn">import</span> <span class="nn">config_products.BaseImpactProduct</span> <span class="k">as</span> <span class="nn">BaseImpactProduct</span>
+<span class="kn">import</span> <span class="nn">config_products.BaseProduct</span> <span class="k">as</span> <span class="nn">BaseProduct</span>
+
+
+<div class="viewcode-block" id="generate_config_file"><a class="viewcode-back" href="../../vampire.config_generator.html#vampire.config_generator.generate_config_file">[docs]</a><span class="k">def</span> <span class="nf">generate_config_file</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_file</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">EACCES</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;Error creating file &quot;</span> <span class="o">+</span> <span class="n">output_file</span>
+            <span class="c1"># Not a permission error.</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s1">&#39;w+&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span>
+
+    <span class="k">with</span> <span class="n">pfile</span><span class="p">:</span>
+        <span class="c1"># cf = CHIRPSConfigFactory.CHIRPSConfigFactory(name=&#39;cf&#39;)</span>
+        <span class="c1"># _end_date = params[&#39;start_date&#39;]</span>
+        <span class="c1"># _valid_to = None</span>
+        <span class="c1"># if &#39;end_date&#39; in params:</span>
+        <span class="c1">#     _end_date = params[&#39;end_date&#39;]</span>
+        <span class="c1"># mf = MODISConfigFactory.MODISConfigFactory(name=&#39;mf&#39;, country=params[&#39;country&#39;],</span>
+        <span class="c1">#                                            start_date=params[&#39;start_date&#39;], end_date=_end_date)</span>
+        <span class="c1"># if &#39;valid_from&#39; in params:</span>
+        <span class="c1">#     _valid_from = params[&#39;valid_from&#39;]</span>
+        <span class="c1"># else:</span>
+        <span class="c1">#     _valid_from = params[&#39;start_date&#39;]</span>
+        <span class="c1"># imf = ImpactConfigFactory.ImpactConfigFactory(name=&#39;imf&#39;, country=params[&#39;country&#39;],</span>
+        <span class="c1">#                                               start_date=_valid_from, end_date=params[&#39;start_date&#39;])</span>
+        <span class="c1"># pfile.write(cf.generate_header_directory())</span>
+        <span class="k">if</span> <span class="s1">&#39;product&#39;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="n">_product</span> <span class="o">=</span> <span class="n">BaseProduct</span><span class="o">.</span><span class="n">BaseProduct</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">product_type</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;product&#39;</span><span class="p">],</span> <span class="n">country</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;country&#39;</span><span class="p">],</span>
+                                                      <span class="n">product_date</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">],</span> <span class="n">interval</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;interval&#39;</span><span class="p">])</span> <span class="c1">#params=params)</span>
+            <span class="n">pfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_product</span><span class="o">.</span><span class="n">generate_header</span><span class="p">())</span>
+            <span class="n">pfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">run:</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+            <span class="n">pfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_product</span><span class="o">.</span><span class="n">generate_config</span><span class="p">())</span>
+
+            <span class="k">if</span> <span class="s1">&#39;mask&#39;</span> <span class="ow">in</span> <span class="n">params</span> <span class="ow">and</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">pfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_product</span><span class="o">.</span><span class="n">generate_mask_config</span><span class="p">())</span>
+
+            <span class="n">_area_impact</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">_popn_impact</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="s1">&#39;impact&#39;</span> <span class="ow">in</span> <span class="n">params</span> <span class="ow">and</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;impact&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">_area_impact</span> <span class="o">=</span> <span class="n">BaseImpactProduct</span><span class="o">.</span><span class="n">BaseImpactProduct</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">impact_type</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_impact_area&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;product&#39;</span><span class="p">]),</span>
+                                                                          <span class="n">country</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;country&#39;</span><span class="p">],</span>
+                                                                          <span class="n">valid_from_date</span><span class="o">=</span><span class="n">_product</span><span class="o">.</span><span class="n">valid_from_date</span><span class="p">,</span>
+                                                                          <span class="n">valid_to_date</span><span class="o">=</span><span class="n">_product</span><span class="o">.</span><span class="n">valid_to_date</span>
+                                                                          <span class="p">)</span>
+                <span class="n">pfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_area_impact</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">hazard_file</span><span class="o">=</span><span class="n">_product</span><span class="o">.</span><span class="n">product_file</span><span class="p">,</span>
+                                                         <span class="n">hazard_dir</span><span class="o">=</span><span class="n">_product</span><span class="o">.</span><span class="n">product_dir</span><span class="p">,</span>
+                                                         <span class="n">hazard_pattern</span><span class="o">=</span><span class="n">_product</span><span class="o">.</span><span class="n">product_pattern</span><span class="p">))</span>
+                <span class="n">_popn_impact</span> <span class="o">=</span> <span class="n">BaseImpactProduct</span><span class="o">.</span><span class="n">BaseImpactProduct</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">impact_type</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_impact_popn&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;product&#39;</span><span class="p">]),</span>
+                                                                          <span class="n">country</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;country&#39;</span><span class="p">],</span>
+                                                                          <span class="n">valid_from_date</span><span class="o">=</span><span class="n">_product</span><span class="o">.</span><span class="n">valid_from_date</span><span class="p">,</span>
+                                                                          <span class="n">valid_to_date</span><span class="o">=</span><span class="n">_product</span><span class="o">.</span><span class="n">valid_to_date</span>
+                                                                          <span class="p">)</span>
+                <span class="n">pfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_popn_impact</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">hazard_file</span><span class="o">=</span><span class="n">_product</span><span class="o">.</span><span class="n">product_file</span><span class="p">,</span>
+                                                         <span class="n">hazard_dir</span><span class="o">=</span><span class="n">_product</span><span class="o">.</span><span class="n">product_dir</span><span class="p">,</span>
+                                                         <span class="n">hazard_pattern</span><span class="o">=</span><span class="n">_product</span><span class="o">.</span><span class="n">product_pattern</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="s1">&#39;publish&#39;</span> <span class="ow">in</span> <span class="n">params</span> <span class="ow">and</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;publish&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">pfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_product</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">())</span>
+                <span class="k">if</span> <span class="n">_area_impact</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">pfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_area_impact</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">())</span>
+                <span class="k">if</span> <span class="n">_popn_impact</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">pfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_popn_impact</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">())</span>
+
+
+<span class="c1">#            if params[&#39;product&#39;] == &#39;vhi&#39;:</span>
+<span class="c1">#                if &#39;mask&#39; in params:</span>
+<span class="c1">#                    if params[&#39;mask&#39;] == True:</span>
+<span class="c1">#                        _mask = True</span>
+<span class="c1">#                        _masked_vhi = BaseProduct.BaseProduct.create(product_type=params[&#39;masked_vhi&#39;], country=params[&#39;country&#39;],</span>
+<span class="c1">#                                                                     product_date=params[&#39;start_date&#39;], interval=params[&#39;interval&#39;])</span>
+<span class="c1">#                        pfile.write(_masked_vhi.generate_config())</span>
+<span class="c1">#                    else:</span>
+<span class="c1">#                        _mask = False</span>
+<span class="c1">#                else:</span>
+<span class="c1">#                    _mask = False</span>
+<span class="c1">#                if params[&#39;impact&#39;] == True:</span>
+<span class="c1">#                    _popn_impact = BaseProduct.BaseProduct.create(product_type=&#39;vhi_impact_popn&#39;, country=params[&#39;country&#39;],</span>
+<span class="c1">#                                                                  product_date=params[&#39;start_date&#39;], interval=params[&#39;interval&#39;])</span>
+<span class="c1">#                    pfile.write(_popn_impact.generate_config(masked=_mask))</span>
+
+<span class="c1">#            if params[&#39;product&#39;].lower() == &quot;rainfall_anomaly&quot;:</span>
+<span class="c1">#                pfile.write(cf.generate_header_chirps())</span>
+<span class="c1">#                pfile.write(cf.generate_header_run())</span>
+<span class="c1">#                pfile.write(cf.generate_rainfall_anomaly_config(params[&#39;country&#39;], params[&#39;interval&#39;],</span>
+<span class="c1">#                                                                params[&#39;start_date&#39;]))</span>
+<span class="c1">#             if params[&#39;product&#39;].lower() == &quot;evi_longterm_average&quot;:</span>
+<span class="c1">#                 pfile.write(mf.generate_header_run())</span>
+<span class="c1">#                 if &#39;interval&#39; in params:</span>
+<span class="c1">#                     _interval = params[&#39;interval&#39;]</span>
+<span class="c1">#                 else:</span>
+<span class="c1">#                     _interval = &#39;16Days&#39;</span>
+<span class="c1">#                 pfile.write(mf.generate_evi_long_term_average(interval=_interval))</span>
+            <span class="c1"># elif params[&#39;product&#39;].lower() == &quot;vhi&quot;:</span>
+            <span class="c1">#     pfile.write(mf.generate_header_run())</span>
+            <span class="c1">#     pfile.write(mf.generate_vci_config())</span>
+            <span class="c1">#     if &#39;interval&#39; in params:</span>
+            <span class="c1">#         _interval = params[&#39;interval&#39;]</span>
+            <span class="c1">#     else:</span>
+            <span class="c1">#         _interval = &#39;16Days&#39;</span>
+            <span class="c1">#     pfile.write(mf.generate_tci_config(interval=_interval))</span>
+            <span class="c1">#     pfile.write(mf.generate_vhi_config())</span>
+            <span class="c1">#     _mask = False</span>
+            <span class="c1">#     if &#39;mask&#39; in params:</span>
+            <span class="c1">#         if params[&#39;mask&#39;] == True:</span>
+            <span class="c1">#             _mask = True</span>
+            <span class="c1">#             pfile.write(mf.generate_mask())</span>
+            <span class="c1">#     if params[&#39;impact&#39;] == True:</span>
+            <span class="c1">#         pfile.write(imf.generate_impact(product=params[&#39;product&#39;], interval=_interval, masked=_mask))</span>
+            <span class="c1">#     if params[&#39;publish&#39;] == True:</span>
+            <span class="c1">#         pf = PublishConfigFactory.PublishConfigFactory(name=&#39;pf&#39;, country=params[&#39;country&#39;],</span>
+            <span class="c1">#                                           start_date=_valid_from, end_date=params[&#39;start_date&#39;])</span>
+            <span class="c1">#         pfile.write(pf.generate_publish_gis(product=params[&#39;product&#39;], interval=_interval, masked=_mask))</span>
+            <span class="c1"># elif params[&#39;product&#39;].lower() == &quot;rainfall_longterm_average&quot;:</span>
+            <span class="c1">#     pfile.write(cf.generate_header_chirps())</span>
+            <span class="c1">#     pfile.write(cf.generate_header_run())</span>
+            <span class="c1">#     pfile.write(cf.generate_rainfall_long_term_average_config(params[&#39;country&#39;],</span>
+            <span class="c1">#                                                                 params[&#39;interval&#39;]</span>
+            <span class="c1">#                                                                 ))</span>
+            <span class="c1"># elif params[&#39;product&#39;].lower() == &quot;spi&quot;:</span>
+            <span class="c1">#     pfile.write(cf.generate_header_chirps())</span>
+            <span class="c1">#     pfile.write(cf.generate_header_run())</span>
+            <span class="c1">#     pfile.write(cf.generate_standardized_precipitation_index_config(params[&#39;country&#39;], params[&#39;interval&#39;],</span>
+            <span class="c1">#                                                     params[&#39;start_date&#39;]))</span>
+        <span class="n">pfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">optparse</span><span class="o">.</span><span class="n">OptionParser</span><span class="p">(</span><span class="n">formatter</span><span class="o">=</span><span class="n">optparse</span><span class="o">.</span><span class="n">TitledHelpFormatter</span><span class="p">(),</span> <span class="n">usage</span><span class="o">=</span><span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;__doc__&#39;</span><span class="p">],</span> <span class="n">version</span><span class="o">=</span><span class="s1">&#39;$Id$&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;-v&#39;</span><span class="p">,</span> <span class="s1">&#39;--verbose&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;verbose output&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="s1">&#39;--country&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;country&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;country name&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="s1">&#39;--product&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;product&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;product&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="s1">&#39;--output&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;output&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;output filename&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;-i&#39;</span><span class="p">,</span> <span class="s1">&#39;--interval&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;interval&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;interval&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;-d&#39;</span><span class="p">,</span> <span class="s1">&#39;--start_date&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;start_date&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;start year-month-day&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s1">&#39;-e&#39;</span><span class="p">,</span> <span class="s1">&#39;--end_date&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;end_date&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;end date year-month-day&#39;</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+        <span class="c1">#if len(args) &lt; 1:</span>
+        <span class="c1">#    parser.error (&#39;missing argument&#39;)</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="n">time</span><span class="o">.</span><span class="n">asctime</span><span class="p">()</span>
+        <span class="n">_country</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">country</span><span class="p">:</span>
+            <span class="n">_country</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">country</span>
+            <span class="nb">print</span> <span class="s1">&#39;country=&#39;</span><span class="p">,</span> <span class="n">_country</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;country&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_country</span>
+        <span class="n">_product</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">product</span><span class="p">:</span>
+            <span class="n">_product</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">product</span>
+            <span class="nb">print</span> <span class="s1">&#39;product=&#39;</span><span class="p">,</span> <span class="n">_product</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;product&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_product</span>
+        <span class="n">_output</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">output</span><span class="p">:</span>
+            <span class="n">_output</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">output</span>
+            <span class="nb">print</span> <span class="s1">&#39;output=&#39;</span><span class="p">,</span> <span class="n">_output</span>
+        <span class="n">_interval</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">interval</span><span class="p">:</span>
+            <span class="n">_interval</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">interval</span>
+            <span class="nb">print</span> <span class="s1">&#39;interval=&#39;</span><span class="p">,</span> <span class="n">_interval</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_interval</span>
+        <span class="n">_start_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">start_date</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_start_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">start_date</span><span class="p">,</span> <span class="s2">&quot;%Y-%m&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="c1"># can&#39;t parse string, try with day as well</span>
+                <span class="n">_start_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">start_date</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span> <span class="s1">&#39;start_date=&#39;</span><span class="p">,</span> <span class="n">_start_date</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_start_date</span>
+        <span class="n">_start_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">end_date</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_end_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">end_date</span><span class="p">,</span> <span class="s2">&quot;%Y-%m&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="c1"># can&#39;t parse string, try with day as well</span>
+                <span class="n">_end_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">end_date</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span> <span class="s1">&#39;end_date=&#39;</span><span class="p">,</span> <span class="n">_end_date</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_end_date</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">generate_config_file</span><span class="p">(</span><span class="n">_output</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="n">time</span><span class="o">.</span><span class="n">asctime</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="s1">&#39;TOTAL TIME IN MINUTES:&#39;</span><span class="p">,</span>
+        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">/</span> <span class="mf">60.0</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span> <span class="c1"># Ctrl-C</span>
+        <span class="k">raise</span> <span class="n">e</span>
+    <span class="k">except</span> <span class="ne">SystemExit</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span> <span class="c1"># sys.exit()</span>
+        <span class="k">raise</span> <span class="n">e</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span> <span class="s1">&#39;ERROR, UNEXPECTED EXCEPTION&#39;</span>
+        <span class="nb">print</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">_exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

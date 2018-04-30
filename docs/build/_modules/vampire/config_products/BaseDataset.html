@@ -1,0 +1,452 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.BaseDataset &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_products.BaseDataset</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Dataset module.</span>
+
+<span class="sd">    Provides classes for each dataset supported within Vampire. New datasets should be added here.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">CHIRPSDatasetImpl</span>
+<span class="kn">import</span> <span class="nn">MODISEVIDatasetImpl</span>
+<span class="kn">import</span> <span class="nn">MODISLSTDatasetImpl</span>
+<span class="kn">import</span> <span class="nn">IMERGDatasetImpl</span>
+<span class="kn">import</span> <span class="nn">GlobalForecastSystemDatasetImpl</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BaseDataset"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.BaseDataset">[docs]</a><span class="k">class</span> <span class="nc">BaseDataset</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Base class for dataset configuration objects.</span>
+
+<span class="sd">    Manages registration of dataset configurations and creation of dataset configuration objects.</span>
+<span class="sd">    Dataset configurations provide the ability to generate config file sections related to the specific</span>
+<span class="sd">    dataset (e.g. data download, pre-processing).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">subclasses</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="BaseDataset.register_subclass"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.BaseDataset.register_subclass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">register_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Register dataset with the dataset manager.</span>
+
+<span class="sd">        Registers the dataset identified by datset_type with the dataset manager.</span>
+<span class="sd">        This allows the appropriate dataset to be created automatically when requested.</span>
+
+<span class="sd">        :param dataset_type: Dataset name.</span>
+<span class="sd">        :type dataset_type: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">subclass</span><span class="p">):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">dataset_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">subclass</span>
+            <span class="k">return</span> <span class="n">subclass</span>
+        <span class="k">return</span> <span class="n">decorator</span></div>
+
+<div class="viewcode-block" id="BaseDataset.create"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.BaseDataset.create">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dataset_type</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create dataset of the specified type.</span>
+
+<span class="sd">        Creates the dataset identified by dataset_type and sets required values.</span>
+
+<span class="sd">        :param dataset_type: Dataset name.</span>
+<span class="sd">        :type dataset_type: string</span>
+<span class="sd">        :param interval: Interval for dataset generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param product_date: Date for dataset being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        :param region: Default is None</span>
+<span class="sd">        :type region: string</span>
+<span class="sd">        :return: Dataset object of type specified (a registered subclass of BaseDataset).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">dataset_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Bad dataset type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset_type</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad dataset type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dataset_type</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">dataset_type</span><span class="p">](</span><span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="CHIRPSDataset"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.CHIRPSDataset">[docs]</a><span class="nd">@BaseDataset</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">CHIRPSDataset</span><span class="p">(</span><span class="n">BaseDataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; CHIRPS dataset configuration.</span>
+
+<span class="sd">    Manages generation of configuration file sections for CHIRPS datasets including download and cropping.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of CHIRPS dataset.</span>
+
+<span class="sd">        Initialises the CHIRPS dataset. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        :param region: Default is None</span>
+<span class="sd">        :type region: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">CHIRPSDatasetImpl</span><span class="o">.</span><span class="n">CHIRPSDatasetImpl</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="CHIRPSDataset.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.CHIRPSDataset.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to CHIRPS that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="CHIRPSDataset.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.CHIRPSDataset.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating VCI.</span>
+
+<span class="sd">        Generate config file entries required to create VCI for the specified country, date and interval.</span>
+
+<span class="sd">        :param data_dir: Path of directory data should be downloaded to.</span>
+<span class="sd">        :type data_dir: string</span>
+<span class="sd">        :param download: Flag indicating if data should be downloaded.</span>
+<span class="sd">        :type download: bool</span>
+<span class="sd">        :param crop: Flag indicating if data should be cropped following download.</span>
+<span class="sd">        :type crop: bool</span>
+<span class="sd">        :param crop_dir: Path of directory for cropped data output.</span>
+<span class="sd">        :type crop_dir: string</span>
+<span class="sd">        :return: Config file sections required for retrieving CHIRPS data.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">download</span><span class="p">,</span> <span class="n">crop</span><span class="p">,</span> <span class="n">crop_dir</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CHIRPSDataset.start_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.CHIRPSDataset.start_date">[docs]</a>    <span class="k">def</span> <span class="nf">start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get or set start date of data in dataset. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">start_date</span></div>
+<div class="viewcode-block" id="CHIRPSDataset.set_start_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.CHIRPSDataset.set_start_date">[docs]</a>    <span class="k">def</span> <span class="nf">set_start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="n">sd</span></div>
+<div class="viewcode-block" id="CHIRPSDataset.end_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.CHIRPSDataset.end_date">[docs]</a>    <span class="k">def</span> <span class="nf">end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get or set end date of data in dataset. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">end_date</span></div>
+<div class="viewcode-block" id="CHIRPSDataset.set_end_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.CHIRPSDataset.set_end_date">[docs]</a>    <span class="k">def</span> <span class="nf">set_end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="n">sd</span></div></div>
+
+<div class="viewcode-block" id="IMERGDataset"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.IMERGDataset">[docs]</a><span class="nd">@BaseDataset</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;IMERG&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">IMERGDataset</span><span class="p">(</span><span class="n">BaseDataset</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of IMERG dataset.</span>
+
+<span class="sd">        Initialises the IMERG dataset. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        :param region: Default is None</span>
+<span class="sd">        :type region: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">IMERGDatasetImpl</span><span class="o">.</span><span class="n">IMERGDatasetImpl</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="IMERGDataset.start_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.IMERGDataset.start_date">[docs]</a>    <span class="k">def</span> <span class="nf">start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get or set start date of data in dataset. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">start_date</span></div>
+<div class="viewcode-block" id="IMERGDataset.set_start_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.IMERGDataset.set_start_date">[docs]</a>    <span class="k">def</span> <span class="nf">set_start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="n">sd</span></div>
+
+<div class="viewcode-block" id="IMERGDataset.end_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.IMERGDataset.end_date">[docs]</a>    <span class="k">def</span> <span class="nf">end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get or set end date of data in dataset. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">end_date</span></div>
+<div class="viewcode-block" id="IMERGDataset.set_end_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.IMERGDataset.set_end_date">[docs]</a>    <span class="k">def</span> <span class="nf">set_end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="n">sd</span></div>
+
+<div class="viewcode-block" id="IMERGDataset.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.IMERGDataset.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to IMERG data that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="IMERGDataset.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.IMERGDataset.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tiles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extract_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating IMERG.</span>
+
+<span class="sd">        Generate config file entries required to create IMERG for the specified country, date and interval.</span>
+
+<span class="sd">        :param data_dir: Path of directory data should be downloaded to.</span>
+<span class="sd">        :type data_dir: string</span>
+<span class="sd">        :param download: Flag indicating if data should be downloaded.</span>
+<span class="sd">        :type download: bool</span>
+<span class="sd">        :param mosaic_dir: Path of directory for mosaic of downloaded data tiles.</span>
+<span class="sd">        :type mosaic_dir: string</span>
+<span class="sd">        :param tiles: List of data tiles to download.</span>
+<span class="sd">        :type tiles: string</span>
+<span class="sd">        :param extract_dir: Path of directory for extracted dataset.</span>
+<span class="sd">        :type extract_dir: string</span>
+<span class="sd">        :param crop: Flag indicating if data should be cropped following download.</span>
+<span class="sd">        :type crop: bool</span>
+<span class="sd">        :param crop_dir: Path of directory for cropped data output.</span>
+<span class="sd">        :type crop_dir: string</span>
+<span class="sd">        :return: Config file sections required for retrieving IMERG data.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="n">download</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="n">crop</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="n">crop_dir</span><span class="p">)</span></div></div>
+
+
+
+<div class="viewcode-block" id="MODISEVIDataset"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.MODISEVIDataset">[docs]</a><span class="nd">@BaseDataset</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;MODIS_EVI&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MODISEVIDataset</span><span class="p">(</span><span class="n">BaseDataset</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of MODIS EVI dataset.</span>
+
+<span class="sd">        Initialises the MODIS Enhanced Vegetation Index dataset. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        :param region: Default is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">MODISEVIDatasetImpl</span><span class="o">.</span><span class="n">MODISEVIDatasetImpl</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="MODISEVIDataset.start_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.MODISEVIDataset.start_date">[docs]</a>    <span class="k">def</span> <span class="nf">start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get or set start date of data in dataset. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">start_date</span></div>
+<div class="viewcode-block" id="MODISEVIDataset.set_start_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.MODISEVIDataset.set_start_date">[docs]</a>    <span class="k">def</span> <span class="nf">set_start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="n">sd</span></div>
+
+<div class="viewcode-block" id="MODISEVIDataset.end_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.MODISEVIDataset.end_date">[docs]</a>    <span class="k">def</span> <span class="nf">end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get or set end date of data in dataset. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">end_date</span></div>
+<div class="viewcode-block" id="MODISEVIDataset.set_end_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.MODISEVIDataset.set_end_date">[docs]</a>    <span class="k">def</span> <span class="nf">set_end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="n">sd</span></div>
+
+
+<div class="viewcode-block" id="MODISEVIDataset.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.MODISEVIDataset.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tiles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extract_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating MODIS EVI.</span>
+
+<span class="sd">        Generate config file entries required to download MODIS EVI for the country, date and interval specified in the dataset initialization.</span>
+
+<span class="sd">        :param data_dir: Path of directory data should be downloaded to.</span>
+<span class="sd">        :type data_dir: string</span>
+<span class="sd">        :param download: Flag indicating if data should be downloaded. Default is True.</span>
+<span class="sd">        :type download: bool</span>
+<span class="sd">        :param mosaic_dir: Path of directory for mosaic of downloaded data tiles.</span>
+<span class="sd">        :type mosaic_dir: string</span>
+<span class="sd">        :param tiles: List of data tiles to download.</span>
+<span class="sd">        :type tiles: string</span>
+<span class="sd">        :param extract_dir: Path of directory for extracted dataset.</span>
+<span class="sd">        :type extract_dir: string</span>
+<span class="sd">        :param crop: Flag indicating if data should be cropped following download.</span>
+<span class="sd">        :type crop: bool</span>
+<span class="sd">        :param crop_dir: Path of directory for cropped data output.</span>
+<span class="sd">        :type crop_dir: string</span>
+<span class="sd">        :return: Config file sections required for retrieving IMERG data.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="n">download</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="o">=</span><span class="n">mosaic_dir</span><span class="p">,</span>
+                                         <span class="n">tiles</span><span class="o">=</span><span class="n">tiles</span><span class="p">,</span> <span class="n">extract_dir</span><span class="o">=</span><span class="n">extract_dir</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="n">crop</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="n">crop_dir</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="MODISLSTDataset"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.MODISLSTDataset">[docs]</a><span class="nd">@BaseDataset</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MODISLSTDataset</span><span class="p">(</span><span class="n">BaseDataset</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of MODIS LST dataset.</span>
+
+<span class="sd">        Initialises the MODIS Land Surface Temperature dataset. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        :param region: Default is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">MODISLSTDatasetImpl</span><span class="o">.</span><span class="n">MODISLSTDatasetImpl</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+<div class="viewcode-block" id="MODISLSTDataset.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.MODISLSTDataset.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tiles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extract_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for downloading MODIS Land Surface Temperature dataset.</span>
+
+<span class="sd">        Generate config file entries required to create MODIS LST for the country, date and interval specified in the dataset initialization.</span>
+
+<span class="sd">        :param data_dir: Path of directory data should be downloaded to.</span>
+<span class="sd">        :type data_dir: string</span>
+<span class="sd">        :param download: Flag indicating if data should be downloaded.</span>
+<span class="sd">        :type download: bool</span>
+<span class="sd">        :param mosaic_dir: Path of directory for mosaic of downloaded data tiles.</span>
+<span class="sd">        :type mosaic_dir: string</span>
+<span class="sd">        :param tiles: List of data tiles to download.</span>
+<span class="sd">        :type tiles: string</span>
+<span class="sd">        :param extract_dir: Path of directory for extracted dataset.</span>
+<span class="sd">        :type extract_dir: string</span>
+<span class="sd">        :param crop: Flag indicating if data should be cropped following download.</span>
+<span class="sd">        :type crop: bool</span>
+<span class="sd">        :param crop_dir: Path of directory for cropped data output.</span>
+<span class="sd">        :type crop_dir: string</span>
+<span class="sd">        :return: Config file sections required for retrieving IMERG data.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="n">download</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="o">=</span><span class="n">mosaic_dir</span><span class="p">,</span>
+                                         <span class="n">tiles</span><span class="o">=</span><span class="n">tiles</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="n">crop</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="n">crop_dir</span><span class="p">)</span></div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get or set name of dataset. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product</span>
+
+    <span class="nd">@product</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">product</span> <span class="o">=</span> <span class="n">product</span>
+
+<div class="viewcode-block" id="MODISLSTDataset.start_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.MODISLSTDataset.start_date">[docs]</a>    <span class="k">def</span> <span class="nf">start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get or set start date of data in dataset. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">start_date</span></div>
+<div class="viewcode-block" id="MODISLSTDataset.set_start_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.MODISLSTDataset.set_start_date">[docs]</a>    <span class="k">def</span> <span class="nf">set_start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_date</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="n">start_date</span></div>
+
+<div class="viewcode-block" id="MODISLSTDataset.end_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.MODISLSTDataset.end_date">[docs]</a>    <span class="k">def</span> <span class="nf">end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get or set end date of data in dataset. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">end_date</span></div>
+<div class="viewcode-block" id="MODISLSTDataset.set_end_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.MODISLSTDataset.set_end_date">[docs]</a>    <span class="k">def</span> <span class="nf">set_end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">end_date</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="n">end_date</span></div></div>
+
+
+<div class="viewcode-block" id="GlobalForecastSystemDataset"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.GlobalForecastSystemDataset">[docs]</a><span class="nd">@BaseDataset</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;GFS&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">GlobalForecastSystemDataset</span><span class="p">(</span><span class="n">BaseDataset</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of Global Forecast System dataset.</span>
+
+<span class="sd">        Initialises the Global Forecast System dataset. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param interval: Interval for product generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param product_date: Date for product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        :param region: Default is None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">GlobalForecastSystemDatasetImpl</span><span class="o">.</span><span class="n">GlobalForecastSystemDatasetImpl</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="GlobalForecastSystemDataset.start_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.GlobalForecastSystemDataset.start_date">[docs]</a>    <span class="k">def</span> <span class="nf">start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get or set start date of data in dataset. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">start_date</span></div>
+<div class="viewcode-block" id="GlobalForecastSystemDataset.set_start_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.GlobalForecastSystemDataset.set_start_date">[docs]</a>    <span class="k">def</span> <span class="nf">set_start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="n">sd</span></div>
+<div class="viewcode-block" id="GlobalForecastSystemDataset.end_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.GlobalForecastSystemDataset.end_date">[docs]</a>    <span class="k">def</span> <span class="nf">end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get or set end date of data in dataset. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">end_date</span></div>
+<div class="viewcode-block" id="GlobalForecastSystemDataset.set_end_date"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.GlobalForecastSystemDataset.set_end_date">[docs]</a>    <span class="k">def</span> <span class="nf">set_end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="n">sd</span></div>
+
+
+<div class="viewcode-block" id="GlobalForecastSystemDataset.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseDataset.html#vampire.config_products.BaseDataset.GlobalForecastSystemDataset.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">forecast_hr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">accumulate_days</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for downloading and pre-processing Global Forecast System models.</span>
+
+<span class="sd">        Generate config file entries required to create GFS data for the country, date and interval specified in the dataset initialization.</span>
+
+<span class="sd">        :param data_dir: Path of directory data should be downloaded to.</span>
+<span class="sd">        :type data_dir: string</span>
+<span class="sd">        :param variable: Model variable to download.</span>
+<span class="sd">        :type variable: string</span>
+<span class="sd">        :param level: Data level (e.g. surface).</span>
+<span class="sd">        :type: string</span>
+<span class="sd">        :param forecast_hr: Hour of forecast.</span>
+<span class="sd">        :type string:</span>
+<span class="sd">        :param download: Flag indicating if data should be downloaded.</span>
+<span class="sd">        :type download: bool</span>
+<span class="sd">        :param crop: Flag indicating if data should be cropped following download.</span>
+<span class="sd">        :type crop: bool</span>
+<span class="sd">        :param crop_dir: Path of directory for cropped data output.</span>
+<span class="sd">        :type crop_dir: string</span>
+<span class="sd">        :param accumulate_days: Number of days to accumulate.</span>
+<span class="sd">        :type accumulate_days: int</span>
+<span class="sd">        :return: Config file sections required for retrieving GFS data.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">level</span><span class="p">,</span> <span class="n">forecast_hr</span><span class="o">=</span><span class="n">forecast_hr</span><span class="p">,</span>
+                                         <span class="n">download</span><span class="o">=</span><span class="n">download</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="n">crop</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="n">crop_dir</span><span class="p">,</span> <span class="n">accumulate_days</span><span class="o">=</span><span class="n">accumulate_days</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

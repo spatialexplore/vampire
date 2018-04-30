@@ -1,0 +1,833 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.MODISTasksImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.MODISTasksImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">errno</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+<span class="kn">import</span> <span class="nn">dateutil.parser</span>
+<span class="kn">import</span> <span class="nn">gdal</span>
+<span class="kn">import</span> <span class="nn">pymodis.downmodis</span> <span class="k">as</span> <span class="nn">downmodis</span>
+
+<span class="kn">import</span> <span class="nn">BaseTaskImpl</span>
+<span class="kn">import</span> <span class="nn">directory_utils</span>
+<span class="kn">import</span> <span class="nn">filename_utils</span>
+<span class="kn">import</span> <span class="nn">VampireDefaults</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">calculate_statistics_arc</span> <span class="k">as</span> <span class="nn">calculate_statistics</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">calculate_statistics_os</span> <span class="k">as</span> <span class="nn">calculate_statistics</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">vegetation_analysis_arc</span> <span class="k">as</span> <span class="nn">vegetation_analysis</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">vegetation_analysis_os</span> <span class="k">as</span> <span class="nn">vegetation_analysis</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MODISTasksImpl"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISTasksImpl">[docs]</a><span class="k">class</span> <span class="nc">MODISTasksImpl</span><span class="p">():</span>
+    <span class="n">subclasses</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="MODISTasksImpl.register_subclass"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISTasksImpl.register_subclass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">register_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">product_type</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">subclass</span><span class="p">):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">product_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">subclass</span>
+            <span class="k">return</span> <span class="n">subclass</span>
+        <span class="k">return</span> <span class="n">decorator</span></div>
+
+<div class="viewcode-block" id="MODISTasksImpl.create"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISTasksImpl.create">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">process_type</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">process_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad process type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">process_type</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">vampire_defaults</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">VampireDefaults</span><span class="o">.</span><span class="n">VampireDefaults</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">process_type</span><span class="p">](</span><span class="n">params</span><span class="p">,</span> <span class="n">vp</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="MODISDownloadTask"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISDownloadTask">[docs]</a><span class="nd">@MODISTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;download&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MODISDownloadTask</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MODISDownloadTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="MODISDownloadTask.process"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISDownloadTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Downloading MODIS data&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No output directory specified. An &#39;output_dir&#39; is required.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+
+        <span class="n">_product</span> <span class="o">=</span> <span class="s1">&#39;MOD13A3.005&#39;</span> <span class="c1"># default product is MOD13A3</span>
+        <span class="k">if</span> <span class="s1">&#39;product&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;product&#39;</span><span class="p">]</span>
+
+        <span class="n">_tiles</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># default to no tiles</span>
+        <span class="k">if</span> <span class="s1">&#39;tiles&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_tiles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;tiles&#39;</span><span class="p">]</span>
+
+        <span class="n">_dates</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;dates&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_dates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;dates&#39;</span><span class="p">]</span>
+
+        <span class="n">_mosaic_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;mosaic_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_mosaic_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mosaic_dir&#39;</span><span class="p">]</span>
+
+        <span class="n">_mrt_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;MRT_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_mrt_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;MRT_dir&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;overwrite&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_overwrite</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_data</span><span class="p">(</span><span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">product</span><span class="o">=</span><span class="n">_product</span><span class="p">,</span> <span class="n">tiles</span><span class="o">=</span><span class="n">_tiles</span><span class="p">,</span>
+                                  <span class="n">dates</span><span class="o">=</span><span class="n">_dates</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="o">=</span><span class="n">_mosaic_dir</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MODISDownloadTask.download_data"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISDownloadTask.download_data">[docs]</a>    <span class="k">def</span> <span class="nf">download_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span>
+                      <span class="n">dates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tiles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering download_data&#39;</span><span class="p">)</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_m_files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">_dl_files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">_delta</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">_user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">)</span>
+        <span class="n">_password</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">)</span>
+        <span class="n">_dates</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c1">#        if dates is None:</span>
+        <span class="c1"># need to get list of dates first</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_dir</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> does not exist. Creating directory&quot;</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+
+        <span class="n">_modis_connect</span> <span class="o">=</span> <span class="n">downmodis</span><span class="o">.</span><span class="n">downModis</span><span class="p">(</span><span class="n">destinationFolder</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">_user</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">_password</span><span class="p">,</span>
+                                             <span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">today</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">_delta</span><span class="p">,</span> <span class="n">tiles</span><span class="o">=</span><span class="n">tiles</span><span class="p">)</span>
+        <span class="n">_modis_connect</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="n">_days_list</span> <span class="o">=</span> <span class="n">_modis_connect</span><span class="o">.</span><span class="n">getAllDays</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">_days_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_dates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="c1">#(&#39;{0}-{1}&#39;.format(i.split(&#39;.&#39;)[0], i.split(&#39;.&#39;)[1]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># check if in month/year</span>
+                <span class="k">if</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">-</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="ow">in</span> <span class="n">dates</span><span class="p">:</span>
+                    <span class="n">_dates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="c1">#        else:</span>
+<span class="c1">#            _dates = dates</span>
+
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">_dates</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;downloading data for </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+            <span class="n">_month</span> <span class="o">=</span> <span class="n">d</span> <span class="c1">#&#39;{date}-01&#39;.format(date=d)</span>
+            <span class="n">_folder_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">_month</span><span class="p">,</span> <span class="s1">&#39;%Y.%m.</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y.%m.</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">_new_folder</span> <span class="o">=</span> <span class="n">output_dir</span> <span class="c1">#os.path.join(output_dir, _folder_date)</span>
+<span class="c1"># don&#39;t need anymore? done above instead?</span>
+             <span class="c1"># create folder if it doesn&#39;t already exist</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_new_folder</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> does not exist. Creating directory&quot;</span><span class="p">,</span> <span class="n">_new_folder</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">_new_folder</span><span class="p">)</span>
+            <span class="n">_modis_download</span> <span class="o">=</span> <span class="n">downmodis</span><span class="o">.</span><span class="n">downModis</span><span class="p">(</span><span class="n">destinationFolder</span><span class="o">=</span><span class="n">_new_folder</span><span class="p">,</span> <span class="n">tiles</span><span class="o">=</span><span class="n">tiles</span><span class="p">,</span>
+                                                  <span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">today</span><span class="o">=</span><span class="n">_month</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">_delta</span><span class="p">,</span>
+                                                  <span class="n">user</span><span class="o">=</span><span class="n">_user</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">_password</span><span class="p">)</span>
+            <span class="n">_modis_download</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+            <span class="n">_check_files</span> <span class="o">=</span> <span class="n">_modis_download</span><span class="o">.</span><span class="n">getFilesList</span><span class="p">(</span><span class="n">_folder_date</span><span class="p">)</span>
+    <span class="c1">#            logger.debug(&quot;check files: %s&quot;, _check_files)</span>
+            <span class="n">_dl_files</span> <span class="o">=</span> <span class="n">_modis_download</span><span class="o">.</span><span class="n">checkDataExist</span><span class="p">(</span><span class="n">_check_files</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_modis_download</span><span class="o">.</span><span class="n">downloadsAllDay</span><span class="p">(</span><span class="n">clean</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Error in pymodis.modisDown.downloadsAllDay downloading </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">_dl_files</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Error in pymodis.modisDown.downloadsAllDay&#39;</span><span class="p">)</span>
+            <span class="n">_modis_download</span><span class="o">.</span><span class="n">removeEmptyFiles</span><span class="p">()</span>
+            <span class="n">_modis_download</span><span class="o">.</span><span class="n">closeFilelist</span><span class="p">()</span>
+            <span class="c1"># want list of files downloaded (or files for this day)</span>
+            <span class="n">_files_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">_check_files</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_new_folder</span><span class="p">,</span> <span class="n">f</span><span class="p">))[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;.hdf&#39;</span><span class="p">:</span>
+                    <span class="n">_files_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_new_folder</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span>
+            <span class="n">_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_new_folder</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{product}</span><span class="s1">*.hdf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">])))</span>
+    <span class="c1">#            logger.debug(&quot;files: %s&quot;, _files)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;downloaded files: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">_files_list</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">mosaic_dir</span><span class="p">:</span>
+                <span class="c1"># mosaic files</span>
+                <span class="n">mosaic_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mosaic_tiles</span><span class="p">(</span><span class="n">_files_list</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="p">,</span> <span class="n">product</span><span class="p">)</span>
+                <span class="n">_m_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mosaic_file</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">mosaic_dir</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_m_files</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;leaving download_data&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_dl_files</span></div>
+
+<div class="viewcode-block" id="MODISDownloadTask.mosaic_tiles"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISDownloadTask.mosaic_tiles">[docs]</a>    <span class="k">def</span> <span class="nf">mosaic_tiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering mosaic_tiles&#39;</span><span class="p">)</span>
+<span class="c1">#def mosaicTiles(files, output_dir, tools_dir=&quot;&quot;, overwrite = False, subset=[1,1,0,0,0,0,0,0,0,0,0], ofmt=&#39;HDF4Image&#39;,</span>
+<span class="c1">#                gdal=False, logger = None):</span>
+        <span class="c1"># use MRTools</span>
+        <span class="n">_mrt_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;directories&#39;</span><span class="p">,</span> <span class="s1">&#39;mrt_dir&#39;</span><span class="p">)</span>
+        <span class="n">_list_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;file_list.txt&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_mosaic_list</span><span class="p">(</span><span class="n">_list_filename</span><span class="p">,</span> <span class="n">files</span><span class="p">)</span>
+        <span class="n">_new_filename</span> <span class="o">=</span> <span class="n">filename_utils</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span><span class="n">input_filename</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                                                                        <span class="n">in_pattern</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span>
+                                                                                         <span class="s1">&#39;modis_tile_pattern&#39;</span><span class="p">),</span>
+                                                                        <span class="n">out_pattern</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span>
+                                                                                         <span class="s1">&#39;modis_mosaic_output_pattern&#39;</span><span class="p">),</span>
+                                                                        <span class="n">ignore_leap_year</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">_spectral_subset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="n">product</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_new_filename</span><span class="p">)))</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mosaic_files</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">_list_filename</span><span class="p">),</span>
+                               <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_new_filename</span><span class="p">)),</span>
+                               <span class="n">_spectral_subset</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_list_filename</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;leaving mosaic_tiles&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_new_filename</span></div>
+
+    <span class="k">def</span> <span class="nf">_write_mosaic_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering _write_mosaic_list&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">files</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">)):</span>
+                    <span class="c1"># directory doesn&#39;t exist, create it first</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
+                <span class="n">pfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">EACCES</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="s2">&quot;Error creating file &quot;</span> <span class="o">+</span> <span class="n">filename</span>
+                <span class="c1"># Not a permission error.</span>
+                <span class="k">raise</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">pfile</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                        <span class="n">pfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span> <span class="o">+</span> <span class="n">f</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">)</span>
+                        <span class="n">pfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                    <span class="n">pfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;leaving _write_mosaic_list&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_mosaic_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_list</span><span class="p">,</span> <span class="n">output_filename</span><span class="p">,</span> <span class="n">subset</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering _mosaic_files&#39;</span><span class="p">)</span>
+        <span class="c1"># call mrtmosaic using input filename</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">mrt_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;directories&#39;</span><span class="p">,</span> <span class="s1">&#39;mrt_dir&#39;</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span> <span class="s2">&quot;Cannot find mrt_dir&quot;</span>
+            <span class="k">raise</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_platform</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">_platform</span> <span class="o">==</span> <span class="s1">&#39;Windows&#39;</span><span class="p">:</span>
+                <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mrt_path</span><span class="p">,</span><span class="s1">&#39;mrtmosaic.exe&#39;</span><span class="p">),</span>
+                                       <span class="s1">&#39;-i&#39;</span><span class="p">,</span> <span class="n">file_list</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">output_filename</span><span class="p">,</span>
+                                       <span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="n">subset</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">_platform</span> <span class="o">==</span> <span class="s1">&#39;Linux&#39;</span><span class="p">:</span>
+                <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mrt_path</span><span class="p">,</span><span class="s1">&#39;mrtmosaic&#39;</span><span class="p">),</span>
+                                       <span class="s1">&#39;-i&#39;</span><span class="p">,</span> <span class="n">file_list</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">output_filename</span><span class="p">,</span>
+                                       <span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="n">subset</span><span class="p">])</span>
+        <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error in mrtmosaic&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+            <span class="k">raise</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;leaving _mosaic_files&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="MODISExtractTask"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISExtractTask">[docs]</a><span class="nd">@MODISTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;extract&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MODISExtractTask</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISExtractTask object.</span>
+
+<span class="sd">    Abstract implementation class for impact config_products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MODISExtractTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS extract task&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="MODISExtractTask.process"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISExtractTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Extract layer from MODIS data&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_input_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No input directory &#39;input_dir&#39; set.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No output directory &#39;output_dir&#39; set.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;file_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_file_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_file_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;output_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_pattern&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;product&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;product&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_product</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_files</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;layer&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;NDVI&#39;</span><span class="p">:</span>
+            <span class="n">_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_NDVI</span><span class="p">(</span><span class="n">_input_dir</span><span class="p">,</span> <span class="n">_output_dir</span><span class="p">,</span> <span class="n">_file_pattern</span><span class="p">,</span> <span class="n">_output_pattern</span><span class="p">,</span> <span class="n">_product</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;layer&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;EVI&#39;</span><span class="p">:</span>
+            <span class="n">_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_EVI</span><span class="p">(</span><span class="n">_input_dir</span><span class="p">,</span> <span class="n">_output_dir</span><span class="p">,</span> <span class="n">_file_pattern</span><span class="p">,</span> <span class="n">_output_pattern</span><span class="p">,</span> <span class="n">_product</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;layer&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;LST_Day&#39;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;layer&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;LST_Night&#39;</span><span class="p">:</span>
+            <span class="n">_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_LST</span><span class="p">(</span><span class="n">_input_dir</span><span class="p">,</span> <span class="n">_output_dir</span><span class="p">,</span> <span class="n">_file_pattern</span><span class="p">,</span> <span class="n">_output_pattern</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;layer&#39;</span><span class="p">],</span> <span class="n">_product</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_files</span></div>
+
+<div class="viewcode-block" id="MODISExtractTask.extract_NDVI"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISExtractTask.extract_NDVI">[docs]</a>    <span class="k">def</span> <span class="nf">extract_NDVI</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">product</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering extract_NDVI&#39;</span><span class="p">)</span>
+<span class="c1">#def extractNDVI(base_path, output_path, tools_path,</span>
+<span class="c1">#                patterns = None, suffix = modis_constants[&#39;ndvi_subset&#39;], overwrite = False, logger = None):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">patterns</span><span class="p">:</span>
+            <span class="n">patterns</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_NDVI&#39;</span><span class="p">,</span> <span class="s1">&#39;ndvi_input_pattern&#39;</span><span class="p">),</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_NDVI&#39;</span><span class="p">,</span> <span class="s1">&#39;ndvi_output_pattern&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">product</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;vegetation_product&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_product</span> <span class="o">=</span> <span class="n">product</span>
+        <span class="n">_spectral_subset</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.NDVI&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_product</span><span class="p">)))</span>
+        <span class="n">_subset_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.NDVI_Name&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_product</span><span class="p">))</span>
+        <span class="n">new_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_subset</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span>
+                                         <span class="n">_spectral_subset</span><span class="p">,</span> <span class="n">_subset_name</span><span class="p">,</span>
+                                         <span class="c1">#self.vampire_tmp.get(&#39;MODIS_NDVI&#39;, &#39;ndvi_spectral_subset&#39;),</span>
+                                         <span class="c1">#self.vampire_tmp.get(&#39;MODIS_NDVI&#39;, &#39;ndvi_subset_name&#39;),</span>
+                                         <span class="n">overwrite</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;leaving extract_NDVI&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_files</span></div>
+
+<div class="viewcode-block" id="MODISExtractTask.extract_EVI"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISExtractTask.extract_EVI">[docs]</a>    <span class="k">def</span> <span class="nf">extract_EVI</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">file_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">product</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering extract_EVI&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">file_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_file_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;modis_monthly_pattern&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_file_pattern</span> <span class="o">=</span> <span class="n">file_pattern</span>
+
+        <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_EVI&#39;</span><span class="p">,</span> <span class="s1">&#39;evi_output_pattern&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">output_pattern</span>
+        <span class="n">patterns</span> <span class="o">=</span> <span class="p">(</span><span class="n">_file_pattern</span><span class="p">,</span> <span class="n">_output_pattern</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">product</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;vegetation_product&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_product</span> <span class="o">=</span> <span class="n">product</span>
+        <span class="n">_spectral_subset</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.EVI&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_product</span><span class="p">)))</span>
+        <span class="n">_subset_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.EVI_Name&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_product</span><span class="p">))</span>
+        <span class="n">new_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_subset</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span>
+                                         <span class="n">_spectral_subset</span><span class="p">,</span> <span class="n">_subset_name</span><span class="p">,</span>
+                                         <span class="c1">#json.loads(self.vampire_tmp.get(&#39;MODIS_EVI&#39;, &#39;evi_spectral_subset&#39;)),</span>
+                                         <span class="c1">#self.vampire_tmp.get(&#39;MODIS_EVI&#39;, &#39;evi_subset_name&#39;),</span>
+                                         <span class="n">overwrite</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;leaving extract_EVI&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_files</span></div>
+
+<div class="viewcode-block" id="MODISExtractTask.extract_LST"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISExtractTask.extract_LST">[docs]</a>    <span class="k">def</span> <span class="nf">extract_LST</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">file_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">product</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering extract_LST&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">file_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_file_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;modis_monthly_pattern&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_file_pattern</span> <span class="o">=</span> <span class="n">file_pattern</span>
+
+        <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_output_pattern&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">output_pattern</span>
+        <span class="n">patterns</span> <span class="o">=</span> <span class="p">(</span><span class="n">_file_pattern</span><span class="p">,</span> <span class="n">_output_pattern</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">product</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;land_surface_temperature_product&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_product</span> <span class="o">=</span> <span class="n">product</span>
+
+        <span class="k">if</span> <span class="n">layer</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">layer</span> <span class="o">==</span> <span class="s1">&#39;LST_Day&#39;</span><span class="p">:</span>
+            <span class="c1"># extract day by default</span>
+            <span class="n">_spectral_subset</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.LST_Day&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_product</span><span class="p">)))</span>
+            <span class="n">_subset_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.LST_Day_Name&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_product</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">layer</span> <span class="o">==</span> <span class="s1">&#39;LST_Night&#39;</span><span class="p">:</span>
+            <span class="n">_spectral_subset</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.LST_Night&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_product</span><span class="p">)))</span>
+            <span class="n">_subset_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.LST_Night_Name&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_product</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span>
+
+        <span class="n">new_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_subset</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span>
+                                         <span class="n">_spectral_subset</span><span class="p">,</span>
+                                         <span class="n">_subset_name</span><span class="p">,</span>
+                                         <span class="n">overwrite</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;leaving extract_LST&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_files</span></div>
+
+    <span class="k">def</span> <span class="nf">_extract_subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">subset</span><span class="p">,</span> <span class="n">subset_name</span><span class="p">,</span> <span class="n">overwrite</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering _extract_subset&#39;</span><span class="p">)</span>
+        <span class="n">_all_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_all_files</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Extracting subset </span><span class="si">{0}</span><span class="s1">. No files found in </span><span class="si">{1}</span><span class="s1"> with pattern </span><span class="si">{2}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">subset_name</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="nb">print</span> <span class="s1">&#39;No files found in &#39;</span> <span class="o">+</span> <span class="n">input_dir</span> <span class="o">+</span> <span class="s1">&#39;, please check directory and try again&#39;</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="c1"># check output directory exists and create it if not</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">output_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="n">new_files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_ifl</span> <span class="ow">in</span> <span class="n">_all_files</span><span class="p">:</span>
+            <span class="c1"># generate parameter file</span>
+            <span class="n">_nfl</span> <span class="o">=</span> <span class="n">filename_utils</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_ifl</span><span class="p">),</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">_ofl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_nfl</span><span class="p">)</span>
+            <span class="n">_checkfl</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">.</span><span class="si">{1}{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">_ofl</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">subset_name</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">_ofl</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_checkfl</span><span class="p">)</span> <span class="ow">or</span> <span class="n">overwrite</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">src_ds</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span><span class="n">_ifl</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Unable to open file&#39;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">sds</span> <span class="o">=</span> <span class="n">src_ds</span><span class="o">.</span><span class="n">GetSubDatasets</span><span class="p">()</span>
+<span class="c1">#                if logger: logger.debug(&quot;Number of bands: %s&quot;,src_ds.RasterCount)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_convert_to_tiff</span><span class="p">(</span><span class="n">_ifl</span><span class="p">,</span> <span class="n">_ofl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;directories&#39;</span><span class="p">,</span> <span class="s1">&#39;gdal_dir&#39;</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">sbs</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sds</span><span class="p">):</span>
+<span class="c1">#                    if logger: logger.debug(&quot;Subdataset: %s&quot;, sbs[0])</span>
+                    <span class="c1"># get subset name (without spaces)</span>
+                    <span class="n">_n</span> <span class="o">=</span> <span class="p">(</span><span class="n">sbs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+                    <span class="n">_rf</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">.</span><span class="si">{1}{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_ofl</span><span class="p">))[</span><span class="mi">0</span><span class="p">],</span> <span class="n">_n</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">_ofl</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">_cf</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">_</span><span class="si">{1}{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_ofl</span><span class="p">))[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">_ofl</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_cf</span><span class="p">))</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
+                        <span class="n">_cf</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">_</span><span class="si">{1}{2}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_ofl</span><span class="p">))[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">_ofl</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="n">idx</span><span class="o">+</span><span class="mi">1</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">:</span>
+                        <span class="c1"># remove un-needed files (including .aux &amp; .aux.xml)</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_cf</span><span class="p">))</span>
+                        <span class="n">_aux_f</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">.aux.xml&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_cf</span><span class="p">))</span>
+                        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_aux_f</span><span class="p">):</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_aux_f</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># keep this file - rename with subset name</span>
+                        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_rf</span><span class="p">)):</span>
+                            <span class="k">if</span> <span class="n">overwrite</span><span class="p">:</span>
+                                <span class="c1"># file already exists....delete first</span>
+                                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_rf</span><span class="p">))</span>
+                                <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_cf</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_rf</span><span class="p">))</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="c1"># just remove the new file</span>
+                                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_cf</span><span class="p">))</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_cf</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_rf</span><span class="p">))</span>
+
+                        <span class="n">_aux_f</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">.aux.xml&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_cf</span><span class="p">))</span>
+                        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_aux_f</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">.aux.xml&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_rf</span><span class="p">))):</span>
+                                <span class="c1"># can&#39;t rename, delete first</span>
+                                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">.aux.xml&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_rf</span><span class="p">)))</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">_aux_f</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{0}</span><span class="s2">.aux.xml&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_rf</span><span class="p">)))</span>
+                        <span class="n">new_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_rf</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;leaving _extract_subset&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_files</span>
+
+    <span class="k">def</span> <span class="nf">_convert_to_tiff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ifl</span><span class="p">,</span> <span class="n">ofl</span><span class="p">,</span> <span class="n">gdal_dir</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering _convert_to_tiff&#39;</span><span class="p">)</span>
+        <span class="n">_platform</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_gdal_translate</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">_platform</span> <span class="o">==</span> <span class="s1">&#39;Windows&#39;</span><span class="p">:</span>
+                <span class="n">_gdal_translate</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gdal_dir</span><span class="p">,</span> <span class="s1">&#39;gdal_translate.exe&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">_platform</span> <span class="o">==</span> <span class="s1">&#39;Linux&#39;</span><span class="p">:</span>
+                <span class="n">_gdal_translate</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gdal_dir</span><span class="p">,</span> <span class="s1">&#39;gdal_translate&#39;</span><span class="p">)</span>
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="n">_gdal_translate</span><span class="p">,</span> <span class="s1">&#39;-sds&#39;</span><span class="p">,</span> <span class="n">ifl</span><span class="p">,</span> <span class="n">ofl</span><span class="p">])</span>
+        <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error in converting to .tif&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+            <span class="k">raise</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;leaving _convert_to_tiff&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="MODISCalculateAverageTask"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISCalculateAverageTask">[docs]</a><span class="nd">@MODISTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;calc_average&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MODISCalculateAverageTask</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISCalculateAverageTask object.</span>
+
+<span class="sd">    Abstract implementation class for impact config_products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MODISCalculateAverageTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS calculate average task&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="MODISCalculateAverageTask.process"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISCalculateAverageTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">&#39;layer&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;layer&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;day_night_temp&#39;</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Calculate Average temperature from Day &amp; Night for files matching pattern&quot;</span><span class="p">)</span>
+                <span class="n">day_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;lst_day_dir&#39;</span><span class="p">]</span>
+                <span class="n">night_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;lst_night_dir&#39;</span><span class="p">]</span>
+                <span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s1">&#39;file_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">input_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">input_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="s1">&#39;output_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_pattern&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">output_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">patterns</span> <span class="o">=</span> <span class="p">(</span><span class="n">input_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">match_day_night_files</span><span class="p">(</span><span class="n">day_dir</span><span class="p">,</span> <span class="n">night_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;layer&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;long_term_statistics&#39;</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Calculate long-term statistics for files matching pattern&quot;</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">_input_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_dir&#39;</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s2">&quot;No input directory &#39;input_dir&#39; set.&quot;</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s2">&quot;No output directory &#39;output_dir&#39; set.&quot;</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">_product</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;product&#39;</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s2">&quot;No product &#39;product&#39; set.&quot;</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">_input_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s2">&quot;No input file pattern &#39;file_pattern&#39; set.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;country&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">_country</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;country&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_country</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="s1">&#39;output_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_pattern&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_output_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="s1">&#39;start_date&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">_start_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_start_date</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="s1">&#39;end_date&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">_end_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_end_date</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="s1">&#39;functions&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">_function_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;functions&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_function_list</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="s1">&#39;interval&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">_interval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;interval&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_interval</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">calc_longterm_stats</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">_input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">product</span><span class="o">=</span><span class="n">_product</span><span class="p">,</span>
+                                       <span class="n">interval</span><span class="o">=</span><span class="n">_interval</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="n">_country</span><span class="p">,</span>
+                                       <span class="n">input_pattern</span><span class="o">=</span><span class="n">_input_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">_output_pattern</span><span class="p">,</span>
+                                       <span class="n">start_date</span><span class="o">=</span><span class="n">_start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="n">_end_date</span><span class="p">,</span> <span class="n">function_list</span><span class="o">=</span><span class="n">_function_list</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="MODISCalculateAverageTask.match_day_night_files"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISCalculateAverageTask.match_day_night_files">[docs]</a>    <span class="k">def</span> <span class="nf">match_day_night_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">day_dir</span><span class="p">,</span> <span class="n">night_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering match_day_night_files&#39;</span><span class="p">)</span>
+        <span class="n">nightFiles</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">night_dir</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">day_dir</span><span class="p">):</span>
+                <span class="n">dayFiles</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">day_dir</span><span class="p">),</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dayFiles</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">day_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dayFiles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">day_dir</span><span class="p">))</span>
+        <span class="nb">print</span> <span class="s2">&quot;Day files: &quot;</span><span class="p">,</span> <span class="n">dayFiles</span>
+        <span class="nb">print</span> <span class="s2">&quot;Night files: &quot;</span><span class="p">,</span> <span class="n">nightFiles</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">fl</span> <span class="ow">in</span> <span class="n">dayFiles</span><span class="p">:</span>
+            <span class="c1"># find matching night file</span>
+            <span class="n">d_fl</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">fl</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.tif&#39;</span><span class="p">):</span>
+                <span class="n">d_t</span> <span class="o">=</span> <span class="n">d_fl</span><span class="o">.</span><span class="n">rpartition</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+                <span class="c1"># create regex pattern</span>
+                <span class="n">_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;^</span><span class="si">{0}{1}</span><span class="s1">LST_Night\w*.tif$&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d_t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">d_t</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="k">for</span> <span class="n">n_fl</span> <span class="ow">in</span> <span class="n">nightFiles</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">_pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">n_fl</span><span class="p">):</span>
+                        <span class="n">avg_fl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">d_t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">d_t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;avg&#39;</span> <span class="o">+</span> <span class="n">ext</span><span class="p">)</span>
+                        <span class="n">dp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">day_dir</span><span class="p">,</span> <span class="n">d_fl</span><span class="o">+</span><span class="n">ext</span><span class="p">)</span>
+                        <span class="n">np</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">night_dir</span><span class="p">,</span> <span class="n">n_fl</span><span class="p">)</span>
+                        <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_average_of_day_night</span><span class="p">(</span><span class="n">dp</span><span class="p">,</span> <span class="n">np</span><span class="p">,</span> <span class="n">avg_file</span><span class="o">=</span><span class="n">avg_fl</span><span class="p">)</span>
+                        <span class="k">break</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;leaving match_day_night_files&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="MODISCalculateAverageTask.calc_longterm_stats"><a class="viewcode-back" href="../../../vampire.processing.MODISTasksImpl.html#vampire.processing.MODISTasksImpl.MODISCalculateAverageTask.calc_longterm_stats">[docs]</a>    <span class="k">def</span> <span class="nf">calc_longterm_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span>
+                            <span class="n">interval</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">start_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">function_list</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering calc_longterm_stats&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">product</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;vegetation_product&#39;</span><span class="p">):</span>
+                <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_EVI_Long_Term_Average&#39;</span><span class="p">,</span> <span class="s1">&#39;lta_output_pattern&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">product</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;land_surface_temperature_product&#39;</span><span class="p">):</span>
+                <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST_Long_Term_Average&#39;</span><span class="p">,</span> <span class="s1">&#39;lta_output_pattern&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="c1"># product unknown</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">output_pattern</span>
+        <span class="k">if</span> <span class="n">country</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_country</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire_tmp&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_country</span> <span class="o">=</span> <span class="n">country</span>
+        <span class="k">if</span> <span class="n">input_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">country</span> <span class="o">==</span> <span class="s1">&#39;Global&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">product</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;vegetation_product&#39;</span><span class="p">):</span>
+                    <span class="n">_input_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;evi_pattern&#39;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">product</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;land_surface_temperature_product&#39;</span><span class="p">):</span>
+                    <span class="n">_input_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_pattern&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="c1"># product unknown</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">product</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;vegetation_product&#39;</span><span class="p">):</span>
+                    <span class="n">_input_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_EVI&#39;</span><span class="p">,</span> <span class="s1">&#39;evi_regional_pattern&#39;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">product</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;land_surface_temperature_product&#39;</span><span class="p">):</span>
+                    <span class="n">_input_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_regional_pattern&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="c1"># product unknown</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_input_pattern</span> <span class="o">=</span> <span class="n">input_pattern</span>
+
+        <span class="n">_convert_interval</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">_new_interval</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">interval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">interval</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.interval&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="p">)):</span>
+                <span class="n">_convert_interval</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">_new_interval</span> <span class="o">=</span> <span class="n">interval</span>
+                <span class="n">_interval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.interval&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_interval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.interval&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="p">))</span>
+
+        <span class="c1"># if product is not None:</span>
+        <span class="c1">#     _interval = self.vampire_tmp.get(&#39;MODIS_PRODUCTS&#39;, &#39;{0}.interval&#39;.format(product))</span>
+        <span class="c1"># else:</span>
+        <span class="c1">#     # use default - monthly</span>
+        <span class="c1">#     _interval = interval</span>
+
+        <span class="n">_all_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">input_pattern</span><span class="p">)</span>
+        <span class="n">_file_list</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">_yrs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">_doy</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">_all_files</span><span class="p">:</span>
+            <span class="n">_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">_result</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">_input_pattern</span><span class="p">,</span> <span class="n">_fname</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;month&#39;</span> <span class="ow">in</span> <span class="n">_result</span><span class="o">.</span><span class="n">groupdict</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;dayofyear&#39;</span> <span class="ow">in</span> <span class="n">_result</span><span class="o">.</span><span class="n">groupdict</span><span class="p">():</span>
+                    <span class="n">_dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)),</span> <span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> \
+                          <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;dayofyear&#39;</span><span class="p">))</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">_month</span> <span class="o">=</span> <span class="n">_dt</span><span class="o">.</span><span class="n">month</span>
+                    <span class="n">_day</span> <span class="o">=</span> <span class="n">_dt</span><span class="o">.</span><span class="n">day</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No month or day of year in file pattern&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_month</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;month&#39;</span><span class="p">))</span>
+                <span class="n">_day</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">))</span>
+
+            <span class="n">_f_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)),</span> <span class="n">_month</span><span class="p">,</span> <span class="n">_day</span><span class="p">)</span>
+            <span class="c1"># TODO: base date should be from start of long-term average data, not necessarily 2000</span>
+            <span class="n">_base_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">_month</span><span class="p">,</span> <span class="n">_day</span><span class="p">)</span>
+<span class="c1">#            _base_name = &#39;{0}-{1}&#39;.format(_result.group(&#39;base_name&#39;), _result.group(&#39;version&#39;))</span>
+            <span class="c1"># check if start_date is a datetime object or a string</span>
+            <span class="k">if</span> <span class="n">start_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">start_date</span><span class="p">)</span> <span class="ow">is</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">start_date</span><span class="p">)</span> <span class="ow">is</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">_f_date</span> <span class="o">&lt;</span> <span class="n">start_date</span><span class="o">.</span><span class="n">date</span><span class="p">():</span>
+                        <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">_f_date</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">dateutil</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">start_date</span><span class="p">))</span><span class="o">.</span><span class="n">date</span><span class="p">():</span>
+                        <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">end_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">end_date</span><span class="p">)</span> <span class="ow">is</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">end_date</span><span class="p">)</span> <span class="ow">is</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">_f_date</span> <span class="o">&gt;</span> <span class="n">end_date</span><span class="p">:</span>
+                            <span class="k">break</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">_f_date</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">dateutil</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">end_date</span><span class="p">))</span><span class="o">.</span><span class="n">date</span><span class="p">():</span>
+                            <span class="k">break</span>
+<span class="c1">#                else:</span>
+            <span class="n">_yrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">))</span>
+            <span class="n">_doy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_f_date</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span><span class="p">)</span>
+            <span class="n">_file_list</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">_f_date</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="n">_years</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">_yrs</span><span class="p">)</span>
+        <span class="n">_syr</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">_years</span><span class="p">)</span> <span class="c1">#1981</span>
+        <span class="n">_eyr</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">_years</span><span class="p">)</span>
+        <span class="n">_num_yrs</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">_eyr</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">_syr</span><span class="p">))</span>
+        <span class="c1"># if need to convert 8-days to 16-days, do the next section to combine files into correct</span>
+        <span class="c1"># lists. NOTE: This will only work for 8-day to 16-day conversion</span>
+        <span class="c1"># TODO: make this generic so it works for other conversions.</span>
+        <span class="k">if</span> <span class="n">_convert_interval</span> <span class="ow">and</span> <span class="n">_new_interval</span> <span class="o">==</span> <span class="s1">&#39;16-days&#39;</span><span class="p">:</span>
+            <span class="n">_doys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">_doy</span><span class="p">)</span>
+            <span class="n">_sorted_doy</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_doys</span><span class="p">)</span>
+            <span class="n">_new_doys</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">_new_file_list</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">_new_temp_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">_sorted_doy</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">16</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># yes</span>
+                    <span class="n">_new_doys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                    <span class="n">_new_file_list</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_file_list</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
+                    <span class="n">_new_file_list</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_new_temp_list</span><span class="p">)</span>
+                    <span class="n">_new_temp_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">_new_temp_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_file_list</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">_new_temp_list</span><span class="p">:</span>
+                <span class="c1"># add last data to first item</span>
+                <span class="n">_new_file_list</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_new_temp_list</span><span class="p">)</span>
+            <span class="n">_interval</span> <span class="o">=</span> <span class="n">_new_interval</span>
+            <span class="n">_file_list</span> <span class="o">=</span> <span class="n">_new_file_list</span>
+
+        <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">_output_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{yr_range}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">-</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_syr</span><span class="p">,</span> <span class="n">_eyr</span><span class="p">))</span>
+        <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">_output_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{num_yrs}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">yrs&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_num_yrs</span><span class="p">))</span>
+        <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">_output_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{subset}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="n">function_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_function_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;AVG&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_function_list</span> <span class="o">=</span> <span class="n">function_list</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">output_dir</span><span class="p">):</span>
+            <span class="c1"># directory doesn&#39;t exist....create it first</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">_file_list</span><span class="p">:</span>
+            <span class="n">fl</span> <span class="o">=</span> <span class="n">_file_list</span><span class="p">[</span><span class="n">d</span><span class="p">]</span>
+            <span class="n">newfl</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">unzip_file_list</span><span class="p">(</span><span class="n">fl</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fl</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">_function_list</span><span class="p">:</span>
+                    <span class="n">_fn_output_pattern</span> <span class="o">=</span> <span class="n">_output_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{statistic}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">func</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+                    <span class="n">newfilename</span> <span class="o">=</span> <span class="n">filename_utils</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">fl</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                                                                                  <span class="n">_input_pattern</span><span class="p">,</span> <span class="n">_fn_output_pattern</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_stats</span><span class="p">(</span><span class="n">newfl</span><span class="p">,</span> <span class="n">newfilename</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="p">[</span><span class="n">func</span><span class="p">])</span>
+
+
+<span class="c1">#         if interval == &#39;monthly&#39;:</span>
+<span class="c1">#             for m in _months:</span>
+<span class="c1">#                 # for each month, calculate long term average</span>
+<span class="c1">#                 if m in _file_list:</span>
+<span class="c1">#                     fl = _file_list[m]</span>
+<span class="c1">#                     newfl = vampire_tmp.directory_utils.unzip_file_list(fl)</span>
+<span class="c1">#                     for func in function_list:</span>
+<span class="c1">#                         _fn_output_pattern = _output_pattern.replace(&#39;{statistic}&#39;, func.lower())</span>
+<span class="c1">#                         newfilename = vampire_tmp.filename_utils.generate_output_filename(fl, _input_pattern, _fn_output_pattern)</span>
+<span class="c1"># #                    newfilename = &#39;{0}.{1}-{2}.{3}.monthly.{4}yrs&#39;.format(_base_name, _syr, _eyr, m, _numyrs)</span>
+<span class="c1">#                         self._calculate_stats(newfl, newfilename, output_dir, [func])</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;leaving calc_longterm_stats&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+    <span class="k">def</span> <span class="nf">_calculate_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_list</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">function_list</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering _calculate_stats&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">function_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">f</span> <span class="o">==</span> <span class="s1">&#39;AVG&#39;</span><span class="p">:</span>
+<span class="c1">#                newfile = &#39;{0}.avg.tif&#39;.format(new_filename)</span>
+                <span class="n">ofl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">)</span>
+                <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_average</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">ofl</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">f</span> <span class="o">==</span> <span class="s1">&#39;STD&#39;</span><span class="p">:</span>
+<span class="c1">#                newfile = &#39;{0}.std.tif&#39;.format(new_filename)</span>
+                <span class="n">ofl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">)</span>
+                <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_std_dev</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">ofl</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">f</span> <span class="o">==</span> <span class="s1">&#39;MAX&#39;</span><span class="p">:</span>
+<span class="c1">#                newfile = &#39;{0}.max.tif&#39;.format(new_filename)</span>
+                <span class="n">ofl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">)</span>
+                <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_max</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">ofl</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">f</span> <span class="o">==</span> <span class="s1">&#39;MIN&#39;</span><span class="p">:</span>
+<span class="c1">#                newfile = &#39;{0}.min.tif&#39;.format(new_filename)</span>
+                <span class="n">ofl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">)</span>
+                <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_min</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">ofl</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">f</span> <span class="o">==</span> <span class="s1">&#39;SUM&#39;</span><span class="p">:</span>
+<span class="c1">#                newfile = &#39;{0}.sum.tif&#39;.format(new_filename)</span>
+                <span class="n">ofl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">)</span>
+                <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_sum</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">ofl</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="n">f</span><span class="p">,</span> <span class="s1">&#39; is not a valid function.&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering _calculate_stats&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

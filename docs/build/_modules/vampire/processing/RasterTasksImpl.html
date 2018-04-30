@@ -1,0 +1,591 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.RasterTasksImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.RasterTasksImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">processing.raster_utils</span> <span class="k">as</span> <span class="nn">raster_utils</span>
+
+<span class="kn">import</span> <span class="nn">BaseTaskImpl</span>
+<span class="kn">import</span> <span class="nn">directory_utils</span>
+<span class="kn">import</span> <span class="nn">filename_utils</span>
+<span class="kn">import</span> <span class="nn">VampireDefaults</span> <span class="k">as</span> <span class="nn">VampireDefaults</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">calculate_statistics_arc</span> <span class="k">as</span> <span class="nn">calculate_statistics</span>
+    <span class="kn">import</span> <span class="nn">vegetation_analysis_arc</span> <span class="k">as</span> <span class="nn">vegetation_analysis</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">calculate_statistics_os</span> <span class="k">as</span> <span class="nn">calculate_statistics</span>
+    <span class="kn">import</span> <span class="nn">vegetation_analysis_os</span> <span class="k">as</span> <span class="nn">vegetation_analysis</span>
+
+<div class="viewcode-block" id="RasterTasksImpl"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterTasksImpl">[docs]</a><span class="k">class</span> <span class="nc">RasterTasksImpl</span><span class="p">():</span>
+    <span class="n">subclasses</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="RasterTasksImpl.register_subclass"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterTasksImpl.register_subclass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">register_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">product_type</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">subclass</span><span class="p">):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">product_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">subclass</span>
+            <span class="k">return</span> <span class="n">subclass</span>
+        <span class="k">return</span> <span class="n">decorator</span></div>
+
+<div class="viewcode-block" id="RasterTasksImpl.create"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterTasksImpl.create">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">process_type</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">process_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad process type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">process_type</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">vampire_defaults</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">VampireDefaults</span><span class="o">.</span><span class="n">VampireDefaults</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">process_type</span><span class="p">](</span><span class="n">params</span><span class="p">,</span> <span class="n">vp</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="RasterCropTask"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterCropTask">[docs]</a><span class="nd">@RasterTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;crop&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RasterCropTask</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RasterCropTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="RasterCropTask.process"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterCropTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Crop raster data to boundary&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;file_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;output_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_out_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_pattern&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_out_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;overwrite&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_overwrite</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_overwrite</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="s1">&#39;no_data&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_no_data</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_no_data</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_input_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No input directory &#39;input_dir&#39; set.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No output directory &#39;output_dir&#39; set.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_boundary_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;boundary_file&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No boundary file specified.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">crop_files</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">_input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">boundary_file</span><span class="o">=</span><span class="n">_boundary_file</span><span class="p">,</span>
+                      <span class="n">file_pattern</span><span class="o">=</span><span class="n">_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">_out_pattern</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">_overwrite</span><span class="p">,</span>
+                      <span class="n">nodata</span><span class="o">=</span><span class="n">_no_data</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="RasterCropTask.crop_files"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterCropTask.crop_files">[docs]</a>    <span class="k">def</span> <span class="nf">crop_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">boundary_file</span><span class="p">,</span> <span class="n">file_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">_patterns</span> <span class="o">=</span> <span class="p">(</span><span class="n">file_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">)</span>
+        <span class="n">_gdal_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;directories&#39;</span><span class="p">,</span> <span class="s1">&#39;gdal_dir&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">output_dir</span><span class="p">):</span>
+            <span class="c1"># need to create output dir</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="n">raster_utils</span><span class="o">.</span><span class="n">crop_files</span><span class="p">(</span><span class="n">base_path</span><span class="o">=</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="n">boundary_file</span><span class="p">,</span>
+                                <span class="n">tools_path</span><span class="o">=</span><span class="n">_gdal_path</span><span class="p">,</span>
+                                <span class="n">patterns</span><span class="o">=</span><span class="n">_patterns</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="n">nodata</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+
+
+<div class="viewcode-block" id="RasterReprojectTask"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterReprojectTask">[docs]</a><span class="nd">@RasterTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;match_projection&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RasterReprojectTask</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RasterReprojectTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="RasterReprojectTask.process"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterReprojectTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Reproject file to same extent and resolution as master&quot;</span><span class="p">)</span>
+        <span class="n">_master_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_slave_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_master_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_master_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_slave_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_slave_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="s1">&#39;master_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_master_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;master_file&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;master_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No master file &#39;master_file&#39; or pattern &#39;master_pattern&#39;/directory &#39;master_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_master_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;master_dir&#39;</span><span class="p">]</span>
+                <span class="n">_master_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;master_pattern&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;slave_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_slave_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;slave_file&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;slave_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No slave file &#39;slave_file&#39; or pattern &#39;slave_pattern&#39;/directory &#39;slave_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_slave_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;slave_dir&#39;</span><span class="p">]</span>
+                <span class="n">_slave_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;slave_pattern&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;output_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_file&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;output_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No output filename &#39;output_file&#39; or output pattern &#39;output_pattern&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_pattern&#39;</span><span class="p">]</span>
+                <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">match_projection</span><span class="p">(</span><span class="n">master_file</span><span class="o">=</span><span class="n">_master_filename</span><span class="p">,</span> <span class="n">master_dir</span><span class="o">=</span><span class="n">_master_dir</span><span class="p">,</span> <span class="n">master_pattern</span><span class="o">=</span><span class="n">_master_pattern</span><span class="p">,</span>
+                            <span class="n">slave_file</span><span class="o">=</span><span class="n">_slave_filename</span><span class="p">,</span> <span class="n">slave_dir</span><span class="o">=</span><span class="n">_slave_dir</span><span class="p">,</span> <span class="n">slave_pattern</span><span class="o">=</span><span class="n">_slave_pattern</span><span class="p">,</span>
+                            <span class="n">output_file</span><span class="o">=</span><span class="n">_output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">_output_pattern</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="RasterReprojectTask.match_projection"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterReprojectTask.match_projection">[docs]</a>    <span class="k">def</span> <span class="nf">match_projection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master_file</span><span class="p">,</span> <span class="n">master_dir</span><span class="p">,</span> <span class="n">master_pattern</span><span class="p">,</span>
+                         <span class="n">slave_file</span><span class="p">,</span> <span class="n">slave_dir</span><span class="p">,</span> <span class="n">slave_pattern</span><span class="p">,</span>
+                         <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">master_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_file_list</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">master_dir</span><span class="p">,</span> <span class="n">master_pattern</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_file_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_master_file</span> <span class="o">=</span> <span class="n">_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No matching master file found.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_master_file</span> <span class="o">=</span> <span class="n">master_file</span>
+
+        <span class="k">if</span> <span class="n">slave_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_file_list</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">slave_dir</span><span class="p">,</span> <span class="n">slave_pattern</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_file_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_slave_file</span> <span class="o">=</span> <span class="n">_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No matching slave file found.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_slave_file</span> <span class="o">=</span> <span class="n">slave_file</span>
+
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="n">output_file</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">_output_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No output directory provided.&quot;</span>
+            <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No output pattern provided.&quot;</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">filename_utils</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_slave_file</span><span class="p">),</span> <span class="n">slave_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_output_dir</span><span class="p">):</span>
+            <span class="c1"># need to create output dir</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">_output_dir</span><span class="p">)</span>
+
+        <span class="n">raster_utils</span><span class="o">.</span><span class="n">reproject_image_to_master</span><span class="p">(</span><span class="n">_master_file</span><span class="p">,</span> <span class="n">_slave_file</span><span class="p">,</span> <span class="n">_output_file</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+
+<div class="viewcode-block" id="RasterZonalStatisticsTask"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterZonalStatisticsTask">[docs]</a><span class="nd">@RasterTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;zonal_statistics&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RasterZonalStatisticsTask</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RasterZonalStatisticsTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="RasterZonalStatisticsTask.process"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterZonalStatisticsTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Calculate zonal statistics as a table from raster and polygon&quot;</span><span class="p">)</span>
+        <span class="n">_raster_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_polygon_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_raster_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_raster_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_polygon_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_polygon_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_zone_field</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="s1">&#39;raster_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_raster_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;raster_file&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;raster_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No raster file &#39;raster_file&#39; or pattern &#39;raster_pattern&#39;/directory &#39;raster_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_raster_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;raster_dir&#39;</span><span class="p">]</span>
+                <span class="n">_raster_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;raster_pattern&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;polygon_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_polygon_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;polygon_file&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;polygon_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No polygon file &#39;polygon_file&#39; or pattern &#39;polygon_pattern&#39;/directory &#39;polygon_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_polygon_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;polygon_dir&#39;</span><span class="p">]</span>
+                <span class="n">_polygon_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;polygon_pattern&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;output_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_file&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;output_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No output filename &#39;output_file&#39; or output pattern &#39;output_pattern&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_pattern&#39;</span><span class="p">]</span>
+                <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;zone_field&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_zone_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;zone_field&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No zone field specified&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">calc_zonal_statistics</span><span class="p">(</span><span class="n">raster_file</span><span class="o">=</span><span class="n">_raster_filename</span><span class="p">,</span> <span class="n">raster_dir</span><span class="o">=</span><span class="n">_raster_dir</span><span class="p">,</span> <span class="n">raster_pattern</span><span class="o">=</span><span class="n">_raster_pattern</span><span class="p">,</span>
+                            <span class="n">polygon_file</span><span class="o">=</span><span class="n">_polygon_filename</span><span class="p">,</span> <span class="n">polygon_dir</span><span class="o">=</span><span class="n">_polygon_dir</span><span class="p">,</span> <span class="n">polygon_pattern</span><span class="o">=</span><span class="n">_polygon_pattern</span><span class="p">,</span>
+                            <span class="n">output_file</span><span class="o">=</span><span class="n">_output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">_output_pattern</span><span class="p">,</span>
+                            <span class="n">zone_field</span><span class="o">=</span><span class="n">_zone_field</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RasterZonalStatisticsTask.calc_zonal_statistics"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterZonalStatisticsTask.calc_zonal_statistics">[docs]</a>    <span class="k">def</span> <span class="nf">calc_zonal_statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raster_file</span><span class="p">,</span> <span class="n">raster_dir</span><span class="p">,</span> <span class="n">raster_pattern</span><span class="p">,</span>
+                              <span class="n">polygon_file</span><span class="p">,</span> <span class="n">polygon_dir</span><span class="p">,</span> <span class="n">polygon_pattern</span><span class="p">,</span>
+                              <span class="n">zone_field</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">raster_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_file_list</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">raster_dir</span><span class="p">,</span> <span class="n">raster_pattern</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_file_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_raster_file</span> <span class="o">=</span> <span class="n">_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No matching raster file found.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_raster_file</span> <span class="o">=</span> <span class="n">raster_file</span>
+
+        <span class="k">if</span> <span class="n">polygon_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_file_list</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">polygon_dir</span><span class="p">,</span> <span class="n">polygon_pattern</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_file_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_polygon_file</span> <span class="o">=</span> <span class="n">_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No matching polygon file found.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_polygon_file</span> <span class="o">=</span> <span class="n">polygon_file</span>
+
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No output directory provided.&quot;</span>
+            <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No output pattern provided.&quot;</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">filename_utils</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_raster_file</span><span class="p">),</span> <span class="n">raster_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="n">output_file</span>
+
+        <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_zonal_statistics</span><span class="p">(</span><span class="n">raster_file</span><span class="o">=</span><span class="n">_raster_file</span><span class="p">,</span> <span class="n">polygon_file</span><span class="o">=</span><span class="n">_polygon_file</span><span class="p">,</span>
+                                                   <span class="n">zone_field</span><span class="o">=</span><span class="n">zone_field</span><span class="p">,</span> <span class="n">output_table</span><span class="o">=</span><span class="n">_output_file</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+
+
+<div class="viewcode-block" id="RasterApplyMaskTask"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterApplyMaskTask">[docs]</a><span class="nd">@RasterTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;apply_mask&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RasterApplyMaskTask</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RasterApplyMaskTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS download task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="RasterApplyMaskTask.process"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterApplyMaskTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Apply shapefile mask to raster&quot;</span><span class="p">)</span>
+        <span class="n">_raster_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_polygon_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_raster_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_raster_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_polygon_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_polygon_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_boundary_raster</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_boundary_raster_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_boundary_raster_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="s1">&#39;raster_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_raster_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;raster_file&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;raster_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No raster file &#39;raster_file&#39; or pattern &#39;raster_pattern&#39;/directory &#39;raster_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_raster_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;raster_dir&#39;</span><span class="p">]</span>
+                <span class="n">_raster_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;raster_pattern&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;polygon_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_polygon_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;polygon_file&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;polygon_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="n">_polygon_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;polygon_dir&#39;</span><span class="p">]</span>
+                <span class="n">_polygon_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;polygon_pattern&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;boundary_raster&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">_boundary_raster</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;boundary_raster&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s1">&#39;boundary_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                        <span class="n">_boundary_raster_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;boundary_raster_dir&#39;</span><span class="p">]</span>
+                        <span class="n">_boundary_raster_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;boundary_raster_pattern&#39;</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No polygon file or raster boundary specified&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;output_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_file&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;output_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No output filename &#39;output_file&#39; or output pattern &#39;output_pattern&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_pattern&#39;</span><span class="p">]</span>
+                <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;no_data&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_no_data</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_no_data</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">_boundary_raster</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mask_by_raster</span><span class="p">(</span><span class="n">raster_file</span><span class="o">=</span><span class="n">_raster_filename</span><span class="p">,</span> <span class="n">raster_dir</span><span class="o">=</span><span class="n">_raster_dir</span><span class="p">,</span> <span class="n">raster_pattern</span><span class="o">=</span><span class="n">_raster_pattern</span><span class="p">,</span>
+                                <span class="n">boundary_raster</span><span class="o">=</span><span class="n">_boundary_raster</span><span class="p">,</span> <span class="n">boundary_raster_dir</span><span class="o">=</span><span class="n">_boundary_raster_dir</span><span class="p">,</span>
+                                <span class="n">boundary_raster_pattern</span><span class="o">=</span><span class="n">_boundary_raster_pattern</span><span class="p">,</span>
+                                <span class="n">output_file</span><span class="o">=</span><span class="n">_output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">_output_pattern</span><span class="p">,</span>
+                                <span class="n">nodata</span><span class="o">=</span><span class="n">_no_data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mask_by_shapefile</span><span class="p">(</span><span class="n">raster_file</span><span class="o">=</span><span class="n">_raster_filename</span><span class="p">,</span> <span class="n">raster_dir</span><span class="o">=</span><span class="n">_raster_dir</span><span class="p">,</span> <span class="n">raster_pattern</span><span class="o">=</span><span class="n">_raster_pattern</span><span class="p">,</span>
+                                 <span class="n">polygon_file</span><span class="o">=</span><span class="n">_polygon_filename</span><span class="p">,</span> <span class="n">polygon_dir</span><span class="o">=</span><span class="n">_polygon_dir</span><span class="p">,</span> <span class="n">polygon_pattern</span><span class="o">=</span><span class="n">_polygon_pattern</span><span class="p">,</span>
+                                 <span class="n">output_file</span><span class="o">=</span><span class="n">_output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">_output_pattern</span><span class="p">,</span>
+                                 <span class="n">nodata</span><span class="o">=</span><span class="n">_no_data</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="RasterApplyMaskTask.mask_by_shapefile"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterApplyMaskTask.mask_by_shapefile">[docs]</a>    <span class="k">def</span> <span class="nf">mask_by_shapefile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raster_file</span><span class="p">,</span> <span class="n">raster_dir</span><span class="p">,</span> <span class="n">raster_pattern</span><span class="p">,</span>
+                          <span class="n">polygon_file</span><span class="p">,</span> <span class="n">polygon_dir</span><span class="p">,</span> <span class="n">polygon_pattern</span><span class="p">,</span>
+                          <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">raster_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_file_list</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">raster_dir</span><span class="p">,</span> <span class="n">raster_pattern</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_file_list</span><span class="p">:</span>
+                <span class="n">_raster_file</span> <span class="o">=</span> <span class="n">_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No matching raster file found.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_raster_file</span> <span class="o">=</span> <span class="n">raster_file</span>
+
+        <span class="k">if</span> <span class="n">polygon_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_file_list</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">polygon_dir</span><span class="p">,</span> <span class="n">polygon_pattern</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_file_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_polygon_file</span> <span class="o">=</span> <span class="n">_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No matching polygon file or polygon dir/pattern found.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_polygon_file</span> <span class="o">=</span> <span class="n">polygon_file</span>
+
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No output directory provided.&quot;</span>
+            <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No output pattern provided.&quot;</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">filename_utils</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_raster_file</span><span class="p">),</span> <span class="n">raster_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="n">output_file</span>
+        <span class="n">_gdal_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;directories&#39;</span><span class="p">,</span> <span class="s1">&#39;gdal_dir&#39;</span><span class="p">)</span>
+
+
+        <span class="n">raster_utils</span><span class="o">.</span><span class="n">mask_by_shapefile</span><span class="p">(</span><span class="n">raster_file</span><span class="o">=</span><span class="n">_raster_file</span><span class="p">,</span> <span class="n">polygon_file</span><span class="o">=</span><span class="n">_polygon_file</span><span class="p">,</span>
+                                       <span class="n">output_file</span><span class="o">=</span><span class="n">_output_file</span><span class="p">,</span> <span class="n">gdal_path</span><span class="o">=</span><span class="n">_gdal_path</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="n">nodata</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="RasterApplyMaskTask.mask_by_raster"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterApplyMaskTask.mask_by_raster">[docs]</a>    <span class="k">def</span> <span class="nf">mask_by_raster</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raster_file</span><span class="p">,</span> <span class="n">raster_dir</span><span class="p">,</span> <span class="n">raster_pattern</span><span class="p">,</span> <span class="n">boundary_raster</span><span class="p">,</span> <span class="n">boundary_raster_dir</span><span class="p">,</span>
+                       <span class="n">boundary_raster_pattern</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">raster_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_file_list</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">raster_dir</span><span class="p">,</span> <span class="n">raster_pattern</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_file_list</span><span class="p">:</span>
+                <span class="n">_raster_file</span> <span class="o">=</span> <span class="n">_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No matching raster file found.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_raster_file</span> <span class="o">=</span> <span class="n">raster_file</span>
+
+        <span class="k">if</span> <span class="n">boundary_raster</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_file_list</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">boundary_raster_dir</span><span class="p">,</span> <span class="n">boundary_raster_pattern</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_file_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_boundary_raster</span> <span class="o">=</span> <span class="n">_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No matching raster boundary file or boundary dir/pattern found.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_boundary_raster</span> <span class="o">=</span> <span class="n">boundary_raster</span>
+
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No output directory provided.&quot;</span>
+            <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No output pattern provided.&quot;</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">filename_utils</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_raster_file</span><span class="p">),</span> <span class="n">raster_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="n">output_file</span>
+
+        <span class="n">raster_utils</span><span class="o">.</span><span class="n">mask_by_raster</span><span class="p">(</span><span class="n">raster_file</span><span class="o">=</span><span class="n">_raster_file</span><span class="p">,</span> <span class="n">mask_file</span><span class="o">=</span><span class="n">_boundary_raster</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="n">_output_file</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+
+
+<div class="viewcode-block" id="RasterMosaicTask"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterMosaicTask">[docs]</a><span class="nd">@RasterTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;mosaic&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RasterMosaicTask</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise RasterMosaicTask object.</span>
+
+<span class="sd">    Implementation class for generating a mosaic from a list of rasters.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RasterMosaicTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising raster mosaic task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="RasterMosaicTask.process"><a class="viewcode-back" href="../../../vampire.processing.RasterTasksImpl.html#vampire.processing.RasterTasksImpl.RasterMosaicTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Mosaic list of rasters&quot;</span><span class="p">)</span>
+        <span class="n">_input_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_file_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_mosaic_method</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="s1">&#39;input_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_input_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_dir&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No input directory &#39;input_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;file_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_file_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No file pattern &#39;file_pattern&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;output_dir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No output directory &#39;output_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;output_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_pattern&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No output pattern &#39;output_pattern&#39; specified.&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;mosaic_method&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_mosaic_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mosaic_method&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_mosaic_method</span> <span class="o">=</span> <span class="s1">&#39;MAXIMUM&#39;</span>
+
+        <span class="n">_file_list</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">_input_dir</span><span class="p">,</span> <span class="n">_file_pattern</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_file_list</span><span class="p">:</span>
+           <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;No matching raster file found.&quot;</span>
+
+        <span class="n">_base_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_file_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">_output_file</span> <span class="o">=</span> <span class="n">filename_utils</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span><span class="n">_base_name</span><span class="p">,</span> <span class="n">_file_pattern</span><span class="p">,</span>
+                                                                       <span class="n">_output_pattern</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">_file_str</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">_file_list</span><span class="p">))</span>
+        <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">mosaic_rasters</span><span class="p">(</span><span class="n">_file_list</span><span class="p">,</span> <span class="n">_output_dir</span><span class="p">,</span> <span class="n">_output_file</span><span class="p">,</span> <span class="n">_mosaic_method</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,631 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.BaseImpactProduct &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_products.BaseImpactProduct</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Impact of Data Products module.</span>
+
+<span class="sd">    Provides classes for each the impact of data products supported within Vampire. New product impacts should be added here.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">VampireDefaults</span>
+<span class="kn">import</span> <span class="nn">VHIPopnImpactProductImpl</span>
+<span class="kn">import</span> <span class="nn">VHIAreaImpactProductImpl</span>
+<span class="kn">import</span> <span class="nn">FloodAreaImpactProductImpl</span>
+<span class="kn">import</span> <span class="nn">FloodPopnImpactProductImpl</span>
+<span class="kn">import</span> <span class="nn">DSLRAreaImpactProductImpl</span>
+<span class="kn">import</span> <span class="nn">DSLRPopnImpactProductImpl</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BaseImpactProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.BaseImpactProduct">[docs]</a><span class="k">class</span> <span class="nc">BaseImpactProduct</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Base class for data product impact configuration objects.</span>
+
+<span class="sd">    Manages registration of data product impact configurations and creation of data product impact configuration objects.</span>
+<span class="sd">    Data product impact configurations provide the ability to generate config file sections related to impact of the</span>
+<span class="sd">    data product.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">subclasses</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="BaseImpactProduct.register_subclass"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.BaseImpactProduct.register_subclass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">register_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">impact_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Register product impact with the productimpact  manager.</span>
+
+<span class="sd">        Registers the data product impact identified by impact_type with the product impact manager.</span>
+<span class="sd">        This allows the appropriate product impact to be created automatically when requested.</span>
+
+<span class="sd">        :param impact_type: Product name.</span>
+<span class="sd">        :type impact_type: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">subclass</span><span class="p">):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">impact_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">subclass</span>
+            <span class="k">return</span> <span class="n">subclass</span>
+        <span class="k">return</span> <span class="n">decorator</span></div>
+
+<div class="viewcode-block" id="BaseImpactProduct.create"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.BaseImpactProduct.create">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">impact_type</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">valid_from_date</span><span class="p">,</span> <span class="n">valid_to_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create impact of the specified type.</span>
+
+<span class="sd">        Creates the product impact identified by impact_type and sets initialization values.</span>
+
+<span class="sd">        :param impact_type: Impact name.</span>
+<span class="sd">        :type impact_type: string</span>
+<span class="sd">        :param country: Country data product impact will be created for.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param valid_from_date: Date product impact is valid from.</span>
+<span class="sd">        :type valid_from_date: datetime</span>
+<span class="sd">        :param valid_to_date: Date product impact is valid until.</span>
+<span class="sd">        :type valid_to_date: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        :return: Product impact object of type specified (a registered subclass of BaseImpactProduct).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">impact_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad impact type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">impact_type</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">vampire_defaults</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">VampireDefaults</span><span class="o">.</span><span class="n">VampireDefaults</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">impact_type</span><span class="p">](</span><span class="n">country</span><span class="p">,</span> <span class="n">valid_from_date</span><span class="p">,</span> <span class="n">valid_to_date</span><span class="p">,</span> <span class="n">vp</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="VHIPopnImpactProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct">[docs]</a><span class="nd">@BaseImpactProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;vhi_impact_popn&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">VHIPopnImpactProduct</span><span class="p">(</span><span class="n">BaseImpactProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Vegetation Health Index product impact configuration.</span>
+
+<span class="sd">    Manages generation of configuration file sections for calculating impact of Vegetation Health Index on population.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">valid_from_date</span><span class="p">,</span> <span class="n">valid_to_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of VHI population impact.</span>
+
+<span class="sd">        Initialises the VHI population impact. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param valid_from_date: Date product impact is valid from.</span>
+<span class="sd">        :type valid_from_date: datetime</span>
+<span class="sd">        :param valid_to_date: Date product impact is valid until.</span>
+<span class="sd">        :type valid_to_date: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">VHIPopnImpactProductImpl</span><span class="o">.</span><span class="n">VHIPopnImpactProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">valid_from_date</span><span class="p">,</span> <span class="n">valid_to_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output impact file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span><span class="p">()</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output impact file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span><span class="p">()</span>
+
+<div class="viewcode-block" id="VHIPopnImpactProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hazard_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">boundary_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_field</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">population_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating VCI.</span>
+
+<span class="sd">        Generate config file entries required to create VCI for the specified country, date and interval.</span>
+
+<span class="sd">        :param hazard_file: File name of hazard image file.</span>
+<span class="sd">        :type hazard_file: string</span>
+<span class="sd">        :param hazard_dir: Directory where the hazard file is located.</span>
+<span class="sd">        :type hazard_dir: string</span>
+<span class="sd">        :param hazard_pattern: Regular expression pattern to used to find the hazard file for the product date.</span>
+<span class="sd">        :type hazard_pattern: string</span>
+<span class="sd">        :param boundary_file: Full path to the boundary file to use to calculate impact.</span>
+<span class="sd">        :type boundary_file: string</span>
+<span class="sd">        :param boundary_dir: Directory where the boundary file is located.</span>
+<span class="sd">        :type boundary_dir: string</span>
+<span class="sd">        :param boundary_pattern: Regular expression pattern to used to find the boundary file.</span>
+<span class="sd">        :type boundary_pattern: string</span>
+<span class="sd">        :param boundary_field: Field within the boundary file to use to identify areas.</span>
+<span class="sd">        :type boundary_field: string</span>
+<span class="sd">        :param population_file: Full path to the file containing population data.</span>
+<span class="sd">        :type population_file: string</span>
+<span class="sd">        :param output_filename: Filename for VHI population impact output file.</span>
+<span class="sd">        :type output_filename: string</span>
+<span class="sd">        :param output_dir: Directory to save the VHI population impact output file.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the VHI population impact output file name. May refer to elements within the hazard_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :param masked: Flag indicating whether the impact should be masked by a boundary or not.</span>
+<span class="sd">        :type masked: bool</span>
+<span class="sd">        :return: Config file sections required for generating VHI population impact.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">hazard_file</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="p">,</span>
+                        <span class="n">boundary_file</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="p">,</span> <span class="n">boundary_field</span><span class="p">,</span>
+                        <span class="n">population_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VHIPopnImpactProduct.generate_publish_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.VHIPopnImpactProduct.generate_publish_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_publish_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config section to publish Flood population impact.</span>
+
+<span class="sd">        Generates configuration file section to publish the Flood population impact output file to a database.</span>
+
+<span class="sd">        :return: Config file sections required for publishing Flood population impact.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="VHIAreaImpactProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct">[docs]</a><span class="nd">@BaseImpactProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;vhi_impact_area&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">VHIAreaImpactProduct</span><span class="p">(</span><span class="n">BaseImpactProduct</span><span class="p">):</span>
+    <span class="c1"># ...</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of VHI area impact.</span>
+
+<span class="sd">        Initialises the VHI area impact. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for impact product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product impact generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">VHIAreaImpactProductImpl</span><span class="o">.</span><span class="n">VHIAreaImpactProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output impact file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output impact file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span>
+
+
+<div class="viewcode-block" id="VHIAreaImpactProduct.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to VHI area impact that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="VHIAreaImpactProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hazard_file</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="p">,</span>
+                        <span class="n">boundary_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_field</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating VCI.</span>
+
+<span class="sd">        Generate config file entries required to create VHI area impact for the specified country, date and interval.</span>
+
+<span class="sd">        :param hazard_file: File name of hazard image file.</span>
+<span class="sd">        :type hazard_file: string</span>
+<span class="sd">        :param hazard_dir: Directory where the hazard file is located.</span>
+<span class="sd">        :type hazard_dir: string</span>
+<span class="sd">        :param hazard_pattern: Regular expression pattern to used to find the hazard file for the product date.</span>
+<span class="sd">        :type hazard_pattern: string</span>
+<span class="sd">        :param boundary_file: Full path to the boundary file to use to calculate impact.</span>
+<span class="sd">        :type boundary_file: string</span>
+<span class="sd">        :param boundary_dir: Directory where the boundary file is located.</span>
+<span class="sd">        :type boundary_dir: string</span>
+<span class="sd">        :param boundary_pattern: Regular expression pattern to used to find the boundary file.</span>
+<span class="sd">        :type boundary_pattern: string</span>
+<span class="sd">        :param boundary_field: Field within the boundary file to use to identify areas.</span>
+<span class="sd">        :type boundary_field: string</span>
+<span class="sd">        :param output_filename: Filename for VHI area impact output file.</span>
+<span class="sd">        :type output_filename: string</span>
+<span class="sd">        :param output_dir: Directory to save the VHI area impact output file.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the VHI area impact output file name. May refer to elements within the hazard_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :param masked: Flag indicating whether the impact should be masked by a boundary or not.</span>
+<span class="sd">        :type masked: bool</span>
+<span class="sd">        :return: Config file sections required for generating VHI area impact.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">hazard_file</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="p">,</span>
+                        <span class="n">boundary_file</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="p">,</span> <span class="n">boundary_field</span><span class="p">,</span>
+                        <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="VHIAreaImpactProduct.generate_publish_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.VHIAreaImpactProduct.generate_publish_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_publish_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config section to publish Flood population impact.</span>
+
+<span class="sd">        Generates configuration file section to publish the Flood population impact output file to a database.</span>
+
+<span class="sd">        :return: Config file sections required for publishing Flood population impact.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">()</span></div></div>
+
+<div class="viewcode-block" id="FloodAreaImpactProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.FloodAreaImpactProduct">[docs]</a><span class="nd">@BaseImpactProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;flood_forecast_impact_area&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">FloodAreaImpactProduct</span><span class="p">(</span><span class="n">BaseImpactProduct</span><span class="p">):</span>
+    <span class="c1"># ...</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of Flood area impact.</span>
+
+<span class="sd">        Initialises the Flood area impact. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for impact product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product impact generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">FloodAreaImpactProductImpl</span><span class="o">.</span><span class="n">FloodAreaImpactProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="FloodAreaImpactProduct.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.FloodAreaImpactProduct.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to Flood area impact that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="FloodAreaImpactProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.FloodAreaImpactProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hazard_file</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="p">,</span>
+                        <span class="n">boundary_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_field</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating Flood area impact.</span>
+
+<span class="sd">        Generate config file entries required to create Flood area impact for the specified country, date and interval.</span>
+
+<span class="sd">        :param hazard_file: File name of hazard image file.</span>
+<span class="sd">        :type hazard_file: string</span>
+<span class="sd">        :param hazard_dir: Directory where the hazard file is located.</span>
+<span class="sd">        :type hazard_dir: string</span>
+<span class="sd">        :param hazard_pattern: Regular expression pattern to used to find the hazard file for the product date.</span>
+<span class="sd">        :type hazard_pattern: string</span>
+<span class="sd">        :param boundary_file: Full path to the boundary file to use to calculate impact.</span>
+<span class="sd">        :type boundary_file: string</span>
+<span class="sd">        :param boundary_dir: Directory where the boundary file is located.</span>
+<span class="sd">        :type boundary_dir: string</span>
+<span class="sd">        :param boundary_pattern: Regular expression pattern to used to find the boundary file.</span>
+<span class="sd">        :type boundary_pattern: string</span>
+<span class="sd">        :param boundary_field: Field within the boundary file to use to identify areas.</span>
+<span class="sd">        :type boundary_field: string</span>
+<span class="sd">        :param output_filename: Filename for Flood area impact output file.</span>
+<span class="sd">        :type output_filename: string</span>
+<span class="sd">        :param output_dir: Directory to save the Flood area impact output file.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the Flood area impact output file name. May refer to elements within the hazard_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :param masked: Flag indicating whether the impact should be masked by a boundary or not.</span>
+<span class="sd">        :type masked: bool</span>
+<span class="sd">        :return: Config file sections required for generating Flood area impact.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">hazard_file</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="p">,</span>
+                        <span class="n">boundary_file</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="p">,</span> <span class="n">boundary_field</span><span class="p">,</span>
+                        <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FloodAreaImpactProduct.generate_publish_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.FloodAreaImpactProduct.generate_publish_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_publish_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config section to publish Flood population impact.</span>
+
+<span class="sd">        Generates configuration file section to publish the Flood population impact output file to a database.</span>
+
+<span class="sd">        :return: Config file sections required for publishing Flood population impact.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">()</span></div></div>
+
+<div class="viewcode-block" id="FloodPopnImpactProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct">[docs]</a><span class="nd">@BaseImpactProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;flood_forecast_impact_popn&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">FloodPopnImpactProduct</span><span class="p">(</span><span class="n">BaseImpactProduct</span><span class="p">):</span>
+    <span class="c1"># ...</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">valid_from_date</span><span class="p">,</span> <span class="n">valid_to_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of Flood population impact.</span>
+
+<span class="sd">        Initialises the Flood population impact. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param valid_from_date: Date product impact is valid from.</span>
+<span class="sd">        :type valid_from_date: datetime</span>
+<span class="sd">        :param valid_to_date: Date product impact is valid until.</span>
+<span class="sd">        :type valid_to_date: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">FloodPopnImpactProductImpl</span><span class="o">.</span><span class="n">FloodPopnImpactProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">valid_from_date</span><span class="p">,</span> <span class="n">valid_to_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output impact file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span><span class="p">()</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output impact file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span><span class="p">()</span>
+
+<div class="viewcode-block" id="FloodPopnImpactProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hazard_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">boundary_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_field</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">population_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating Flood population impact.</span>
+
+<span class="sd">        Generate config file entries required to create Flood population impact for the specified country, date and interval.</span>
+
+<span class="sd">        :param hazard_file: File name of hazard image file.</span>
+<span class="sd">        :type hazard_file: string</span>
+<span class="sd">        :param hazard_dir: Directory where the hazard file is located.</span>
+<span class="sd">        :type hazard_dir: string</span>
+<span class="sd">        :param hazard_pattern: Regular expression pattern to used to find the hazard file for the product date.</span>
+<span class="sd">        :type hazard_pattern: string</span>
+<span class="sd">        :param boundary_file: Full path to the boundary file to use to calculate impact.</span>
+<span class="sd">        :type boundary_file: string</span>
+<span class="sd">        :param boundary_dir: Directory where the boundary file is located.</span>
+<span class="sd">        :type boundary_dir: string</span>
+<span class="sd">        :param boundary_pattern: Regular expression pattern to used to find the boundary file.</span>
+<span class="sd">        :type boundary_pattern: string</span>
+<span class="sd">        :param boundary_field: Field within the boundary file to use to identify areas.</span>
+<span class="sd">        :type boundary_field: string</span>
+<span class="sd">        :param population_file: Full path to the file containing population data.</span>
+<span class="sd">        :type population_file: string</span>
+<span class="sd">        :param output_filename: Filename for Flood population impact output file.</span>
+<span class="sd">        :type output_filename: string</span>
+<span class="sd">        :param output_dir: Directory to save the Flood population impact output file.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the Flood population impact output file name. May refer to elements within the hazard_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :param masked: Flag indicating whether the impact should be masked by a boundary or not.</span>
+<span class="sd">        :type masked: bool</span>
+<span class="sd">        :return: Config file sections required for generating Flood population impact.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">hazard_file</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="p">,</span>
+                        <span class="n">boundary_file</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="p">,</span> <span class="n">boundary_field</span><span class="p">,</span>
+                        <span class="n">population_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FloodPopnImpactProduct.generate_publish_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.FloodPopnImpactProduct.generate_publish_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_publish_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config section to publish Flood population impact.</span>
+
+<span class="sd">        Generates configuration file section to publish the Flood population impact output file to a database.</span>
+
+<span class="sd">        :return: Config file sections required for publishing Flood population impact.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">()</span></div></div>
+
+<div class="viewcode-block" id="DaysSinceLastRainPopnImpactProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct">[docs]</a><span class="nd">@BaseImpactProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;days_since_last_rain_impact_popn&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">DaysSinceLastRainPopnImpactProduct</span><span class="p">(</span><span class="n">BaseImpactProduct</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Days Since Last Rain product impact configuration.</span>
+
+<span class="sd">    Manages generation of configuration file sections for calculating impact of Days Since Last Rain on population.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">valid_from_date</span><span class="p">,</span> <span class="n">valid_to_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of DSLR population impact.</span>
+
+<span class="sd">        Initialises the DSLR population impact. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param valid_from_date: Date product impact is valid from.</span>
+<span class="sd">        :type valid_from_date: datetime</span>
+<span class="sd">        :param valid_to_date: Date product impact is valid until.</span>
+<span class="sd">        :type valid_to_date: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">DSLRPopnImpactProductImpl</span><span class="o">.</span><span class="n">DSLRPopnImpactProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">valid_from_date</span><span class="p">,</span> <span class="n">valid_to_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output impact file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span><span class="p">()</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output impact file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span><span class="p">()</span>
+
+<div class="viewcode-block" id="DaysSinceLastRainPopnImpactProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hazard_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">boundary_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_field</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">population_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating VCI.</span>
+
+<span class="sd">        Generate config file entries required to create VCI for the specified country, date and interval.</span>
+
+<span class="sd">        :param hazard_file: File name of hazard image file.</span>
+<span class="sd">        :type hazard_file: string</span>
+<span class="sd">        :param hazard_dir: Directory where the hazard file is located.</span>
+<span class="sd">        :type hazard_dir: string</span>
+<span class="sd">        :param hazard_pattern: Regular expression pattern to used to find the hazard file for the product date.</span>
+<span class="sd">        :type hazard_pattern: string</span>
+<span class="sd">        :param boundary_file: Full path to the boundary file to use to calculate impact.</span>
+<span class="sd">        :type boundary_file: string</span>
+<span class="sd">        :param boundary_dir: Directory where the boundary file is located.</span>
+<span class="sd">        :type boundary_dir: string</span>
+<span class="sd">        :param boundary_pattern: Regular expression pattern to used to find the boundary file.</span>
+<span class="sd">        :type boundary_pattern: string</span>
+<span class="sd">        :param boundary_field: Field within the boundary file to use to identify areas.</span>
+<span class="sd">        :type boundary_field: string</span>
+<span class="sd">        :param population_file: Full path to the file containing population data.</span>
+<span class="sd">        :type population_file: string</span>
+<span class="sd">        :param output_filename: Filename for VHI population impact output file.</span>
+<span class="sd">        :type output_filename: string</span>
+<span class="sd">        :param output_dir: Directory to save the VHI population impact output file.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the VHI population impact output file name. May refer to elements within the hazard_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :param masked: Flag indicating whether the impact should be masked by a boundary or not.</span>
+<span class="sd">        :type masked: bool</span>
+<span class="sd">        :return: Config file sections required for generating VHI population impact.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">hazard_file</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="p">,</span>
+                        <span class="n">boundary_file</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="p">,</span> <span class="n">boundary_field</span><span class="p">,</span>
+                        <span class="n">population_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DaysSinceLastRainPopnImpactProduct.generate_publish_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.DaysSinceLastRainPopnImpactProduct.generate_publish_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_publish_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config section to publish Flood population impact.</span>
+
+<span class="sd">        Generates configuration file section to publish the Flood population impact output file to a database.</span>
+
+<span class="sd">        :return: Config file sections required for publishing Flood population impact.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="DaysSinceLastRainAreaImpactProduct"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct">[docs]</a><span class="nd">@BaseImpactProduct</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;days_since_last_rain_impact_area&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">DaysSinceLastRainAreaImpactProduct</span><span class="p">(</span><span class="n">BaseImpactProduct</span><span class="p">):</span>
+    <span class="c1"># ...</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialisation of DSLR area impact.</span>
+
+<span class="sd">        Initialises the DSLR area impact. Creates the implementation object which does the actual work of</span>
+<span class="sd">        generating config file sections.</span>
+
+<span class="sd">        :param country: Country data product will be created for.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Date for impact product being generated.</span>
+<span class="sd">        :type product_date: datetime</span>
+<span class="sd">        :param interval: Interval for product impact generation - daily, weekly, monthly, seasonal.</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults:</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">impl</span> <span class="o">=</span> <span class="n">DSLRAreaImpactProductImpl</span><span class="o">.</span><span class="n">DSLRAreaImpactProductImpl</span><span class="p">(</span><span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_from_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output impact file is valid from. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_from_date</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_to_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get date the output impact file is valid until. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">valid_to_date</span>
+
+
+<div class="viewcode-block" id="DaysSinceLastRainAreaImpactProduct.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate details related to VHI area impact that go in the config file header. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DaysSinceLastRainAreaImpactProduct.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hazard_file</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="p">,</span>
+                        <span class="n">boundary_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boundary_field</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config file section for generating VCI.</span>
+
+<span class="sd">        Generate config file entries required to create VHI area impact for the specified country, date and interval.</span>
+
+<span class="sd">        :param hazard_file: File name of hazard image file.</span>
+<span class="sd">        :type hazard_file: string</span>
+<span class="sd">        :param hazard_dir: Directory where the hazard file is located.</span>
+<span class="sd">        :type hazard_dir: string</span>
+<span class="sd">        :param hazard_pattern: Regular expression pattern to used to find the hazard file for the product date.</span>
+<span class="sd">        :type hazard_pattern: string</span>
+<span class="sd">        :param boundary_file: Full path to the boundary file to use to calculate impact.</span>
+<span class="sd">        :type boundary_file: string</span>
+<span class="sd">        :param boundary_dir: Directory where the boundary file is located.</span>
+<span class="sd">        :type boundary_dir: string</span>
+<span class="sd">        :param boundary_pattern: Regular expression pattern to used to find the boundary file.</span>
+<span class="sd">        :type boundary_pattern: string</span>
+<span class="sd">        :param boundary_field: Field within the boundary file to use to identify areas.</span>
+<span class="sd">        :type boundary_field: string</span>
+<span class="sd">        :param output_filename: Filename for VHI area impact output file.</span>
+<span class="sd">        :type output_filename: string</span>
+<span class="sd">        :param output_dir: Directory to save the VHI area impact output file.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param output_pattern: Pattern to be used to generate the VHI area impact output file name. May refer to elements within the hazard_pattern.</span>
+<span class="sd">        :type output_pattern: string</span>
+<span class="sd">        :param masked: Flag indicating whether the impact should be masked by a boundary or not.</span>
+<span class="sd">        :type masked: bool</span>
+<span class="sd">        :return: Config file sections required for generating VHI area impact.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">hazard_file</span><span class="p">,</span> <span class="n">hazard_dir</span><span class="p">,</span> <span class="n">hazard_pattern</span><span class="p">,</span>
+                        <span class="n">boundary_file</span><span class="p">,</span> <span class="n">boundary_dir</span><span class="p">,</span> <span class="n">boundary_pattern</span><span class="p">,</span> <span class="n">boundary_field</span><span class="p">,</span>
+                        <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DaysSinceLastRainAreaImpactProduct.generate_publish_config"><a class="viewcode-back" href="../../../vampire.config_products.BaseImpactProduct.html#vampire.config_products.BaseImpactProduct.DaysSinceLastRainAreaImpactProduct.generate_publish_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_publish_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate config section to publish Flood population impact.</span>
+
+<span class="sd">        Generates configuration file section to publish the Flood population impact output file to a database.</span>
+
+<span class="sd">        :return: Config file sections required for publishing Flood population impact.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">generate_publish_config</span><span class="p">()</span></div></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

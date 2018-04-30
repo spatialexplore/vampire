@@ -1,0 +1,457 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.BaseDataset module &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vampire.config_products.BaseDataset">
+<span id="vampire-config-products-basedataset-module"></span><h1>vampire.config_products.BaseDataset module<a class="headerlink" href="#module-vampire.config_products.BaseDataset" title="Permalink to this headline">¶</a></h1>
+<p>Dataset module.</p>
+<p>Provides classes for each dataset supported within Vampire. New datasets should be added here.</p>
+<dl class="class">
+<dt id="vampire.config_products.BaseDataset.BaseDataset">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseDataset.</code><code class="descname">BaseDataset</code><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#BaseDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.BaseDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Base class for dataset configuration objects.</p>
+<p>Manages registration of dataset configurations and creation of dataset configuration objects.
+Dataset configurations provide the ability to generate config file sections related to the specific
+dataset (e.g. data download, pre-processing).</p>
+<dl class="classmethod">
+<dt id="vampire.config_products.BaseDataset.BaseDataset.create">
+<em class="property">classmethod </em><code class="descname">create</code><span class="sig-paren">(</span><em>dataset_type</em>, <em>interval</em>, <em>product_date</em>, <em>vampire_defaults</em>, <em>region=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#BaseDataset.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.BaseDataset.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create dataset of the specified type.</p>
+<p>Creates the dataset identified by dataset_type and sets required values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dataset_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Dataset name.</li>
+<li><strong>interval</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Interval for dataset generation - daily, weekly, monthly, seasonal.</li>
+<li><strong>product_date</strong> (<a class="reference external" href="https://docs.python.org/3/library/datetime.html#module-datetime" title="(in Python v3.6)"><em>datetime</em></a>) – Date for dataset being generated.</li>
+<li><strong>vampire_defaults</strong> (<a class="reference internal" href="vampire.VampireDefaults.html#vampire.VampireDefaults.VampireDefaults" title="vampire.VampireDefaults.VampireDefaults"><em>VampireDefaults</em></a>) – </li>
+<li><strong>region</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Default is None</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Dataset object of type specified (a registered subclass of BaseDataset).</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="vampire.config_products.BaseDataset.BaseDataset.register_subclass">
+<em class="property">classmethod </em><code class="descname">register_subclass</code><span class="sig-paren">(</span><em>dataset_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#BaseDataset.register_subclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.BaseDataset.register_subclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register dataset with the dataset manager.</p>
+<p>Registers the dataset identified by datset_type with the dataset manager.
+This allows the appropriate dataset to be created automatically when requested.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dataset_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Dataset name.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseDataset.BaseDataset.subclasses">
+<code class="descname">subclasses</code><em class="property"> = {'CHIRPS': &lt;class 'vampire.config_products.BaseDataset.CHIRPSDataset'&gt;, 'GFS': &lt;class 'vampire.config_products.BaseDataset.GlobalForecastSystemDataset'&gt;, 'IMERG': &lt;class 'vampire.config_products.BaseDataset.IMERGDataset'&gt;, 'MODIS_EVI': &lt;class 'vampire.config_products.BaseDataset.MODISEVIDataset'&gt;, 'MODIS_LST': &lt;class 'vampire.config_products.BaseDataset.MODISLSTDataset'&gt;}</em><a class="headerlink" href="#vampire.config_products.BaseDataset.BaseDataset.subclasses" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseDataset.CHIRPSDataset">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseDataset.</code><code class="descname">CHIRPSDataset</code><span class="sig-paren">(</span><em>interval</em>, <em>product_date</em>, <em>vampire_defaults</em>, <em>region=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#CHIRPSDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.CHIRPSDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseDataset.BaseDataset" title="vampire.config_products.BaseDataset.BaseDataset"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseDataset.BaseDataset</span></code></a></p>
+<p>CHIRPS dataset configuration.</p>
+<p>Manages generation of configuration file sections for CHIRPS datasets including download and cropping.</p>
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.CHIRPSDataset.end_date">
+<code class="descname">end_date</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#CHIRPSDataset.end_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.CHIRPSDataset.end_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set end date of data in dataset.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.CHIRPSDataset.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>data_dir=None</em>, <em>download=True</em>, <em>crop=True</em>, <em>crop_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#CHIRPSDataset.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.CHIRPSDataset.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating VCI.</p>
+<p>Generate config file entries required to create VCI for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory data should be downloaded to.</li>
+<li><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating if data should be downloaded.</li>
+<li><strong>crop</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating if data should be cropped following download.</li>
+<li><strong>crop_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory for cropped data output.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for retrieving CHIRPS data.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.CHIRPSDataset.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#CHIRPSDataset.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.CHIRPSDataset.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to CHIRPS that go in the config file header.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.CHIRPSDataset.set_end_date">
+<code class="descname">set_end_date</code><span class="sig-paren">(</span><em>sd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#CHIRPSDataset.set_end_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.CHIRPSDataset.set_end_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.CHIRPSDataset.set_start_date">
+<code class="descname">set_start_date</code><span class="sig-paren">(</span><em>sd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#CHIRPSDataset.set_start_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.CHIRPSDataset.set_start_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.CHIRPSDataset.start_date">
+<code class="descname">start_date</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#CHIRPSDataset.start_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.CHIRPSDataset.start_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set start date of data in dataset.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseDataset.GlobalForecastSystemDataset">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseDataset.</code><code class="descname">GlobalForecastSystemDataset</code><span class="sig-paren">(</span><em>interval</em>, <em>product_date</em>, <em>vampire_defaults</em>, <em>region=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#GlobalForecastSystemDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.GlobalForecastSystemDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseDataset.BaseDataset" title="vampire.config_products.BaseDataset.BaseDataset"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseDataset.BaseDataset</span></code></a></p>
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.GlobalForecastSystemDataset.end_date">
+<code class="descname">end_date</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#GlobalForecastSystemDataset.end_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.GlobalForecastSystemDataset.end_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set end date of data in dataset.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.GlobalForecastSystemDataset.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>data_dir=None</em>, <em>variable=None</em>, <em>level=None</em>, <em>forecast_hr=None</em>, <em>download=True</em>, <em>crop=True</em>, <em>crop_dir=None</em>, <em>accumulate_days=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#GlobalForecastSystemDataset.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.GlobalForecastSystemDataset.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for downloading and pre-processing Global Forecast System models.</p>
+<p>Generate config file entries required to create GFS data for the country, date and interval specified in the dataset initialization.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory data should be downloaded to.</li>
+<li><strong>variable</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Model variable to download.</li>
+<li><strong>level</strong> – Data level (e.g. surface).</li>
+<li><strong>forecast_hr</strong> – Hour of forecast.</li>
+<li><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating if data should be downloaded.</li>
+<li><strong>crop</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating if data should be cropped following download.</li>
+<li><strong>crop_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory for cropped data output.</li>
+<li><strong>accumulate_days</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – Number of days to accumulate.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body"><p class="first">string</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for retrieving GFS data.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.GlobalForecastSystemDataset.set_end_date">
+<code class="descname">set_end_date</code><span class="sig-paren">(</span><em>sd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#GlobalForecastSystemDataset.set_end_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.GlobalForecastSystemDataset.set_end_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.GlobalForecastSystemDataset.set_start_date">
+<code class="descname">set_start_date</code><span class="sig-paren">(</span><em>sd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#GlobalForecastSystemDataset.set_start_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.GlobalForecastSystemDataset.set_start_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.GlobalForecastSystemDataset.start_date">
+<code class="descname">start_date</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#GlobalForecastSystemDataset.start_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.GlobalForecastSystemDataset.start_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set start date of data in dataset.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseDataset.IMERGDataset">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseDataset.</code><code class="descname">IMERGDataset</code><span class="sig-paren">(</span><em>interval</em>, <em>product_date</em>, <em>vampire_defaults</em>, <em>region=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#IMERGDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.IMERGDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseDataset.BaseDataset" title="vampire.config_products.BaseDataset.BaseDataset"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseDataset.BaseDataset</span></code></a></p>
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.IMERGDataset.end_date">
+<code class="descname">end_date</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#IMERGDataset.end_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.IMERGDataset.end_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set end date of data in dataset.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.IMERGDataset.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>data_dir=None</em>, <em>download=True</em>, <em>mosaic_dir=None</em>, <em>tiles=None</em>, <em>extract_dir=None</em>, <em>crop=True</em>, <em>crop_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#IMERGDataset.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.IMERGDataset.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating IMERG.</p>
+<p>Generate config file entries required to create IMERG for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory data should be downloaded to.</li>
+<li><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating if data should be downloaded.</li>
+<li><strong>mosaic_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory for mosaic of downloaded data tiles.</li>
+<li><strong>tiles</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – List of data tiles to download.</li>
+<li><strong>extract_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory for extracted dataset.</li>
+<li><strong>crop</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating if data should be cropped following download.</li>
+<li><strong>crop_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory for cropped data output.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for retrieving IMERG data.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.IMERGDataset.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#IMERGDataset.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.IMERGDataset.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to IMERG data that go in the config file header.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.IMERGDataset.set_end_date">
+<code class="descname">set_end_date</code><span class="sig-paren">(</span><em>sd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#IMERGDataset.set_end_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.IMERGDataset.set_end_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.IMERGDataset.set_start_date">
+<code class="descname">set_start_date</code><span class="sig-paren">(</span><em>sd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#IMERGDataset.set_start_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.IMERGDataset.set_start_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.IMERGDataset.start_date">
+<code class="descname">start_date</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#IMERGDataset.start_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.IMERGDataset.start_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set start date of data in dataset.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseDataset.MODISEVIDataset">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseDataset.</code><code class="descname">MODISEVIDataset</code><span class="sig-paren">(</span><em>interval</em>, <em>product_date</em>, <em>vampire_defaults</em>, <em>region=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#MODISEVIDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.MODISEVIDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseDataset.BaseDataset" title="vampire.config_products.BaseDataset.BaseDataset"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseDataset.BaseDataset</span></code></a></p>
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.MODISEVIDataset.end_date">
+<code class="descname">end_date</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#MODISEVIDataset.end_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.MODISEVIDataset.end_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set end date of data in dataset.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.MODISEVIDataset.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>data_dir=None</em>, <em>download=True</em>, <em>mosaic_dir=None</em>, <em>tiles=None</em>, <em>extract_dir=None</em>, <em>crop=True</em>, <em>crop_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#MODISEVIDataset.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.MODISEVIDataset.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating MODIS EVI.</p>
+<p>Generate config file entries required to download MODIS EVI for the country, date and interval specified in the dataset initialization.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory data should be downloaded to.</li>
+<li><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating if data should be downloaded. Default is True.</li>
+<li><strong>mosaic_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory for mosaic of downloaded data tiles.</li>
+<li><strong>tiles</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – List of data tiles to download.</li>
+<li><strong>extract_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory for extracted dataset.</li>
+<li><strong>crop</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating if data should be cropped following download.</li>
+<li><strong>crop_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory for cropped data output.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for retrieving IMERG data.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.MODISEVIDataset.set_end_date">
+<code class="descname">set_end_date</code><span class="sig-paren">(</span><em>sd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#MODISEVIDataset.set_end_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.MODISEVIDataset.set_end_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.MODISEVIDataset.set_start_date">
+<code class="descname">set_start_date</code><span class="sig-paren">(</span><em>sd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#MODISEVIDataset.set_start_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.MODISEVIDataset.set_start_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.MODISEVIDataset.start_date">
+<code class="descname">start_date</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#MODISEVIDataset.start_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.MODISEVIDataset.start_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set start date of data in dataset.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseDataset.MODISLSTDataset">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseDataset.</code><code class="descname">MODISLSTDataset</code><span class="sig-paren">(</span><em>interval</em>, <em>product_date</em>, <em>vampire_defaults</em>, <em>region=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#MODISLSTDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.MODISLSTDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseDataset.BaseDataset" title="vampire.config_products.BaseDataset.BaseDataset"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseDataset.BaseDataset</span></code></a></p>
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.MODISLSTDataset.end_date">
+<code class="descname">end_date</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#MODISLSTDataset.end_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.MODISLSTDataset.end_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set end date of data in dataset.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.MODISLSTDataset.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>data_dir=None</em>, <em>download=True</em>, <em>mosaic_dir=None</em>, <em>tiles=None</em>, <em>extract_dir=None</em>, <em>crop=True</em>, <em>crop_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#MODISLSTDataset.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.MODISLSTDataset.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for downloading MODIS Land Surface Temperature dataset.</p>
+<p>Generate config file entries required to create MODIS LST for the country, date and interval specified in the dataset initialization.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory data should be downloaded to.</li>
+<li><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating if data should be downloaded.</li>
+<li><strong>mosaic_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory for mosaic of downloaded data tiles.</li>
+<li><strong>tiles</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – List of data tiles to download.</li>
+<li><strong>extract_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory for extracted dataset.</li>
+<li><strong>crop</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating if data should be cropped following download.</li>
+<li><strong>crop_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path of directory for cropped data output.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for retrieving IMERG data.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseDataset.MODISLSTDataset.product">
+<code class="descname">product</code><a class="headerlink" href="#vampire.config_products.BaseDataset.MODISLSTDataset.product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set name of dataset.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.MODISLSTDataset.set_end_date">
+<code class="descname">set_end_date</code><span class="sig-paren">(</span><em>end_date</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#MODISLSTDataset.set_end_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.MODISLSTDataset.set_end_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.MODISLSTDataset.set_start_date">
+<code class="descname">set_start_date</code><span class="sig-paren">(</span><em>start_date</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#MODISLSTDataset.set_start_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.MODISLSTDataset.set_start_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseDataset.MODISLSTDataset.start_date">
+<code class="descname">start_date</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseDataset.html#MODISLSTDataset.start_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseDataset.MODISLSTDataset.start_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set start date of data in dataset.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/vampire.config_products.BaseDataset.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

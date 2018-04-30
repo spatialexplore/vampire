@@ -1,0 +1,128 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.impact_analysis_os module &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vampire.processing.impact_analysis_os">
+<span id="vampire-processing-impact-analysis-os-module"></span><h1>vampire.processing.impact_analysis_os module<a class="headerlink" href="#module-vampire.processing.impact_analysis_os" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="vampire.processing.impact_analysis_os.calculate_crop_impact">
+<code class="descclassname">vampire.processing.impact_analysis_os.</code><code class="descname">calculate_crop_impact</code><span class="sig-paren">(</span><em>hazard_raster</em>, <em>threshold</em>, <em>hazard_var</em>, <em>crop_boundary</em>, <em>crop_field</em>, <em>admin_boundary</em>, <em>admin_field</em>, <em>output_file</em>, <em>start_date</em>, <em>end_date</em>, <em>intersect=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/impact_analysis_os.html#calculate_crop_impact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.impact_analysis_os.calculate_crop_impact" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.impact_analysis_os.calculate_poverty_impact">
+<code class="descclassname">vampire.processing.impact_analysis_os.</code><code class="descname">calculate_poverty_impact</code><span class="sig-paren">(</span><em>self</em>, <em>popn_impact_file</em>, <em>popn_impact_field</em>, <em>popn_match_field</em>, <em>poor_file</em>, <em>poor_field</em>, <em>poor_match_field</em>, <em>multiplier</em>, <em>output_file</em>, <em>output_field</em>, <em>start_date</em>, <em>end_date</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/impact_analysis_os.html#calculate_poverty_impact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.impact_analysis_os.calculate_poverty_impact" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.impact_analysis_os.create_mask">
+<code class="descclassname">vampire.processing.impact_analysis_os.</code><code class="descname">create_mask</code><span class="sig-paren">(</span><em>raster</em>, <em>mask</em>, <em>output_raster</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/impact_analysis_os.html#create_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.impact_analysis_os.create_mask" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.impact_analysis_os.intersect_boundaries">
+<code class="descclassname">vampire.processing.impact_analysis_os.</code><code class="descname">intersect_boundaries</code><span class="sig-paren">(</span><em>boundary_list</em>, <em>boundary_output</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/impact_analysis_os.html#intersect_boundaries"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.impact_analysis_os.intersect_boundaries" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.impact_analysis_os.mask_with_shapefile">
+<code class="descclassname">vampire.processing.impact_analysis_os.</code><code class="descname">mask_with_shapefile</code><span class="sig-paren">(</span><em>raster_file</em>, <em>mask_file</em>, <em>output_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/impact_analysis_os.html#mask_with_shapefile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.impact_analysis_os.mask_with_shapefile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.impact_analysis_os.multiply_by_mask">
+<code class="descclassname">vampire.processing.impact_analysis_os.</code><code class="descname">multiply_by_mask</code><span class="sig-paren">(</span><em>raster</em>, <em>mask</em>, <em>output_raster</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/impact_analysis_os.html#multiply_by_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.impact_analysis_os.multiply_by_mask" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.impact_analysis_os.reclassify_raster">
+<code class="descclassname">vampire.processing.impact_analysis_os.</code><code class="descname">reclassify_raster</code><span class="sig-paren">(</span><em>raster</em>, <em>threshold</em>, <em>output_raster</em>, <em>threshold_direction='LESS_THAN'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/impact_analysis_os.html#reclassify_raster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.impact_analysis_os.reclassify_raster" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.impact_analysis_os.shapefile_to_table">
+<code class="descclassname">vampire.processing.impact_analysis_os.</code><code class="descname">shapefile_to_table</code><span class="sig-paren">(</span><em>input_file</em>, <em>output_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/impact_analysis_os.html#shapefile_to_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.impact_analysis_os.shapefile_to_table" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/vampire.processing.impact_analysis_os.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

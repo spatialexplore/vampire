@@ -1,0 +1,345 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.impact_analysis_os &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.impact_analysis_os</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">fiona</span>
+<span class="kn">import</span> <span class="nn">geopandas</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">ogr</span>
+<span class="kn">import</span> <span class="nn">pandas</span>
+<span class="kn">import</span> <span class="nn">rasterio</span>
+<span class="kn">import</span> <span class="nn">rasterio.mask</span>
+
+<span class="kn">import</span> <span class="nn">calculate_statistics_os</span> <span class="k">as</span> <span class="nn">calculate_statistics</span>
+<span class="kn">import</span> <span class="nn">raster_utils</span>
+<span class="kn">import</span> <span class="nn">csv_utils</span> <span class="k">as</span> <span class="nn">csv_utils</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="calculate_poverty_impact"><a class="viewcode-back" href="../../../vampire.processing.impact_analysis_os.html#vampire.processing.impact_analysis_os.calculate_poverty_impact">[docs]</a><span class="k">def</span> <span class="nf">calculate_poverty_impact</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">popn_impact_file</span><span class="p">,</span> <span class="n">popn_impact_field</span><span class="p">,</span> <span class="n">popn_match_field</span><span class="p">,</span>
+                             <span class="n">poor_file</span><span class="p">,</span> <span class="n">poor_field</span><span class="p">,</span> <span class="n">poor_match_field</span><span class="p">,</span> <span class="n">multiplier</span><span class="p">,</span>
+                             <span class="n">output_file</span><span class="p">,</span> <span class="n">output_field</span><span class="p">,</span>
+                             <span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="p">):</span>
+    <span class="n">_poverty</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">poor_file</span><span class="p">)</span>
+    <span class="n">_popn_impact</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">popn_impact_file</span><span class="p">)</span>
+    <span class="n">_popn_impact</span><span class="p">[</span><span class="n">popn_match_field</span><span class="p">]</span> <span class="o">=</span> <span class="n">_popn_impact</span><span class="p">[</span><span class="n">popn_match_field</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:.0f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">)</span>
+    <span class="n">_merged</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">_popn_impact</span><span class="p">,</span> <span class="n">_poverty</span><span class="p">[[</span><span class="n">poor_field</span><span class="p">,</span> <span class="n">poor_match_field</span><span class="p">]],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">,</span> <span class="n">left_on</span><span class="o">=</span><span class="n">popn_match_field</span><span class="p">,</span> <span class="n">right_on</span><span class="o">=</span><span class="n">poor_match_field</span><span class="p">)</span>
+    <span class="n">_merged</span><span class="p">[</span><span class="n">output_field</span><span class="p">]</span> <span class="o">=</span> <span class="n">_merged</span><span class="p">[</span><span class="n">popn_impact_field</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">_merged</span><span class="p">[</span><span class="n">poor_field</span><span class="p">]</span><span class="o">*</span><span class="n">multiplier</span><span class="p">)</span>
+    <span class="n">_merged</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_date</span>
+    <span class="n">_merged</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">end_date</span>
+    <span class="n">_merged</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="calculate_crop_impact"><a class="viewcode-back" href="../../../vampire.processing.impact_analysis_os.html#vampire.processing.impact_analysis_os.calculate_crop_impact">[docs]</a><span class="k">def</span> <span class="nf">calculate_crop_impact</span><span class="p">(</span><span class="n">hazard_raster</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">hazard_var</span><span class="p">,</span>
+                          <span class="n">crop_boundary</span><span class="p">,</span> <span class="n">crop_field</span><span class="p">,</span>
+                          <span class="n">admin_boundary</span><span class="p">,</span> <span class="n">admin_field</span><span class="p">,</span>
+                          <span class="n">output_file</span><span class="p">,</span>
+                          <span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="p">,</span> <span class="n">intersect</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+    <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
+    <span class="c1"># reclassify hazard raster to generate mask of all &lt;= threshold</span>
+    <span class="n">_reclass_raster</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">output_file</span><span class="p">),</span> <span class="s1">&#39;hazard_crops_reclass.tif&#39;</span><span class="p">)</span>
+    <span class="n">reclassify_raster</span><span class="p">(</span><span class="n">raster</span><span class="o">=</span><span class="n">hazard_raster</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span> <span class="n">output_raster</span><span class="o">=</span><span class="n">_reclass_raster</span><span class="p">)</span>
+
+    <span class="n">_zone_table</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_output_dir</span><span class="p">,</span> <span class="s1">&#39;hazard_crops_table.csv&#39;</span><span class="p">)</span>
+
+    <span class="c1"># calculate impact on boundary</span>
+    <span class="c1"># if have admin boundary as well, intersect the two boundaries first, then dissolve after the join to</span>
+    <span class="c1"># calculate crop impact per admin area</span>
+    <span class="n">_boundary</span> <span class="o">=</span> <span class="n">crop_boundary</span>
+    <span class="n">_zone_field</span> <span class="o">=</span> <span class="n">admin_field</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="c1">#&#39;fid&#39;</span>
+<span class="c1">###    don&#39;t do intersect</span>
+<span class="c1">#    if admin_boundary is None:</span>
+<span class="c1">#        _boundary = crop_boundary</span>
+<span class="c1">#        _zone_field = crop_field</span>
+<span class="c1">#    else:</span>
+<span class="c1">#        if intersect:</span>
+<span class="c1">#            _boundary_output = os.path.join(_output_dir, &#39;crop_admin_intersection.shp&#39;)</span>
+<span class="c1">#            intersect_boundaries([crop_boundary, admin_boundary], _boundary_output)</span>
+<span class="c1">#            _boundary = _boundary_output</span>
+<span class="c1">#            _zone_field = &#39;fid&#39;</span>
+<span class="c1">#        else:</span>
+<span class="c1">#            _boundary = crop_boundary</span>
+<span class="c1">#            _zone_field = &#39;fid&#39;</span>
+<span class="c1">###</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_zonal_statistics</span><span class="p">(</span><span class="n">raster_file</span><span class="o">=</span><span class="n">_reclass_raster</span><span class="p">,</span> <span class="n">polygon_file</span><span class="o">=</span><span class="n">_boundary</span><span class="p">,</span>
+                                                       <span class="n">zone_field</span><span class="o">=</span><span class="n">_zone_field</span><span class="p">,</span> <span class="n">output_table</span><span class="o">=</span><span class="n">_zone_table</span><span class="p">)</span>
+
+    <span class="c1"># convert to hectares</span>
+    <span class="c1"># TODO: get multiplier from defaults depending on resolution of hazard raster</span>
+    <span class="n">csv_utils</span><span class="o">.</span><span class="n">calc_field</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">_zone_table</span><span class="p">,</span> <span class="n">new_field</span><span class="o">=</span><span class="s1">&#39;area_aff&#39;</span><span class="p">,</span> <span class="n">cal_field</span><span class="o">=</span><span class="s1">&#39;COUNT&#39;</span><span class="p">,</span> <span class="n">multiplier</span><span class="o">=</span><span class="mf">6.25</span><span class="p">)</span>
+    <span class="c1"># add start and end date fields and set values</span>
+    <span class="n">csv_utils</span><span class="o">.</span><span class="n">add_field</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">_zone_table</span><span class="p">,</span> <span class="n">new_field</span><span class="o">=</span><span class="s1">&#39;start_date&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">start_date</span><span class="p">)</span>
+    <span class="n">csv_utils</span><span class="o">.</span><span class="n">add_field</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">_zone_table</span><span class="p">,</span> <span class="n">new_field</span><span class="o">=</span><span class="s1">&#39;end_date&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">end_date</span><span class="p">)</span>
+
+    <span class="c1"># calculate affected crops within admin areas</span>
+    <span class="c1"># join table to boundary, then extract district etc.</span>
+    <span class="k">if</span> <span class="n">admin_boundary</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1">#            _boundary_table = os.path.join(os.path.dirname(_output_file), &#39;crop_admin_table.csv&#39;)</span>
+        <span class="c1">#            impact_analysis.shapefile_to_table(_boundary, _boundary_table)</span>
+        <span class="c1">#            _merge_output = os.path.join(os.path.dirname(_output_file), &#39;crop_hazard_merge.csv&#39;)</span>
+        <span class="c1">#            csv_utils.merge_files(file1=_zone_table, file2=_boundary_table, output_file=_merge_output,</span>
+        <span class="c1">#                                      file1_field=&#39;FID_&#39;, file2_field=&#39;FID_PADDY_&#39;)</span>
+        <span class="n">_merge_output</span> <span class="o">=</span> <span class="n">_zone_table</span>
+        <span class="n">_out_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;area_aff&#39;</span><span class="p">:</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span> <span class="s1">&#39;crops_ha&#39;</span><span class="p">:</span> <span class="s1">&#39;sum&#39;</span><span class="p">}</span>
+        <span class="n">csv_utils</span><span class="o">.</span><span class="n">aggregate_on_field</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">_merge_output</span><span class="p">,</span> <span class="n">ref_field</span><span class="o">=</span><span class="n">admin_field</span><span class="p">,</span>
+                                     <span class="n">output_fields_dict</span><span class="o">=</span><span class="n">_out_dict</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">output_file</span><span class="p">,</span> <span class="n">all_fields</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># calculate percentage</span>
+        <span class="n">csv_utils</span><span class="o">.</span><span class="n">calc_field</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">output_file</span><span class="p">,</span> <span class="n">new_field</span><span class="o">=</span><span class="s1">&#39;total_area_ha&#39;</span><span class="p">,</span> <span class="n">cal_field</span><span class="o">=</span><span class="s1">&#39;crops_ha&#39;</span><span class="p">)</span> <span class="c1">#,</span>
+<span class="c1">#                             multiplier=100.0)</span>
+        <span class="n">csv_utils</span><span class="o">.</span><span class="n">calc_pc_field</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">output_file</span><span class="p">,</span> <span class="n">new_field</span><span class="o">=</span><span class="s1">&#39;impact_pc&#39;</span><span class="p">,</span> <span class="n">numerator_field</span><span class="o">=</span><span class="s1">&#39;area_aff&#39;</span><span class="p">,</span>
+                                <span class="n">denominator_field</span><span class="o">=</span><span class="s1">&#39;total_area_ha&#39;</span><span class="p">)</span>
+        <span class="n">_gf</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">admin_boundary</span><span class="p">)</span>
+<span class="c1">#        _gf = geopandas.GeoDataFrame.from_file(&#39;C:\PRIMA\data\Shapefiles\Boundaries\National\lka_bnd_adm3_dsd_nbro_wgs84.shp&#39;)</span>
+
+        <span class="n">csv_utils</span><span class="o">.</span><span class="n">calc_normalized_field</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">output_file</span><span class="p">,</span> <span class="n">new_field</span><span class="o">=</span><span class="s1">&#39;impact_norm&#39;</span><span class="p">,</span>
+                                        <span class="n">area_field</span><span class="o">=</span><span class="s1">&#39;area_aff&#39;</span><span class="p">,</span> <span class="n">total_field</span><span class="o">=</span><span class="s1">&#39;total_area_ha&#39;</span><span class="p">,</span> <span class="n">admin_area</span><span class="o">=</span><span class="n">_gf</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="reclassify_raster"><a class="viewcode-back" href="../../../vampire.processing.impact_analysis_os.html#vampire.processing.impact_analysis_os.reclassify_raster">[docs]</a><span class="k">def</span> <span class="nf">reclassify_raster</span><span class="p">(</span><span class="n">raster</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">output_raster</span><span class="p">,</span>
+                      <span class="n">threshold_direction</span><span class="o">=</span><span class="s1">&#39;LESS_THAN&#39;</span><span class="p">):</span>
+    <span class="n">_threshold</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">threshold</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">raster</span><span class="p">)</span> <span class="k">as</span> <span class="n">ras_r</span><span class="p">:</span>
+        <span class="n">_profile</span> <span class="o">=</span> <span class="n">ras_r</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">_ras_a</span> <span class="o">=</span> <span class="n">ras_r</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">threshold_direction</span> <span class="o">==</span> <span class="s1">&#39;LESS_THAN&#39;</span><span class="p">:</span>
+            <span class="n">_dst_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_where</span><span class="p">(</span><span class="n">_ras_a</span> <span class="o">&gt;=</span> <span class="n">_threshold</span><span class="p">,</span> <span class="n">_ras_a</span><span class="p">)</span>
+            <span class="n">_dst_r</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">_ras_a</span> <span class="o">&lt;</span> <span class="n">_threshold</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">threshold_direction</span> <span class="o">==</span> <span class="s1">&#39;EQUALS&#39;</span><span class="p">:</span>
+            <span class="n">_dst_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_where</span><span class="p">(</span><span class="n">_ras_a</span> <span class="o">&lt;&gt;</span> <span class="n">_threshold</span><span class="p">,</span> <span class="n">_ras_a</span><span class="p">)</span>
+            <span class="n">_dst_r</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">_ras_a</span> <span class="o">==</span> <span class="n">_threshold</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_dst_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_where</span><span class="p">(</span><span class="n">_ras_a</span> <span class="o">&lt;=</span> <span class="n">_threshold</span><span class="p">,</span> <span class="n">_ras_a</span><span class="p">)</span>
+            <span class="n">_dst_r</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">_ras_a</span> <span class="o">&gt;</span> <span class="n">_threshold</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="c1">#        _dst_r = np.ma.masked_where(_ras_a &gt; _threshold, _ras_a)</span>
+<span class="c1">#        _dst_r.data[_ras_a &lt;= _threshold] = 1</span>
+        <span class="n">_dst_r</span> <span class="o">=</span> <span class="n">_dst_r</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="o">-</span><span class="mi">9999</span><span class="p">)</span>
+        <span class="n">_profile</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">rasterio</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mi">9999</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">output_raster</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">_profile</span><span class="p">)</span> <span class="k">as</span> <span class="n">dst</span><span class="p">:</span>
+            <span class="n">dst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_dst_r</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">rasterio</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># _driver = gdal.GetDriverByName(&#39;GTiff&#39;)</span>
+    <span class="c1"># _file = gdal.Open(raster)</span>
+    <span class="c1"># _band = _file.GetRasterBand(1)</span>
+    <span class="c1"># _ras_a = _band.ReadAsArray()</span>
+    <span class="c1">#</span>
+    <span class="c1"># _ras_a[np.where(_ras_a &lt;= int(threshold))] = 1</span>
+    <span class="c1"># _ras_a[np.where(_ras_a &gt; int(threshold))] = -3000</span>
+    <span class="c1">#</span>
+    <span class="c1"># _out = _driver.Create(output_raster, _file.RasterXSize, _file.RasterYSize, 1)</span>
+    <span class="c1"># _out.GetRasterBand(1).WriteArray(_ras_a)</span>
+    <span class="c1"># _proj = _file.GetProjection()</span>
+    <span class="c1"># _georef = _file.GetGeoTransform()</span>
+    <span class="c1"># _out.SetProjection(_proj)</span>
+    <span class="c1"># _out.SetGeoTransform(_georef)</span>
+    <span class="c1"># _out.FlushCache()</span>
+
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="multiply_by_mask"><a class="viewcode-back" href="../../../vampire.processing.impact_analysis_os.html#vampire.processing.impact_analysis_os.multiply_by_mask">[docs]</a><span class="k">def</span> <span class="nf">multiply_by_mask</span><span class="p">(</span><span class="n">raster</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">output_raster</span><span class="p">):</span>
+    <span class="n">_tmp_ras</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">raster</span><span class="p">),</span> <span class="s1">&#39;tmp_</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">raster</span><span class="p">)))</span>
+    <span class="n">raster_utils</span><span class="o">.</span><span class="n">reproject_image_to_master</span><span class="p">(</span><span class="n">master</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span> <span class="n">slave</span><span class="o">=</span><span class="n">raster</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">_tmp_ras</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">_tmp_ras</span><span class="p">)</span> <span class="k">as</span> <span class="n">ras</span><span class="p">:</span>
+        <span class="n">_ras_a</span> <span class="o">=</span> <span class="n">ras</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">_profile</span> <span class="o">=</span> <span class="n">ras</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span> <span class="k">as</span> <span class="n">_mask_r</span><span class="p">:</span>
+            <span class="c1"># TODO check if same size/projection</span>
+            <span class="n">_mask_a</span> <span class="o">=</span> <span class="n">_mask_r</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">_dst_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">_ras_a</span><span class="p">,</span><span class="n">_mask_a</span><span class="p">)</span>
+            <span class="n">_dst_r</span> <span class="o">=</span> <span class="n">_dst_r</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="o">-</span><span class="mi">9999</span><span class="p">)</span>
+            <span class="n">_profile</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">rasterio</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mi">9999</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">output_raster</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">_profile</span><span class="p">)</span> <span class="k">as</span> <span class="n">dst</span><span class="p">:</span>
+                <span class="n">dst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_dst_r</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">rasterio</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="nb">print</span> <span class="s2">&quot;saved multiply result in: &quot;</span><span class="p">,</span> <span class="n">output_raster</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="create_mask"><a class="viewcode-back" href="../../../vampire.processing.impact_analysis_os.html#vampire.processing.impact_analysis_os.create_mask">[docs]</a><span class="k">def</span> <span class="nf">create_mask</span><span class="p">(</span><span class="n">raster</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">output_raster</span><span class="p">):</span>
+    <span class="n">_tmp_ras</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">raster</span><span class="p">),</span> <span class="s1">&#39;tmp_</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">raster</span><span class="p">)))</span>
+    <span class="n">raster_utils</span><span class="o">.</span><span class="n">reproject_image_to_master</span><span class="p">(</span><span class="n">master</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span> <span class="n">slave</span><span class="o">=</span><span class="n">raster</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">_tmp_ras</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">_tmp_ras</span><span class="p">)</span> <span class="k">as</span> <span class="n">ras</span><span class="p">:</span>
+        <span class="n">_ras_a</span> <span class="o">=</span> <span class="n">ras</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">_profile</span> <span class="o">=</span> <span class="n">ras</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span> <span class="k">as</span> <span class="n">_mask_r</span><span class="p">:</span>
+            <span class="c1"># TODO check if same size/projection</span>
+            <span class="n">_mask_a</span> <span class="o">=</span> <span class="n">_mask_r</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">_dst_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_where</span><span class="p">(</span><span class="n">_mask_a</span><span class="o">==</span><span class="mi">0</span><span class="p">,</span> <span class="n">_mask_a</span><span class="p">)</span>
+            <span class="n">_dst_r</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">_ras_a</span>
+            <span class="n">_profile</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">rasterio</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=-</span><span class="mi">9999</span><span class="p">)</span>
+            <span class="n">_dst_r</span> <span class="o">=</span> <span class="n">_dst_r</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="o">-</span><span class="mi">9999</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">output_raster</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">_profile</span><span class="p">)</span> <span class="k">as</span> <span class="n">dst</span><span class="p">:</span>
+                <span class="n">dst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_dst_r</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">rasterio</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="nb">print</span> <span class="s2">&quot;saved multiply result in: &quot;</span><span class="p">,</span> <span class="n">output_raster</span>
+
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="shapefile_to_table"><a class="viewcode-back" href="../../../vampire.processing.impact_analysis_os.html#vampire.processing.impact_analysis_os.shapefile_to_table">[docs]</a><span class="k">def</span> <span class="nf">shapefile_to_table</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">output_file</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;.dbf&#39;</span><span class="p">:</span>
+        <span class="n">_output</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">output_file</span><span class="p">))[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;.dbf&#39;</span><span class="p">)</span>
+        <span class="n">_output_csv</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">output_file</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;.csv&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_output</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
+        <span class="n">_output_csv</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">output_file</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;.csv&#39;</span><span class="p">)</span>
+    <span class="n">_csv_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">_output_csv</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+    <span class="n">_ds</span> <span class="o">=</span> <span class="n">ogr</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+    <span class="n">_layer</span> <span class="o">=</span> <span class="n">_ds</span><span class="o">.</span><span class="n">GetLayer</span><span class="p">()</span>
+    <span class="n">_dfn</span> <span class="o">=</span> <span class="n">_layer</span><span class="o">.</span><span class="n">GetLayerDefn</span><span class="p">()</span>
+    <span class="n">_nfields</span> <span class="o">=</span> <span class="n">_dfn</span><span class="o">.</span><span class="n">GetFieldCount</span><span class="p">()</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_nfields</span><span class="p">):</span>
+        <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_dfn</span><span class="o">.</span><span class="n">GetFieldDefn</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">GetName</span><span class="p">())</span>
+    <span class="n">_csv_writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">_csv_file</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span>
+    <span class="n">_csv_writer</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">feat</span> <span class="ow">in</span> <span class="n">_layer</span><span class="p">:</span>
+        <span class="n">_attributes</span> <span class="o">=</span> <span class="n">feat</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="n">_csv_writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">_attributes</span><span class="p">)</span>
+
+    <span class="c1"># clean up</span>
+    <span class="k">del</span> <span class="n">_csv_writer</span><span class="p">,</span> <span class="n">_layer</span><span class="p">,</span> <span class="n">_ds</span>
+    <span class="n">_csv_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="c1">#    arcpy.TableToTable_conversion(input, os.path.dirname(output), os.path.splitext(_output)[0])</span>
+<span class="c1">#    vampire_tmp.csv_utils.convert_dbf_to_csv(os.path.join(os.path.dirname(output), _output), _output_csv)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="intersect_boundaries"><a class="viewcode-back" href="../../../vampire.processing.impact_analysis_os.html#vampire.processing.impact_analysis_os.intersect_boundaries">[docs]</a><span class="k">def</span> <span class="nf">intersect_boundaries</span><span class="p">(</span><span class="n">boundary_list</span><span class="p">,</span> <span class="n">boundary_output</span><span class="p">):</span>
+    <span class="n">_g_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">boundary_list</span><span class="p">:</span>
+        <span class="n">_df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+        <span class="n">_g_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_df</span><span class="p">)</span>
+
+<span class="c1">#    g1 = geopandas.GeoDataFrame.from_file(&quot;crime_stat.shp&quot;)</span>
+<span class="c1">#    g2 = geopandas.GeoDataFrame.from_file(&quot;population.shp&quot;)</span>
+    <span class="n">_new_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">_new_columns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">_res_intersection</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">_g_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">_g_list</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;intersection&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">_data</span> <span class="ow">in</span> <span class="n">_g_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">index2</span><span class="p">,</span> <span class="n">_data2</span> <span class="ow">in</span> <span class="n">_g_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">_data</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">intersects</span><span class="p">(</span><span class="n">_data2</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]):</span>
+                <span class="n">_new_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">_data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">):</span>
+                    <span class="n">_new_dict</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">_data</span><span class="p">[</span><span class="n">x</span><span class="p">]</span>
+                    <span class="n">_new_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">_data2</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">_new_dict</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+                        <span class="n">_new_key</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_data2&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+                        <span class="n">_new_dict</span><span class="p">[</span><span class="n">_new_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_data2</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
+                        <span class="n">_new_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_new_key</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">_new_dict</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">_data2</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
+                <span class="n">_new_dict</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_data</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">_data2</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">])</span>
+                <span class="n">_new_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;geometry&#39;</span><span class="p">)</span>
+<span class="c1">#               _new_dict[&#39;area&#39;] = _data[&#39;geometry&#39;].intersection(_data2[&#39;geometry&#39;]).area</span>
+                <span class="n">_new_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_new_dict</span><span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">geopandas</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span><span class="n">_new_data</span><span class="p">,</span><span class="n">columns</span><span class="o">=</span><span class="n">_new_columns</span><span class="p">)</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="n">boundary_output</span><span class="p">)</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<span class="c1">#    arcpy.Intersect_analysis(in_features=boundary_list, out_feature_class=boundary_output)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="mask_with_shapefile"><a class="viewcode-back" href="../../../vampire.processing.impact_analysis_os.html#vampire.processing.impact_analysis_os.mask_with_shapefile">[docs]</a><span class="k">def</span> <span class="nf">mask_with_shapefile</span><span class="p">(</span><span class="n">raster_file</span><span class="p">,</span> <span class="n">mask_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">fiona</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">mask_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">shapefile</span><span class="p">:</span>
+        <span class="n">geoms</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">shapefile</span><span class="p">]</span>
+
+    <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">raster_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
+        <span class="n">out_image</span><span class="p">,</span> <span class="n">out_transform</span> <span class="o">=</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">mask</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">geoms</span><span class="p">)</span>
+        <span class="n">out_meta</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">out_meta</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;driver&quot;</span><span class="p">:</span> <span class="s2">&quot;GTiff&quot;</span><span class="p">,</span>
+                     <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="n">out_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                     <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="n">out_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                     <span class="s2">&quot;transform&quot;</span><span class="p">:</span> <span class="n">out_transform</span><span class="p">})</span>
+
+    <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">out_meta</span><span class="p">)</span> <span class="k">as</span> <span class="n">dest</span><span class="p">:</span>
+        <span class="n">dest</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">out_image</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="kc">None</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

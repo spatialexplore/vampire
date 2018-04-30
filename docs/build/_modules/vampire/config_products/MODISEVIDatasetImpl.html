@@ -1,0 +1,228 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.MODISEVIDatasetImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_products.MODISEVIDatasetImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">MODISDatasetImpl</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">dateutil.rrule</span>
+<span class="kn">import</span> <span class="nn">dateutil.relativedelta</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MODISEVIDatasetImpl"><a class="viewcode-back" href="../../../vampire.config_products.MODISEVIDatasetImpl.html#vampire.config_products.MODISEVIDatasetImpl.MODISEVIDatasetImpl">[docs]</a><span class="k">class</span> <span class="nc">MODISEVIDatasetImpl</span><span class="p">(</span><span class="n">MODISDatasetImpl</span><span class="o">.</span><span class="n">MODISDatasetImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISEVIDatasetImpl object.</span>
+
+<span class="sd">    Implementation class for MODISEVIDataset.</span>
+<span class="sd">    Initialise object parameters and calculate start and end dates for dataset using product_date and interval.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    interval : string</span>
+<span class="sd">        Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal</span>
+<span class="sd">    product_date : datetime</span>
+<span class="sd">        Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding</span>
+<span class="sd">        the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,</span>
+<span class="sd">        the product_date refers to the start of the season (3 month period).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS EVI dataset&#39;</span><span class="p">)</span>
+        <span class="n">_product</span> <span class="o">=</span> <span class="n">vampire_defaults</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;vegetation_product&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MODISEVIDatasetImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="o">=</span><span class="n">product_date</span><span class="p">,</span>
+                                                  <span class="n">vampire_defaults</span><span class="o">=</span><span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">product</span><span class="o">=</span><span class="n">_product</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="n">region</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">day_of_year</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span>
+        <span class="k">return</span>
+
+    <span class="sd">&quot;&quot;&quot; Generate a config file process for the dataset.</span>
+
+<span class="sd">    Generate VAMPIRE config file process(es) for the dataset including download and crop if specified.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_dir : string</span>
+<span class="sd">        Path for downloaded data. The data will be stored in this path under a directory with the interval name. If the</span>
+<span class="sd">        data_dir is None, the VAMPIRE default download directory will be used.</span>
+<span class="sd">    download : boolean</span>
+<span class="sd">        Flag indicating whether data should be downloaded. Default is True.</span>
+<span class="sd">    crop : boolean</span>
+<span class="sd">        Flag indicating whether data should be cropped to region. Default is True.</span>
+<span class="sd">    crop_dir : string</span>
+<span class="sd">        Path where cropped data will be stored. If None, the region code will be appended to the download data path.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    string</span>
+<span class="sd">        Returns string containing the configuration file process.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="MODISEVIDatasetImpl.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.MODISEVIDatasetImpl.html#vampire.config_products.MODISEVIDatasetImpl.MODISEVIDatasetImpl.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tiles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extract_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;MODISEVIDataset generate_config&#39;</span><span class="p">)</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">data_dir</span>
+        <span class="n">_crop</span> <span class="o">=</span> <span class="n">crop</span>
+        <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
+            <span class="n">config</span><span class="p">,</span> <span class="n">_output_dir</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">MODISEVIDatasetImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">generate_download</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="p">,</span> <span class="n">tiles</span><span class="p">)</span>
+        <span class="c1"># setup directories for extracting EVI data</span>
+        <span class="k">if</span> <span class="n">extract_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_extract_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_EVI&#39;</span><span class="p">,</span> <span class="s1">&#39;evi_extract_dir&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_extract_dir</span> <span class="o">=</span> <span class="n">extract_dir</span>
+        <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_extract_evi</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_extract_dir</span><span class="p">)</span>
+        <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">_extract_dir</span>
+
+        <span class="n">_crop_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">crop_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;global&#39;</span><span class="p">:</span>
+                <span class="c1"># don&#39;t crop global</span>
+                <span class="n">_crop</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">():</span>
+                    <span class="c1"># home country</span>
+                    <span class="n">_crop_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country_prefix&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># regional country - directory for output file</span>
+                    <span class="n">_crop_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;regional_prefix&#39;</span><span class="p">),</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+                <span class="n">_crop_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_crop_dir</span><span class="p">,</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_EVI&#39;</span><span class="p">,</span> <span class="s1">&#39;evi_dir_suffix&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_crop_dir</span> <span class="o">=</span> <span class="n">crop_dir</span>
+        <span class="k">if</span> <span class="n">_crop</span><span class="p">:</span>
+            <span class="n">_input_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_EVI&#39;</span><span class="p">,</span> <span class="s1">&#39;evi_pattern&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># replace generic year and month in pattern with the specific ones needed so the correct file is found.</span>
+                <span class="n">_input_pattern</span> <span class="o">=</span> <span class="n">_input_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+                <span class="n">_input_pattern</span> <span class="o">=</span> <span class="n">_input_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+                <span class="n">_input_pattern</span> <span class="o">=</span> <span class="n">_input_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;day&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_EVI&#39;</span><span class="p">,</span> <span class="s1">&#39;evi_regional_output_pattern&#39;</span><span class="p">)</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">_output_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{country}</span><span class="s1">&#39;</span><span class="p">,</span>
+                                                      <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country&#39;</span><span class="p">):</span>
+                <span class="n">_boundary_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country_prefix&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_boundary_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;regional_prefix&#39;</span><span class="p">),</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+            <span class="n">_boundary_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_boundary_file</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;boundary_dir_suffix&#39;</span><span class="p">))</span>
+            <span class="n">_boundary_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_boundary_file</span><span class="p">,</span>
+                                          <span class="s1">&#39;</span><span class="si">{country}{filename}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                              <span class="n">country</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+                                              <span class="n">filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span>
+                                                                   <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.boundary_filename&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product</span><span class="p">))))</span>
+
+            <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_crop_section</span><span class="p">(</span><span class="n">_extract_dir</span><span class="p">,</span> <span class="n">_crop_dir</span><span class="p">,</span> <span class="n">_input_pattern</span><span class="p">,</span> <span class="n">_output_pattern</span><span class="p">,</span> <span class="n">_boundary_file</span><span class="p">)</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">_crop_dir</span>
+        <span class="k">return</span> <span class="n">config</span><span class="p">,</span> <span class="n">_output_dir</span></div>
+
+<div class="viewcode-block" id="MODISEVIDatasetImpl.generate_extract_evi"><a class="viewcode-back" href="../../../vampire.config_products.MODISEVIDatasetImpl.html#vampire.config_products.MODISEVIDatasetImpl.MODISEVIDatasetImpl.generate_extract_evi">[docs]</a>    <span class="k">def</span> <span class="nf">generate_extract_evi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">data_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_data_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;vegetation_download_dir&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_data_dir</span> <span class="o">=</span> <span class="n">data_dir</span>
+
+        <span class="c1"># setup directories for extracting EVI data</span>
+        <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_EVI&#39;</span><span class="p">,</span> <span class="s1">&#39;evi_extract_dir&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+
+        <span class="c1"># pattern for files to extract from</span>
+        <span class="n">_modis_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;modis_monthly_pattern&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># replace generic year and month in pattern with the specific ones needed so the correct file is found.</span>
+            <span class="n">_modis_pattern</span> <span class="o">=</span> <span class="n">_modis_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+            <span class="n">_modis_pattern</span> <span class="o">=</span> <span class="n">_modis_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+            <span class="n">_modis_pattern</span> <span class="o">=</span> <span class="n">_modis_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;day&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+        <span class="n">_evi_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_EVI&#39;</span><span class="p">,</span> <span class="s1">&#39;evi_output_pattern&#39;</span><span class="p">)</span>
+        <span class="n">_evi_layer</span> <span class="o">=</span> <span class="s1">&#39;EVI&#39;</span> <span class="c1">#self.vampire.get(&#39;MODIS_PRODUCTS&#39;, &#39;{0}.EVI_Name&#39;.format(_product))</span>
+        <span class="n">file_string</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">MODISEVIDatasetImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">generate_extract_section</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">_data_dir</span><span class="p">,</span>
+                                                                                <span class="n">output_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span>
+                                                                                <span class="n">product</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product</span><span class="p">,</span>
+                                                                                <span class="n">layer</span><span class="o">=</span><span class="n">_evi_layer</span><span class="p">,</span>
+                                                                                <span class="n">file_pattern</span><span class="o">=</span><span class="n">_modis_pattern</span><span class="p">,</span>
+                                                                                <span class="n">output_pattern</span><span class="o">=</span><span class="n">_evi_output_pattern</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">file_string</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

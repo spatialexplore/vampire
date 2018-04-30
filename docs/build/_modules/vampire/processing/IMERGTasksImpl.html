@@ -1,0 +1,414 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.IMERGTasksImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.IMERGTasksImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">cookielib</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">urllib2</span>
+
+<span class="kn">import</span> <span class="nn">dateutil</span>
+<span class="kn">import</span> <span class="nn">dateutil.relativedelta</span>
+<span class="kn">import</span> <span class="nn">gdal</span>
+<span class="kn">import</span> <span class="nn">osr</span>
+
+<span class="kn">import</span> <span class="nn">BaseTaskImpl</span>
+<span class="kn">import</span> <span class="nn">directory_utils</span>
+<span class="kn">import</span> <span class="nn">filename_utils</span>
+<span class="kn">import</span> <span class="nn">VampireDefaults</span>
+
+<span class="c1">#import h5py</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">calculate_statistics_arc</span> <span class="k">as</span> <span class="nn">calculate_statistics</span>
+    <span class="kn">import</span> <span class="nn">precipitation_analysis_arc</span> <span class="k">as</span> <span class="nn">precip_analysis</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">calculate_statistics_os</span> <span class="k">as</span> <span class="nn">calculate_statistics</span>
+    <span class="kn">import</span> <span class="nn">precipitation_analysis_os</span> <span class="k">as</span> <span class="nn">precip_analysis</span>
+
+
+<div class="viewcode-block" id="IMERGTasksImpl"><a class="viewcode-back" href="../../../vampire.processing.IMERGTasksImpl.html#vampire.processing.IMERGTasksImpl.IMERGTasksImpl">[docs]</a><span class="k">class</span> <span class="nc">IMERGTasksImpl</span><span class="p">():</span>
+    <span class="n">subclasses</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="IMERGTasksImpl.register_subclass"><a class="viewcode-back" href="../../../vampire.processing.IMERGTasksImpl.html#vampire.processing.IMERGTasksImpl.IMERGTasksImpl.register_subclass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">register_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">product_type</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">subclass</span><span class="p">):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">product_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">subclass</span>
+            <span class="k">return</span> <span class="n">subclass</span>
+        <span class="k">return</span> <span class="n">decorator</span></div>
+
+<div class="viewcode-block" id="IMERGTasksImpl.create"><a class="viewcode-back" href="../../../vampire.processing.IMERGTasksImpl.html#vampire.processing.IMERGTasksImpl.IMERGTasksImpl.create">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">process_type</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">process_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad process type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">process_type</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">vampire_defaults</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">VampireDefaults</span><span class="o">.</span><span class="n">VampireDefaults</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">process_type</span><span class="p">](</span><span class="n">params</span><span class="p">,</span> <span class="n">vp</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="IMERGDownloadTask"><a class="viewcode-back" href="../../../vampire.processing.IMERGTasksImpl.html#vampire.processing.IMERGTasksImpl.IMERGDownloadTask">[docs]</a><span class="nd">@IMERGTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;download&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">IMERGDownloadTask</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise IMERGDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading IMERG products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">IMERGDownloadTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising IMERG download task&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="IMERGDownloadTask.process"><a class="viewcode-back" href="../../../vampire.processing.IMERGTasksImpl.html#vampire.processing.IMERGTasksImpl.IMERGDownloadTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Downloading IMERG data&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No ouput directory &#39;output_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="n">_dates</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_start_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_end_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_overwrite</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="s1">&#39;dates&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_dates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;dates&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;start_date&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_start_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;end_date&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_end_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;overwrite&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_overwrite</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">download_data</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;interval&#39;</span><span class="p">],</span> <span class="n">dates</span><span class="o">=</span><span class="n">_dates</span><span class="p">,</span> <span class="n">start_date</span><span class="o">=</span><span class="n">_start_date</span><span class="p">,</span>
+                         <span class="n">end_date</span><span class="o">=</span><span class="n">_end_date</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">_overwrite</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="IMERGDownloadTask.download_data"><a class="viewcode-back" href="../../../vampire.processing.IMERGTasksImpl.html#vampire.processing.IMERGTasksImpl.IMERGDownloadTask.download_data">[docs]</a>    <span class="k">def</span> <span class="nf">download_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">dates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">start_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Download IMERG precipitation data for given interval.</span>
+
+<span class="sd">        Download IMERG precipitation data for given interval. Will download all available data unless start</span>
+<span class="sd">        and/or end dates are provided.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        output_dir : str</span>
+<span class="sd">            Filename of raster file</span>
+<span class="sd">        interval : str</span>
+<span class="sd">            Filename of vector file</span>
+<span class="sd">        dates : str</span>
+<span class="sd">            Name of field labelling the zones within vector file</span>
+<span class="sd">        start_date : str</span>
+<span class="sd">            Filename of output table (.dbf or .csv)</span>
+<span class="sd">        end_date : str</span>
+<span class="sd">            F</span>
+<span class="sd">        overwrite : boolean</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">            Returns None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">)</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Create a password manager to deal with the 401 reponse that is returned from</span>
+        <span class="c1"># Earthdata Login</span>
+        <span class="n">password_manager</span> <span class="o">=</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">HTTPPasswordMgrWithDefaultRealm</span><span class="p">()</span>
+        <span class="n">password_manager</span><span class="o">.</span><span class="n">add_password</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;https://urs.earthdata.nasa.gov&quot;</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+
+        <span class="c1"># Create a cookie jar for storing cookies. This is used to store and return</span>
+        <span class="c1"># the session cookie given to use by the data server (otherwise it will just</span>
+        <span class="c1"># keep sending us back to Earthdata Login to authenticate).  Ideally, we</span>
+        <span class="c1"># should use a file based cookie jar to preserve cookies between runs. This</span>
+        <span class="c1"># will make it much more efficient.</span>
+        <span class="n">cookie_jar</span> <span class="o">=</span> <span class="n">cookielib</span><span class="o">.</span><span class="n">CookieJar</span><span class="p">()</span>
+
+        <span class="c1"># Install all the handlers.</span>
+
+        <span class="n">opener</span> <span class="o">=</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">build_opener</span><span class="p">(</span>
+            <span class="n">urllib2</span><span class="o">.</span><span class="n">HTTPBasicAuthHandler</span><span class="p">(</span><span class="n">password_manager</span><span class="p">),</span>
+            <span class="c1">#urllib2.HTTPHandler(debuglevel=1),    # Uncomment these two lines to see</span>
+            <span class="c1">#urllib2.HTTPSHandler(debuglevel=1),   # details of the requests/responses</span>
+            <span class="n">urllib2</span><span class="o">.</span><span class="n">HTTPCookieProcessor</span><span class="p">(</span><span class="n">cookie_jar</span><span class="p">))</span>
+        <span class="n">urllib2</span><span class="o">.</span><span class="n">install_opener</span><span class="p">(</span><span class="n">opener</span><span class="p">)</span>
+
+        <span class="n">_start_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_end_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">dates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># download between start and end dates</span>
+            <span class="k">if</span> <span class="n">start_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">end_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_start_date</span> <span class="o">=</span> <span class="n">start_date</span>
+                <span class="n">_end_date</span> <span class="o">=</span> <span class="n">end_date</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># do something else!</span>
+                <span class="k">if</span> <span class="n">start_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">_start_date</span> <span class="o">=</span> <span class="n">start_date</span>
+                    <span class="n">_end_date</span> <span class="o">=</span> <span class="n">start_date</span>
+                <span class="k">else</span><span class="p">:</span> <span class="c1"># end_date is not None</span>
+                    <span class="n">_end_date</span> <span class="o">=</span> <span class="n">end_date</span>
+                    <span class="n">_start_date</span> <span class="o">=</span> <span class="n">end_date</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># get from first day of month for first date in list to last day in month of last date in list</span>
+            <span class="n">_start_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">dates</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;%Y-%m&#39;</span><span class="p">)</span>
+            <span class="n">_end_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">dates</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;%Y-%m&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">dateutil</span><span class="o">.</span><span class="n">relativedelta</span><span class="o">.</span><span class="n">relativedelta</span><span class="p">(</span><span class="n">day</span><span class="o">=</span><span class="mi">31</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">end_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">_end_date</span> <span class="o">&gt;</span> <span class="n">end_date</span><span class="p">:</span>
+                <span class="n">_end_date</span> <span class="o">=</span> <span class="n">end_date</span>
+        <span class="n">_i_date</span> <span class="o">=</span> <span class="n">_start_date</span>
+        <span class="n">files_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="n">_i_date</span> <span class="o">&lt;</span> <span class="n">_end_date</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;IMERG&#39;</span><span class="p">,</span> <span class="s1">&#39;default_product&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;GPM_3IMERGDL.05&#39;</span><span class="p">:</span>
+                <span class="n">_version</span> <span class="o">=</span> <span class="s1">&#39;05&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_version</span> <span class="o">=</span> <span class="s1">&#39;04&#39;</span>
+            <span class="n">_imerg_file</span> <span class="o">=</span> <span class="s1">&#39;3B-DAY-L.MS.MRG.3IMERG.</span><span class="si">{0}{1:0&gt;2}{2:0&gt;2}</span><span class="s1">-S000000-E235959.V</span><span class="si">{3}</span><span class="s1">.nc4&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_i_date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+                                                                                                     <span class="n">_i_date</span><span class="o">.</span><span class="n">month</span><span class="p">,</span>
+                                                                                                     <span class="n">_i_date</span><span class="o">.</span><span class="n">day</span><span class="p">,</span>
+                                                                                                     <span class="n">_version</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_imerg_file</span><span class="p">)):</span>
+                <span class="c1"># The url of the file we wish to retrieve</span>
+                <span class="c1"># url = url_base product/year/month/imerg_file</span>
+                <span class="n">_url</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}{1}</span><span class="s1">/</span><span class="si">{2}</span><span class="s1">/</span><span class="si">{3:0&gt;2}</span><span class="s1">/</span><span class="si">{4}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;IMERG&#39;</span><span class="p">,</span> <span class="s1">&#39;base_url&#39;</span><span class="p">),</span>
+                                                   <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;IMERG&#39;</span><span class="p">,</span> <span class="s1">&#39;default_product&#39;</span><span class="p">),</span>
+                                                   <span class="n">_i_date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">_i_date</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">_imerg_file</span><span class="p">)</span>
+
+                <span class="c1"># Create and submit the request. There are a wide range of exceptions that</span>
+                <span class="c1"># can be thrown here, including HTTPError and URLError. These should be</span>
+                <span class="c1"># caught and handled.</span>
+                <span class="n">_request</span> <span class="o">=</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">_url</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">_response</span> <span class="o">=</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">_request</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;HTTPError, url: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_url</span><span class="p">))</span>
+                    <span class="n">_i_date</span> <span class="o">+=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="n">_outfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_imerg_file</span><span class="p">)</span>
+                <span class="n">total_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">_response</span><span class="o">.</span><span class="n">info</span><span class="p">()</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="s1">&#39;Content-Length&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                <span class="n">downloaded</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">CHUNK</span> <span class="o">=</span> <span class="mi">256</span> <span class="o">*</span> <span class="mi">10240</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">_outfile</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                        <span class="n">chunk</span> <span class="o">=</span> <span class="n">_response</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">CHUNK</span><span class="p">)</span>
+                        <span class="n">downloaded</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">chunk</span><span class="p">:</span> <span class="k">break</span>
+                        <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+                <span class="n">files_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_outfile</span><span class="p">)</span>
+            <span class="c1"># get the .xml too</span>
+            <span class="n">_imerg_xml</span> <span class="o">=</span> <span class="s1">&#39;3B-DAY-L.MS.MRG.3IMERG.</span><span class="si">{0}{1:0&gt;2}{2:0&gt;2}</span><span class="s1">-S000000-E235959.V</span><span class="si">{3}</span><span class="s1">.nc4.xml&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_i_date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+                                                                                                        <span class="n">_i_date</span><span class="o">.</span><span class="n">month</span><span class="p">,</span>
+                                                                                                        <span class="n">_i_date</span><span class="o">.</span><span class="n">day</span><span class="p">,</span>
+                                                                                                        <span class="n">_version</span><span class="p">)</span>
+            <span class="n">_imerg_xml_output</span> <span class="o">=</span> <span class="s1">&#39;3B-DAY-L.MS.MRG.3IMERG.</span><span class="si">{0}{1:0&gt;2}{2:0&gt;2}</span><span class="s1">-S000000-E235959.V</span><span class="si">{3}</span><span class="s1">.nc4.aux.xml&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_i_date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+                                                                                                                   <span class="n">_i_date</span><span class="o">.</span><span class="n">month</span><span class="p">,</span>
+                                                                                                                   <span class="n">_i_date</span><span class="o">.</span><span class="n">day</span><span class="p">,</span>
+                                                                                                                   <span class="n">_version</span><span class="p">)</span>
+            <span class="n">_url</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}{1}</span><span class="s1">/</span><span class="si">{2}</span><span class="s1">/</span><span class="si">{3:0&gt;2}</span><span class="s1">/</span><span class="si">{4}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;IMERG&#39;</span><span class="p">,</span> <span class="s1">&#39;base_url&#39;</span><span class="p">),</span>
+                                                   <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;IMERG&#39;</span><span class="p">,</span> <span class="s1">&#39;default_product&#39;</span><span class="p">),</span>
+                                                   <span class="n">_i_date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">_i_date</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">_imerg_xml</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_imerg_xml</span><span class="p">)):</span>
+                <span class="n">_request</span> <span class="o">=</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">_url</span><span class="p">)</span>
+                <span class="n">_response</span> <span class="o">=</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">_request</span><span class="p">)</span>
+                <span class="n">_body</span> <span class="o">=</span> <span class="n">_response</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+                <span class="n">_outfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_imerg_xml_output</span><span class="p">)</span>
+                <span class="n">_outfp</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">_outfile</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+                <span class="n">_outfp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_body</span><span class="p">)</span>
+            <span class="n">_i_date</span> <span class="o">+=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">files_list</span></div></div>
+
+<div class="viewcode-block" id="IMERGExtractTask"><a class="viewcode-back" href="../../../vampire.processing.IMERGTasksImpl.html#vampire.processing.IMERGTasksImpl.IMERGExtractTask">[docs]</a><span class="nd">@IMERGTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;extract&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">IMERGExtractTask</span><span class="p">(</span><span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">BaseTaskImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise IMERGExtractTask object.</span>
+
+<span class="sd">    Implementation class for extracting precipitation from IMERG products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">IMERGExtractTask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising IMERG extract task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="IMERGExtractTask.process"><a class="viewcode-back" href="../../../vampire.processing.IMERGTasksImpl.html#vampire.processing.IMERGTasksImpl.IMERGExtractTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Extracting IMERG data&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_input_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No input directory &#39;input_dir&#39; set.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BaseTaskImpl</span><span class="o">.</span><span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No output directory &#39;output_dir&#39; set.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;file_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_file_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;file_pattern&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_file_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;IMERG&#39;</span><span class="p">,</span> <span class="s1">&#39;global_daily_pattern&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;output_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_pattern&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;IMERG&#39;</span><span class="p">,</span> <span class="s1">&#39;global_precip_output_pattern&#39;</span><span class="p">)</span>
+        <span class="n">patterns</span> <span class="o">=</span> <span class="p">(</span><span class="n">_file_pattern</span><span class="p">,</span> <span class="n">_output_pattern</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;layer&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_subset_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;layer&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_subset_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;IMERG&#39;</span><span class="p">,</span> <span class="s1">&#39;subset_name&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;overwrite&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_overwrite</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;overwrite&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_overwrite</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">_files</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">_spectral_subset</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;IMERG&#39;</span><span class="p">,</span> <span class="s1">&#39;spectral_subset&#39;</span><span class="p">))</span>
+
+        <span class="n">new_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_subset</span><span class="p">(</span><span class="n">_input_dir</span><span class="p">,</span> <span class="n">_output_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span>
+                                         <span class="n">_spectral_subset</span><span class="p">,</span> <span class="n">_subset_name</span><span class="p">,</span> <span class="n">_overwrite</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_files</span></div>
+
+    <span class="k">def</span> <span class="nf">_extract_subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">subset</span><span class="p">,</span> <span class="n">subset_name</span><span class="p">,</span> <span class="n">overwrite</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering _extract_subset&#39;</span><span class="p">)</span>
+        <span class="n">_all_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_all_files</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Extracting subset </span><span class="si">{0}</span><span class="s1">. No files found in </span><span class="si">{1}</span><span class="s1"> with pattern </span><span class="si">{2}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">subset_name</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;No files found in &#39;</span> <span class="o">+</span> <span class="n">input_dir</span> <span class="o">+</span> <span class="s1">&#39;, please check directory and try again&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="c1"># check output directory exists and create it if not</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">output_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="n">new_files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">_sr</span> <span class="o">=</span> <span class="n">osr</span><span class="o">.</span><span class="n">SpatialReference</span><span class="p">()</span>
+        <span class="n">_sr</span><span class="o">.</span><span class="n">ImportFromEPSG</span><span class="p">(</span><span class="mi">4326</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">_ifl</span> <span class="ow">in</span> <span class="n">_all_files</span><span class="p">:</span>
+            <span class="c1"># generate output file</span>
+            <span class="n">_nfl</span> <span class="o">=</span> <span class="n">filename_utils</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_ifl</span><span class="p">),</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">_ofl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_nfl</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_ofl</span><span class="p">)</span> <span class="ow">or</span> <span class="n">overwrite</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">gdal</span><span class="o">.</span><span class="n">SetConfigOption</span><span class="p">(</span> <span class="s1">&#39;CPL_DEBUG&#39;</span><span class="p">,</span> <span class="s1">&#39;ON&#39;</span> <span class="p">)</span>
+                    <span class="n">gdal</span><span class="o">.</span><span class="n">UseExceptions</span><span class="p">()</span>
+                    <span class="n">_name_str</span> <span class="o">=</span> <span class="s1">&#39;HDF5:&quot;</span><span class="si">{0}</span><span class="s1">&quot;://</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_ifl</span><span class="p">,</span> <span class="n">subset_name</span><span class="p">)</span>
+                    <span class="n">src_ds</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span><span class="n">_name_str</span><span class="p">)</span>
+                    <span class="n">_proj</span> <span class="o">=</span> <span class="n">src_ds</span><span class="o">.</span><span class="n">GetProjection</span><span class="p">()</span>
+                    <span class="nb">print</span> <span class="n">_proj</span>
+                    <span class="n">_geotransform</span> <span class="o">=</span> <span class="n">src_ds</span><span class="o">.</span><span class="n">GetGeoTransform</span><span class="p">()</span>
+                    <span class="nb">print</span> <span class="n">_geotransform</span>
+                    <span class="n">src_ds</span><span class="o">.</span><span class="n">SetProjection</span><span class="p">(</span><span class="n">_sr</span><span class="o">.</span><span class="n">ExportToWkt</span><span class="p">())</span>
+                    <span class="n">src_ds</span><span class="o">.</span><span class="n">SetGeoTransform</span><span class="p">([</span><span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">90</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">])</span>
+                    <span class="nb">print</span> <span class="n">src_ds</span><span class="o">.</span><span class="n">RasterCount</span>
+                    <span class="nb">print</span> <span class="n">src_ds</span><span class="o">.</span><span class="n">GetMetadata</span><span class="p">()</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="n">src_ds</span><span class="o">.</span><span class="n">RasterXSize</span>
+                    <span class="n">_band</span> <span class="o">=</span> <span class="n">src_ds</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">_data</span> <span class="o">=</span> <span class="n">_band</span><span class="o">.</span><span class="n">ReadAsArray</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+                    <span class="n">stats</span> <span class="o">=</span> <span class="n">_band</span><span class="o">.</span><span class="n">GetStatistics</span><span class="p">(</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span> <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">continue</span>
+
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;[ STATS ] =  Minimum=</span><span class="si">%.3f</span><span class="s1">, Maximum=</span><span class="si">%.3f</span><span class="s1">, Mean=</span><span class="si">%.3f</span><span class="s1">, StdDev=</span><span class="si">%.3f</span><span class="s1">&#39;</span> <span class="o">%</span>
+                                 <span class="p">(</span><span class="n">stats</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stats</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">stats</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">stats</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
+                    <span class="n">ysize</span><span class="p">,</span><span class="n">xsize</span> <span class="o">=</span> <span class="n">_data</span><span class="o">.</span><span class="n">shape</span>
+                    <span class="n">tif</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GetDriverByName</span><span class="p">(</span><span class="s1">&#39;GTiff&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">_ofl</span><span class="p">,</span> <span class="n">xsize</span><span class="p">,</span> <span class="n">ysize</span><span class="p">,</span> <span class="n">eType</span><span class="o">=</span><span class="n">gdal</span><span class="o">.</span><span class="n">GDT_Float32</span><span class="p">)</span>
+                    <span class="n">tif</span><span class="o">.</span><span class="n">SetProjection</span><span class="p">(</span><span class="n">src_ds</span><span class="o">.</span><span class="n">GetProjection</span><span class="p">())</span>
+                    <span class="n">tif</span><span class="o">.</span><span class="n">SetGeoTransform</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">src_ds</span><span class="o">.</span><span class="n">GetGeoTransform</span><span class="p">()))</span>
+                    <span class="n">band</span> <span class="o">=</span> <span class="n">tif</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">band</span><span class="o">.</span><span class="n">WriteArray</span><span class="p">(</span><span class="n">_data</span><span class="p">)</span>
+                    <span class="n">band</span><span class="o">.</span><span class="n">FlushCache</span><span class="p">()</span>
+                    <span class="n">band</span><span class="o">.</span><span class="n">SetNoDataValue</span><span class="p">(</span><span class="o">-</span><span class="mf">9999.900390625</span><span class="p">)</span>
+                    <span class="n">tif</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># closes file</span>
+                <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Unable to open file&#39;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="k">if</span> <span class="n">src_ds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Unable to open file </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_ifl</span><span class="p">))</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span>
+                <span class="n">new_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_ofl</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;leaving _extract_subset&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_files</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

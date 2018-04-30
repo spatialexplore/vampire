@@ -1,0 +1,253 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.PublishTasksImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.PublishTasksImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">GISServer</span>
+<span class="kn">import</span> <span class="nn">PublishProductTasksImpl</span>
+<span class="kn">import</span> <span class="nn">directory_utils</span>
+<span class="kn">import</span> <span class="nn">database_utils</span>
+<span class="kn">import</span> <span class="nn">VampireDefaults</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PublishTasksImpl"><a class="viewcode-back" href="../../../vampire.processing.PublishTasksImpl.html#vampire.processing.PublishTasksImpl.PublishTasksImpl">[docs]</a><span class="k">class</span> <span class="nc">PublishTasksImpl</span><span class="p">():</span>
+    <span class="n">subclasses</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="PublishTasksImpl.register_subclass"><a class="viewcode-back" href="../../../vampire.processing.PublishTasksImpl.html#vampire.processing.PublishTasksImpl.PublishTasksImpl.register_subclass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">register_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">product_type</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">subclass</span><span class="p">):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">product_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">subclass</span>
+            <span class="k">return</span> <span class="n">subclass</span>
+        <span class="k">return</span> <span class="n">decorator</span></div>
+
+<div class="viewcode-block" id="PublishTasksImpl.create"><a class="viewcode-back" href="../../../vampire.processing.PublishTasksImpl.html#vampire.processing.PublishTasksImpl.PublishTasksImpl.create">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">process_type</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">process_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad process type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">process_type</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">vampire_defaults</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">VampireDefaults</span><span class="o">.</span><span class="n">VampireDefaults</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">process_type</span><span class="p">](</span><span class="n">params</span><span class="p">,</span> <span class="n">vp</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="PublishToGISServerTask"><a class="viewcode-back" href="../../../vampire.processing.PublishTasksImpl.html#vampire.processing.PublishTasksImpl.PublishToGISServerTask">[docs]</a><span class="nd">@PublishTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;gis_server&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishToGISServerTask</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising publish to GIS server task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product</span> <span class="o">=</span> <span class="n">PublishProductTasksImpl</span><span class="o">.</span><span class="n">PublishProductTasksImpl</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;product&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+                                                                              <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">GISServer</span><span class="o">.</span><span class="n">GISServer</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;gis_server&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="PublishToGISServerTask.process"><a class="viewcode-back" href="../../../vampire.processing.PublishTasksImpl.html#vampire.processing.PublishTasksImpl.PublishToGISServerTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product</span><span class="p">)</span>
+<span class="c1">#        self.move_output_to_gisserver()</span>
+<span class="c1">#        self.upload_to_db()</span>
+        <span class="k">return</span></div></div>
+
+
+
+
+<div class="viewcode-block" id="PublishToDatabaseTask"><a class="viewcode-back" href="../../../vampire.processing.PublishTasksImpl.html#vampire.processing.PublishTasksImpl.PublishToDatabaseTask">[docs]</a><span class="nd">@PublishTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PublishToDatabaseTask</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising publish to database task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product</span> <span class="o">=</span> <span class="n">PublishProductTasksImpl</span><span class="o">.</span><span class="n">PublishProductTasksImpl</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;product&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+                                                                              <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="PublishToDatabaseTask.process"><a class="viewcode-back" href="../../../vampire.processing.PublishTasksImpl.html#vampire.processing.PublishTasksImpl.PublishToDatabaseTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upload_impact_to_db</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="PublishToDatabaseTask.upload_impact_to_db"><a class="viewcode-back" href="../../../vampire.processing.PublishTasksImpl.html#vampire.processing.PublishTasksImpl.PublishToDatabaseTask.upload_impact_to_db">[docs]</a>    <span class="k">def</span> <span class="nf">upload_impact_to_db</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">):</span> <span class="c1">#, impact_type, start_date, vp</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_host</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_host&#39;</span><span class="p">)</span> <span class="c1">#&#39;localhost&#39;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span><span class="n">e</span><span class="p">:</span>
+            <span class="n">_host</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_host&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_user&#39;</span><span class="p">)</span> <span class="c1">#&#39;localhost&#39;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span><span class="n">e</span><span class="p">:</span>
+            <span class="n">_user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_user&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_password</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_pw&#39;</span><span class="p">)</span> <span class="c1">#&#39;localhost&#39;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span><span class="n">e</span><span class="p">:</span>
+            <span class="n">_password</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_pw&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_port&#39;</span><span class="p">)</span> <span class="c1">#&#39;localhost&#39;</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span><span class="n">e</span><span class="p">:</span>
+            <span class="n">_port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_port&#39;</span><span class="p">)</span>
+        <span class="n">_overwrite</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="s1">&#39;overwrite&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_overwrite</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">database_utils</span><span class="o">.</span><span class="n">insert_csv_to_table</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">product</span><span class="o">.</span><span class="n">database</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="n">_host</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">_port</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">_user</span><span class="p">,</span>
+                                                   <span class="n">password</span><span class="o">=</span><span class="n">_password</span><span class="p">,</span> <span class="n">table</span><span class="o">=</span><span class="n">product</span><span class="o">.</span><span class="n">table_name</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">product</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span>
+                                                   <span class="n">csv_file</span><span class="o">=</span><span class="n">product</span><span class="o">.</span><span class="n">product_filename</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">_overwrite</span><span class="p">)</span>
+    <span class="c1">#     _product_dir = product.product_dir</span>
+    <span class="c1">#     _filename_pattern = product.filename_pattern</span>
+    <span class="c1">#     _table_name = product.table_name</span>
+    <span class="c1">#</span>
+    <span class="c1">#     if product == &#39;vhi&#39;:</span>
+    <span class="c1">#         _product_dir = self.vp.get(&#39;hazard_impact&#39;, &#39;vhi_output_dir&#39;)</span>
+    <span class="c1">#         if self.impact_type == &#39;area&#39;:</span>
+    <span class="c1">#             _filename_pattern = self.vp.get(&#39;hazard_impact&#39;, &#39;vhi_area_pattern&#39;)</span>
+    <span class="c1">#             _table_name = self.vp.get(&#39;database&#39;, &#39;impact_area_table&#39;) #&#39;vhi_area&#39;</span>
+    <span class="c1">#             try:</span>
+    <span class="c1">#                 _schema = self.vp.get(&#39;database&#39;, &#39;impact_area_schema&#39;)</span>
+    <span class="c1">#             except Exception, e:</span>
+    <span class="c1">#                 _schema = self.vp.get(&#39;database&#39;, &#39;default_schema&#39;)</span>
+    <span class="c1"># #        _product_filename = os.path.join(_product_dir,</span>
+    <span class="c1"># #                                         &#39;lka_phy_MOD13Q1.%s.250m_16_days_vhi_area_dsd.csv&#39; % start_date.strftime(</span>
+    <span class="c1"># #                                             &#39;%Y.%m.%d&#39;))</span>
+    <span class="c1">#         elif self.impact_type == &#39;popn&#39;:</span>
+    <span class="c1">#             _filename_pattern = self.vp.get(&#39;hazard_impact&#39;, &#39;vhi_popn_pattern&#39;)</span>
+    <span class="c1">#             _table_name = self.vp.get(&#39;database&#39;, &#39;impact_popn_table&#39;) #&#39;vhi_popn&#39;</span>
+    <span class="c1">#             try:</span>
+    <span class="c1">#                 _schema = self.vp.get(&#39;database&#39;, &#39;impact_popn_schema&#39;)</span>
+    <span class="c1">#             except Exception, e:</span>
+    <span class="c1">#                 _schema = self.vp.get(&#39;database&#39;, &#39;default_schema&#39;)</span>
+    <span class="c1">#         elif self.impact_type == &#39;crops&#39;:</span>
+    <span class="c1">#             _filename_pattern = self.vp.get(&#39;hazard_impact&#39;, &#39;vhi_crops_pattern&#39;)</span>
+    <span class="c1">#             _table_name = self.vp.get(&#39;database&#39;, &#39;impact_crops_table&#39;) #&#39;vhi_crops&#39;</span>
+    <span class="c1">#             try:</span>
+    <span class="c1">#                 _schema = self.vp.get(&#39;database&#39;, &#39;impact_crops_schema&#39;)</span>
+    <span class="c1">#             except Exception, e:</span>
+    <span class="c1">#                 _schema = self.vp.get(&#39;database&#39;, &#39;default_schema&#39;)</span>
+    <span class="c1">#         elif self.impact_type == &#39;poverty&#39;:</span>
+    <span class="c1">#             _filename_pattern = self.vp.get(&#39;hazard_impact&#39;, &#39;vhi_poverty_pattern&#39;)</span>
+    <span class="c1">#             _table_name = self.vp.get(&#39;database&#39;, &#39;impact_poverty_table&#39;)  # &#39;vhi_crops&#39;</span>
+    <span class="c1">#             try:</span>
+    <span class="c1">#                 _schema = self.vp.get(&#39;database&#39;, &#39;impact_poverty_schema&#39;)</span>
+    <span class="c1">#             except Exception, e:</span>
+    <span class="c1">#                 _schema = self.vp.get(&#39;database&#39;, &#39;default_schema&#39;)</span>
+    <span class="c1">#         else:</span>
+    <span class="c1">#             raise ValueError(&#39;Invalid impact type {0}&#39;.format(self.impact_type))</span>
+    <span class="c1">#         _filename_pattern = _filename_pattern.replace(&#39;(?P&lt;year&gt;\d{4})&#39;, &#39;(?P&lt;year&gt;{0})&#39;.format(self.start_date.year))</span>
+    <span class="c1">#         _filename_pattern = _filename_pattern.replace(&#39;(?P&lt;month&gt;\d{2})&#39;, &#39;(?P&lt;month&gt;{0:0&gt;2})&#39;.format(self.start_date.month))</span>
+    <span class="c1">#         _filename_pattern = _filename_pattern.replace(&#39;(?P&lt;day&gt;\d{2})&#39;, &#39;(?P&lt;day&gt;{0:0&gt;2})&#39;.format(self.start_date.day))</span>
+    <span class="c1">#         _filenames = directory_utils.get_matching_files(_product_dir, _filename_pattern)</span>
+    <span class="c1">#         if _filenames is not None:</span>
+    <span class="c1">#             _product_filename = _filenames[0]</span>
+    <span class="c1">#         else:</span>
+    <span class="c1">#             _product_filename = None</span>
+    <span class="c1">#             raise ValueError(&quot;No product filename found in upload_impact_to_db&quot;)</span>
+    <span class="c1">#</span>
+    <span class="c1">#         _database = self.vp.get(&#39;database&#39;, &#39;impact_db&#39;) #&#39;prima_impact&#39;</span>
+    <span class="c1">#         try:</span>
+    <span class="c1">#             _host = self.vp.get(&#39;database&#39;, &#39;impact_host&#39;) #&#39;localhost&#39;</span>
+    <span class="c1">#         except Exception,e:</span>
+    <span class="c1">#             _host = self.vp.get(&#39;database&#39;, &#39;default_host&#39;)</span>
+    <span class="c1">#         try:</span>
+    <span class="c1">#             _user = self.vp.get(&#39;database&#39;, &#39;impact_user&#39;) #&#39;localhost&#39;</span>
+    <span class="c1">#         except Exception,e:</span>
+    <span class="c1">#             _user = self.vp.get(&#39;database&#39;, &#39;default_user&#39;)</span>
+    <span class="c1">#         try:</span>
+    <span class="c1">#             _password = self.vp.get(&#39;database&#39;, &#39;impact_pw&#39;) #&#39;localhost&#39;</span>
+    <span class="c1">#         except Exception,e:</span>
+    <span class="c1">#             _password = self.vp.get(&#39;database&#39;, &#39;default_pw&#39;)</span>
+    <span class="c1">#         try:</span>
+    <span class="c1">#             _port = self.vp.get(&#39;database&#39;, &#39;impact_port&#39;) #&#39;localhost&#39;</span>
+    <span class="c1">#         except Exception,e:</span>
+    <span class="c1">#             _port = self.vp.get(&#39;database&#39;, &#39;default_port&#39;)</span>
+    <span class="c1">#         database_utils.insert_csv_to_table(database=_database, host=_host, port=_port, user=_user,</span>
+    <span class="c1">#                                                    password=_password, table=_table_name, schema=_schema,</span>
+    <span class="c1">#                                                    csv_file=_product_filename) #, overwrite=True)</span>
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

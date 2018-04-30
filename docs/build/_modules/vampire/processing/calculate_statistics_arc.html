@@ -1,0 +1,366 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.calculate_statistics_arc &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.calculate_statistics_arc</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">arcpy</span>
+<span class="kn">import</span> <span class="nn">dbfpy.dbf</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">csv_utils</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="calc_average"><a class="viewcode-back" href="../../../vampire.processing.calculate_statistics_arc.html#vampire.processing.calculate_statistics_arc.calc_average">[docs]</a><span class="k">def</span> <span class="nf">calc_average</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">avg_file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Calculate pixel-by-pixel average of a list of rasters and save result as new raster. </span>
+<span class="sd">    </span>
+<span class="sd">    For each pixel, calculate the average of values in the list of rasters. Uses ArcPy</span>
+<span class="sd">    CellStatistics function. Requires an ArcGIS SpatialAnalyst licence.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_list : list</span>
+<span class="sd">        List of raster files</span>
+<span class="sd">    avg_file : str</span>
+<span class="sd">        Filename of output file</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">        Returns None</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_cellsize</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span>
+    <span class="n">_extent</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="s2">&quot;MAXOF&quot;</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="s2">&quot;MAXOF&quot;</span>
+    <span class="n">outRaster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">CellStatistics</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="s2">&quot;MEAN&quot;</span><span class="p">)</span>
+    <span class="c1"># Save the output</span>
+    <span class="n">outRaster</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">avg_file</span><span class="p">)</span>
+<span class="c1">#    print &quot;saved avg in: &quot;, avg_file</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="n">_cellsize</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="n">_extent</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="calc_min"><a class="viewcode-back" href="../../../vampire.processing.calculate_statistics_arc.html#vampire.processing.calculate_statistics_arc.calc_min">[docs]</a><span class="k">def</span> <span class="nf">calc_min</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">min_file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Calculate pixel-by-pixel minimum of a list of rasters and save result as new raster. </span>
+<span class="sd">    </span>
+<span class="sd">    For each pixel, calculate the minimum of values in the list of rasters. Uses ArcPy</span>
+<span class="sd">    CellStatistics function. Requires an ArcGIS SpatialAnalyst licence.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_list : list</span>
+<span class="sd">        List of raster files</span>
+<span class="sd">    min_file : str</span>
+<span class="sd">        Filename of output file</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">        Returns None</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#    print &quot;calcMin: &quot;, file_list</span>
+    <span class="n">_cellsize</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span>
+    <span class="n">_extent</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="s2">&quot;MAXOF&quot;</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="s2">&quot;MAXOF&quot;</span>
+    <span class="n">outRaster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">CellStatistics</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="s2">&quot;MINIMUM&quot;</span><span class="p">)</span>
+    <span class="c1"># Save the output</span>
+    <span class="n">outRaster</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">min_file</span><span class="p">)</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="n">_cellsize</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="n">_extent</span>
+<span class="c1">#    print &quot;saved minimum in: &quot;, min_file</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="calc_max"><a class="viewcode-back" href="../../../vampire.processing.calculate_statistics_arc.html#vampire.processing.calculate_statistics_arc.calc_max">[docs]</a><span class="k">def</span> <span class="nf">calc_max</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">max_file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Calculate pixel-by-pixel maximum of a list of rasters and save result as new raster. </span>
+<span class="sd">    </span>
+<span class="sd">    For each pixel, calculate the maximum of values in the list of rasters. Uses ArcPy</span>
+<span class="sd">    CellStatistics function. Requires an ArcGIS SpatialAnalyst licence.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_list : list</span>
+<span class="sd">        List of raster files</span>
+<span class="sd">    max_file : str</span>
+<span class="sd">        Filename of output file</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">        Returns None</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#    print &quot;calcAverage: &quot;, file_list</span>
+    <span class="n">_cellsize</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span>
+    <span class="n">_extent</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="s2">&quot;MAXOF&quot;</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="s2">&quot;MAXOF&quot;</span>
+    <span class="n">outRaster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">CellStatistics</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="s2">&quot;MAXIMUM&quot;</span><span class="p">)</span>
+    <span class="c1"># Save the output</span>
+    <span class="n">outRaster</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">max_file</span><span class="p">)</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="n">_cellsize</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="n">_extent</span>
+<span class="c1">#    print &quot;saved maximum in: &quot;, max_file</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="calc_std_dev"><a class="viewcode-back" href="../../../vampire.processing.calculate_statistics_arc.html#vampire.processing.calculate_statistics_arc.calc_std_dev">[docs]</a><span class="k">def</span> <span class="nf">calc_std_dev</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">sd_file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Calculate pixel-by-pixel standard deviation of a list of rasters and save result as new raster. </span>
+<span class="sd">    </span>
+<span class="sd">    For each pixel, calculate the standard deviation of values in the list of rasters. Uses ArcPy</span>
+<span class="sd">    CellStatistics function. Requires an ArcGIS SpatialAnalyst licence.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_list : list</span>
+<span class="sd">        List of raster files</span>
+<span class="sd">    sd_file : str</span>
+<span class="sd">        Filename of output file</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">        Returns None</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#    print &quot;calcStDev: &quot;, file_list</span>
+    <span class="n">_cellsize</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span>
+    <span class="n">_extent</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="s2">&quot;MAXOF&quot;</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="s2">&quot;MAXOF&quot;</span>
+    <span class="n">outRaster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">CellStatistics</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="s2">&quot;STD&quot;</span><span class="p">)</span>
+    <span class="c1"># Save the output</span>
+    <span class="n">outRaster</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">sd_file</span><span class="p">)</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="n">_cellsize</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="n">_extent</span>
+<span class="c1">#    print &quot;saved standard deviation in: &quot;, sd_file</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="calc_sum"><a class="viewcode-back" href="../../../vampire.processing.calculate_statistics_arc.html#vampire.processing.calculate_statistics_arc.calc_sum">[docs]</a><span class="k">def</span> <span class="nf">calc_sum</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">sum_file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Calculate pixel-by-pixel sum of a list of rasters and save result as new raster. </span>
+<span class="sd">    </span>
+<span class="sd">    For each pixel, calculate the sum of values in the list of rasters. Uses ArcPy</span>
+<span class="sd">    CellStatistics function. Requires an ArcGIS SpatialAnalyst licence.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_list : list</span>
+<span class="sd">        List of raster files</span>
+<span class="sd">    sum_file : str</span>
+<span class="sd">        Filename of output file</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">        Returns None</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1">#    print &quot;calcSum: &quot;, file_list</span>
+    <span class="n">_cellsize</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span>
+    <span class="n">_extent</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="s2">&quot;MAXOF&quot;</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="s2">&quot;MAXOF&quot;</span>
+    <span class="n">outRaster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">CellStatistics</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="s2">&quot;SUM&quot;</span><span class="p">)</span>
+    <span class="c1"># Save the output</span>
+    <span class="n">outRaster</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">sum_file</span><span class="p">)</span>
+<span class="c1">#    print &quot;saved sum in: &quot;, sum_file</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="n">_cellsize</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="n">_extent</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="calc_average_of_day_night"><a class="viewcode-back" href="../../../vampire.processing.calculate_statistics_arc.html#vampire.processing.calculate_statistics_arc.calc_average_of_day_night">[docs]</a><span class="k">def</span> <span class="nf">calc_average_of_day_night</span><span class="p">(</span><span class="n">day_file</span><span class="p">,</span> <span class="n">night_file</span><span class="p">,</span> <span class="n">avg_file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Calculate pixel-by-pixel average of land surface temperature day and night rasters and save result as new raster. </span>
+
+<span class="sd">    For each pixel, calculate the mean of values in the two rasters. Uses ArcPy</span>
+<span class="sd">    CellStatistics function. Requires an ArcGIS SpatialAnalyst licence.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    day_file : str</span>
+<span class="sd">        Filename of day file</span>
+<span class="sd">    night_file : str</span>
+<span class="sd">        Filename of night file</span>
+<span class="sd">    avg_file : str</span>
+<span class="sd">        Filename of output file</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">        Returns None</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span> <span class="s2">&quot;calcAverage: &quot;</span><span class="p">,</span> <span class="n">day_file</span><span class="p">,</span> <span class="n">night_file</span>
+    <span class="c1">#an empty array/vector in which to store the different bands</span>
+    <span class="n">rasters</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1">#open rasters</span>
+    <span class="n">rasters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">day_file</span><span class="p">)</span>
+    <span class="n">rasters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">night_file</span><span class="p">)</span>
+    <span class="n">outRaster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">CellStatistics</span><span class="p">(</span><span class="n">rasters</span><span class="p">,</span> <span class="s2">&quot;MEAN&quot;</span><span class="p">,</span> <span class="s2">&quot;DATA&quot;</span><span class="p">)</span>
+    <span class="c1"># Save the output</span>
+    <span class="n">outRaster</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">avg_file</span><span class="p">)</span>
+    <span class="nb">print</span> <span class="s2">&quot;saved avg in: &quot;</span><span class="p">,</span> <span class="n">avg_file</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="calc_zonal_statistics"><a class="viewcode-back" href="../../../vampire.processing.calculate_statistics_arc.html#vampire.processing.calculate_statistics_arc.calc_zonal_statistics">[docs]</a><span class="k">def</span> <span class="nf">calc_zonal_statistics</span><span class="p">(</span><span class="n">raster_file</span><span class="p">,</span> <span class="n">polygon_file</span><span class="p">,</span> <span class="n">zone_field</span><span class="p">,</span> <span class="n">output_table</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Calculate zonal statistics for a raster and vector and save result as .dbf and .csv files. </span>
+
+<span class="sd">    For each polygon in the vector file, calculate set of statistics from the raster (sum, mean, max, min, count). </span>
+<span class="sd">    Uses ArcPy ZonalStatisticsAsTable function. Requires an ArcGIS SpatialAnalyst licence.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    raster_file : str</span>
+<span class="sd">        Filename of raster file</span>
+<span class="sd">    polygon_file : str</span>
+<span class="sd">        Filename of vector file</span>
+<span class="sd">    zone_field : str</span>
+<span class="sd">        Name of field labelling the zones within vector file</span>
+<span class="sd">    output_table : str</span>
+<span class="sd">        Filename of output table (.dbf or .csv)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">        Returns None</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">CheckOutExtension</span><span class="p">(</span><span class="s2">&quot;Spatial&quot;</span><span class="p">)</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">MakeFeatureLayer_management</span><span class="p">(</span><span class="n">polygon_file</span><span class="p">,</span> <span class="s2">&quot;layer&quot;</span><span class="p">)</span>
+    <span class="n">layer</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">mapping</span><span class="o">.</span><span class="n">Layer</span><span class="p">(</span><span class="s2">&quot;layer&quot;</span><span class="p">)</span>
+    <span class="c1"># First calculate statistics on raster.</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">CalculateStatistics_management</span><span class="p">(</span><span class="n">in_raster_dataset</span><span class="o">=</span><span class="n">raster_file</span><span class="p">)</span>
+    <span class="c1"># set up .dbf and .csv filenames</span>
+    <span class="k">if</span> <span class="n">output_table</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.dbf&#39;</span><span class="p">):</span>
+        <span class="n">_output_csv</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">output_table</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">_output_csv</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.csv&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_output_csv</span><span class="p">)</span>
+        <span class="n">_output_dbf</span> <span class="o">=</span> <span class="n">output_table</span>
+    <span class="k">elif</span> <span class="n">output_table</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.csv&#39;</span><span class="p">):</span>
+        <span class="n">_output_dbf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">output_table</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">_output_dbf</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.dbf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_output_dbf</span><span class="p">)</span>
+        <span class="n">_output_csv</span> <span class="o">=</span> <span class="n">output_table</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_output_dbf</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.dbf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_table</span><span class="p">)</span>
+        <span class="n">_output_csv</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.csv&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_table</span><span class="p">)</span>
+    <span class="n">_output_dbf</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.dbf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">raster_file</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_output_dbf</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">12</span><span class="p">:</span>
+        <span class="n">_output_dbf</span> <span class="o">=</span> <span class="s1">&#39;temp_output.dbf&#39;</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">workspace</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">raster_file</span><span class="p">)</span>
+    <span class="n">_output_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_output_dbf</span><span class="p">)</span>
+    <span class="c1"># now calculate zonal statistics as table</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">ZonalStatisticsAsTable</span><span class="p">(</span><span class="n">in_zone_data</span><span class="o">=</span><span class="n">layer</span><span class="p">,</span> <span class="n">zone_field</span><span class="o">=</span><span class="n">zone_field</span><span class="p">,</span>
+                                    <span class="n">in_value_raster</span><span class="o">=</span><span class="n">raster_file</span><span class="p">,</span><span class="n">out_table</span><span class="o">=</span><span class="n">_output_dbf</span><span class="p">,</span>
+                                    <span class="n">ignore_nodata</span><span class="o">=</span><span class="s2">&quot;DATA&quot;</span><span class="p">,</span> <span class="n">statistics_type</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">Exists</span><span class="p">(</span><span class="n">layer</span><span class="p">):</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">Delete_management</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+    <span class="c1"># convert to .csv</span>
+    <span class="n">csv_utils</span><span class="o">.</span><span class="n">convert_dbf_to_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">raster_file</span><span class="p">),</span> <span class="n">_output_dbf</span><span class="p">),</span> <span class="n">_output_csv</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="mosaic_rasters"><a class="viewcode-back" href="../../../vampire.processing.calculate_statistics_arc.html#vampire.processing.calculate_statistics_arc.mosaic_rasters">[docs]</a><span class="k">def</span> <span class="nf">mosaic_rasters</span><span class="p">(</span><span class="n">raster_file_list</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">mosaic_method</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Mosaic the list of files using the specified method and save to output_file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    raster_file : str</span>
+<span class="sd">        Filename of raster file</span>
+<span class="sd">    polygon_file : str</span>
+<span class="sd">        Filename of vector file</span>
+<span class="sd">    zone_field : str</span>
+<span class="sd">        Name of field labelling the zones within vector file</span>
+<span class="sd">    output_table : str</span>
+<span class="sd">        Filename of output table (.dbf or .csv)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">        Returns None</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">CheckOutExtension</span><span class="p">(</span><span class="s2">&quot;Spatial&quot;</span><span class="p">)</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">MosaicToNewRaster_management</span><span class="p">(</span><span class="n">input_rasters</span><span class="o">=</span><span class="n">raster_file_list</span><span class="p">,</span> <span class="n">output_location</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+                                       <span class="n">raster_dataset_name_with_extension</span><span class="o">=</span><span class="n">output_file</span><span class="p">,</span> <span class="n">mosaic_method</span><span class="o">=</span><span class="n">mosaic_method</span><span class="p">,</span>
+                                       <span class="n">number_of_bands</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

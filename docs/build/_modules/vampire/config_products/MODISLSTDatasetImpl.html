@@ -1,0 +1,296 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.MODISLSTDatasetImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_products.MODISLSTDatasetImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">MODISDatasetImpl</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">dateutil.rrule</span>
+<span class="kn">import</span> <span class="nn">dateutil.relativedelta</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MODISLSTDatasetImpl"><a class="viewcode-back" href="../../../vampire.config_products.MODISLSTDatasetImpl.html#vampire.config_products.MODISLSTDatasetImpl.MODISLSTDatasetImpl">[docs]</a><span class="k">class</span> <span class="nc">MODISLSTDatasetImpl</span><span class="p">(</span><span class="n">MODISDatasetImpl</span><span class="o">.</span><span class="n">MODISDatasetImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISLSTDatasetImpl object.</span>
+
+<span class="sd">    Implementation class for MODISLSTDataset.</span>
+<span class="sd">    Initialise object parameters and calculate start and end dates for dataset using product_date and interval.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    interval : string</span>
+<span class="sd">        Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal</span>
+<span class="sd">    product_date : datetime</span>
+<span class="sd">        Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding</span>
+<span class="sd">        the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,</span>
+<span class="sd">        the product_date refers to the start of the season (3 month period).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS LST dataset&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product</span> <span class="o">=</span> <span class="n">vampire_defaults</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;land_surface_temperature_product&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MODISLSTDatasetImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="o">=</span><span class="n">product_date</span><span class="p">,</span>
+                                                  <span class="n">vampire_defaults</span><span class="o">=</span><span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">product</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="n">region</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">day_of_year</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">product</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__product</span>
+
+    <span class="nd">@product</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__product</span> <span class="o">=</span> <span class="n">product</span>
+
+    <span class="sd">&quot;&quot;&quot; Generate a config file process for the dataset.</span>
+
+<span class="sd">    Generate VAMPIRE config file process(es) for the dataset including download and crop if specified.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_dir : string</span>
+<span class="sd">        Path for downloaded data. The data will be stored in this path under a directory with the interval name. If the</span>
+<span class="sd">        data_dir is None, the VAMPIRE default download directory will be used.</span>
+<span class="sd">    download : boolean</span>
+<span class="sd">        Flag indicating whether data should be downloaded. Default is True.</span>
+<span class="sd">    crop : boolean</span>
+<span class="sd">        Flag indicating whether data should be cropped to region. Default is True.</span>
+<span class="sd">    crop_dir : string</span>
+<span class="sd">        Path where cropped data will be stored. If None, the region code will be appended to the download data path.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    string</span>
+<span class="sd">        Returns string containing the configuration file process.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="MODISLSTDatasetImpl.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.MODISLSTDatasetImpl.html#vampire.config_products.MODISLSTDatasetImpl.MODISLSTDatasetImpl.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tiles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;MODISLSTDataset generate_config&#39;</span><span class="p">)</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">data_dir</span>
+        <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
+            <span class="n">config</span><span class="p">,</span> <span class="n">_output_dir</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">MODISLSTDatasetImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">generate_download</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="p">,</span> <span class="n">tiles</span><span class="p">)</span>
+
+        <span class="n">_lst_extract_day_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_day_dir&#39;</span><span class="p">)</span>
+        <span class="n">_lst_extract_night_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_night_dir&#39;</span><span class="p">)</span>
+
+        <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_extract_lst</span><span class="p">(</span><span class="n">product</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span>
+                                            <span class="n">day_dir</span><span class="o">=</span><span class="n">_lst_extract_day_dir</span><span class="p">,</span>
+                                            <span class="n">night_dir</span><span class="o">=</span><span class="n">_lst_extract_night_dir</span><span class="p">)</span>
+        <span class="n">_lst_average_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_dir&#39;</span><span class="p">)</span>
+        <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_average_lst</span><span class="p">(</span><span class="n">day_dir</span><span class="o">=</span><span class="n">_lst_extract_day_dir</span><span class="p">,</span> <span class="n">night_dir</span><span class="o">=</span><span class="n">_lst_extract_night_dir</span><span class="p">,</span>
+                                            <span class="n">output_dir</span><span class="o">=</span><span class="n">_lst_average_dir</span><span class="p">)</span>
+        <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">_lst_average_dir</span>
+        <span class="n">_crop</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;global&#39;</span> <span class="ow">or</span> <span class="n">crop</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="c1"># don&#39;t crop global</span>
+            <span class="n">_crop</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">_crop</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country&#39;</span><span class="p">):</span>
+                <span class="n">_boundary_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country_prefix&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_boundary_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;regional_prefix&#39;</span><span class="p">),</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+            <span class="n">_boundary_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_boundary_file</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;boundary_dir_suffix&#39;</span><span class="p">))</span>
+            <span class="n">_boundary_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_boundary_file</span><span class="p">,</span>
+                                          <span class="s1">&#39;</span><span class="si">{country}{filename}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                              <span class="n">country</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+                                              <span class="n">filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span>
+                                                                   <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.boundary_filename&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product</span><span class="p">))))</span>
+            <span class="n">_crop_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_regional_output_pattern&#39;</span><span class="p">)</span>
+            <span class="n">_crop_output_pattern</span> <span class="o">=</span> <span class="n">_crop_output_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{country}</span><span class="s1">&#39;</span><span class="p">,</span>
+                                                                <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()))</span>
+            <span class="k">if</span> <span class="n">crop_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;vampire&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">():</span>
+                    <span class="c1"># home country</span>
+                    <span class="n">_crop_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country_prefix&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># regional country - directory for output file</span>
+                    <span class="n">_crop_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS&#39;</span><span class="p">,</span> <span class="s1">&#39;regional_prefix&#39;</span><span class="p">),</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+                <span class="n">_crop_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_crop_dir</span><span class="p">,</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_dir_suffix&#39;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_crop_dir</span> <span class="o">=</span> <span class="n">crop_dir</span>
+            <span class="n">_crop_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_average_pattern&#39;</span><span class="p">)</span>
+            <span class="c1"># replace generic year and month in pattern with the specific ones needed so the correct file is found.</span>
+            <span class="n">_crop_pattern</span> <span class="o">=</span> <span class="n">_crop_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+            <span class="n">_crop_pattern</span> <span class="o">=</span> <span class="n">_crop_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;dayofyear&gt;\d</span><span class="si">{3}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;dayofyear&gt;</span><span class="si">{0:0&gt;3}</span><span class="s1">)&#39;</span><span class="o">.</span>
+                                                    <span class="nb">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">day_of_year</span><span class="p">))</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_crop_section</span><span class="p">(</span><span class="n">_lst_average_dir</span><span class="p">,</span> <span class="n">_crop_dir</span><span class="p">,</span> <span class="n">_crop_pattern</span><span class="p">,</span> <span class="n">_crop_output_pattern</span><span class="p">,</span>
+                                                 <span class="n">_boundary_file</span><span class="p">)</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">_crop_dir</span>
+        <span class="k">return</span> <span class="n">config</span><span class="p">,</span> <span class="n">_output_dir</span></div>
+
+<div class="viewcode-block" id="MODISLSTDatasetImpl.generate_extract_lst"><a class="viewcode-back" href="../../../vampire.config_products.MODISLSTDatasetImpl.html#vampire.config_products.MODISLSTDatasetImpl.MODISLSTDatasetImpl.generate_extract_lst">[docs]</a>    <span class="k">def</span> <span class="nf">generate_extract_lst</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">day_dir</span><span class="p">,</span> <span class="n">night_dir</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">data_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_data_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_download_dir&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_data_dir</span> <span class="o">=</span> <span class="n">data_dir</span>
+
+        <span class="c1"># setup directories for extracting Day &amp; Night data</span>
+        <span class="k">if</span> <span class="n">day_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_day_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_day_dir&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_day_dir</span> <span class="o">=</span> <span class="n">day_dir</span>
+
+        <span class="k">if</span> <span class="n">night_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_night_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_night_dir&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_night_dir</span> <span class="o">=</span> <span class="n">night_dir</span>
+
+        <span class="c1"># need to extract both day and night layers then average them</span>
+        <span class="c1"># pattern for files to extract from</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.mosaic_dir&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="p">))</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span> <span class="c1">#is None:</span>
+            <span class="c1"># no mosaic, so data uses day of year</span>
+            <span class="n">_modis_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_pattern&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># already mosaic&#39;d so use year.month.day format</span>
+            <span class="n">_modis_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_mosaic_pattern&#39;</span><span class="p">)</span>
+        <span class="c1"># replace generic year and month in pattern with the specific ones needed so the correct file is found.</span>
+        <span class="n">_modis_pattern</span> <span class="o">=</span> <span class="n">_modis_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+        <span class="n">_modis_pattern</span> <span class="o">=</span> <span class="n">_modis_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+        <span class="n">_modis_pattern</span> <span class="o">=</span> <span class="n">_modis_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;day&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+        <span class="n">_modis_pattern</span> <span class="o">=</span> <span class="n">_modis_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;dayofyear&gt;\d</span><span class="si">{3}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;dayofyear&gt;</span><span class="si">{0:0&gt;3}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">day_of_year</span><span class="p">))</span>
+        <span class="n">_lst_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_output_pattern&#39;</span><span class="p">)</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">MODISLSTDatasetImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">generate_extract_section</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">_data_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_day_dir</span><span class="p">,</span>
+                                                                                <span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s1">&#39;LST_Day&#39;</span><span class="p">,</span>
+                                                                                <span class="n">file_pattern</span><span class="o">=</span><span class="n">_modis_pattern</span><span class="p">,</span>
+                                                                                <span class="n">output_pattern</span><span class="o">=</span><span class="n">_lst_output_pattern</span><span class="p">)</span>
+        <span class="n">config</span> <span class="o">+=</span> <span class="nb">super</span><span class="p">(</span><span class="n">MODISLSTDatasetImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">generate_extract_section</span><span class="p">(</span><span class="n">input_dir</span><span class="o">=</span><span class="n">_data_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_night_dir</span><span class="p">,</span>
+                                                                                 <span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="s1">&#39;LST_Night&#39;</span><span class="p">,</span>
+                                                                                 <span class="n">file_pattern</span><span class="o">=</span><span class="n">_modis_pattern</span><span class="p">,</span>
+                                                                                 <span class="n">output_pattern</span><span class="o">=</span><span class="n">_lst_output_pattern</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">config</span></div>
+
+<div class="viewcode-block" id="MODISLSTDatasetImpl.generate_average_lst"><a class="viewcode-back" href="../../../vampire.config_products.MODISLSTDatasetImpl.html#vampire.config_products.MODISLSTDatasetImpl.MODISLSTDatasetImpl.generate_average_lst">[docs]</a>    <span class="k">def</span> <span class="nf">generate_average_lst</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">day_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">night_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">input_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">day_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_day_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_day_dir&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_day_dir</span> <span class="o">=</span> <span class="n">day_dir</span>
+        <span class="k">if</span> <span class="n">night_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_night_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_night_dir&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_night_dir</span> <span class="o">=</span> <span class="n">night_dir</span>
+        <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_dir&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+        <span class="k">if</span> <span class="n">input_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_input_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_day_night_pattern&#39;</span><span class="p">)</span>
+            <span class="c1"># have a specific date - replace generic pattern with specific values</span>
+            <span class="n">_input_pattern</span> <span class="o">=</span> <span class="n">_input_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+            <span class="n">_input_pattern</span> <span class="o">=</span> <span class="n">_input_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;dayofyear&gt;\d</span><span class="si">{3}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;dayofyear&gt;</span><span class="si">{0:0&gt;3}</span><span class="s1">)&#39;</span><span class="o">.</span>
+                                                    <span class="nb">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">day_of_year</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_input_pattern</span> <span class="o">=</span> <span class="n">input_pattern</span>
+        <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_LST&#39;</span><span class="p">,</span> <span class="s1">&#39;lst_average_output_pattern&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">output_pattern</span>
+
+        <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_average_section</span><span class="p">(</span><span class="n">_day_dir</span><span class="p">,</span> <span class="n">_night_dir</span><span class="p">,</span> <span class="n">_output_dir</span><span class="p">,</span>
+                                                <span class="n">_input_pattern</span><span class="p">,</span> <span class="n">_output_pattern</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">config</span></div>
+
+    <span class="k">def</span> <span class="nf">_generate_average_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">day_dir</span><span class="p">,</span> <span class="n">night_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">input_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    # Compute average of day and night temperatures</span>
+<span class="s2">    - process: MODIS</span>
+<span class="s2">      type: calc_average</span>
+<span class="s2">      layer: day_night_temp</span>
+<span class="s2">      lst_day_dir: </span><span class="si">{lst_day_dir}</span><span class="s2"></span>
+<span class="s2">      lst_night_dir: </span><span class="si">{lst_night_dir}</span><span class="s2"></span>
+<span class="s2">      output_dir: </span><span class="si">{lst_average_dir}</span><span class="s2"></span>
+<span class="s2">      file_pattern: &#39;</span><span class="si">{input_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">      output_pattern: &#39;</span><span class="si">{output_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lst_day_dir</span><span class="o">=</span><span class="n">day_dir</span><span class="p">,</span> <span class="n">lst_night_dir</span><span class="o">=</span><span class="n">night_dir</span><span class="p">,</span>
+                       <span class="n">lst_average_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">input_pattern</span><span class="o">=</span><span class="n">input_pattern</span><span class="p">,</span>
+                       <span class="n">output_pattern</span><span class="o">=</span><span class="n">output_pattern</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">config</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

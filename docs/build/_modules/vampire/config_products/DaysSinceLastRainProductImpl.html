@@ -1,0 +1,228 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.DaysSinceLastRainProductImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_products.DaysSinceLastRainProductImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">BaseDataset</span>
+<span class="kn">import</span> <span class="nn">RasterProductImpl</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DaysSinceLastRainProductImpl"><a class="viewcode-back" href="../../../vampire.config_products.DaysSinceLastRainProductImpl.html#vampire.config_products.DaysSinceLastRainProductImpl.DaysSinceLastRainProductImpl">[docs]</a><span class="k">class</span> <span class="nc">DaysSinceLastRainProductImpl</span><span class="p">(</span><span class="n">RasterProductImpl</span><span class="o">.</span><span class="n">RasterProductImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Days Since Last Rain config file process generation.</span>
+
+<span class="sd">    Data handling for generating config file entries for Days Since Last Rain data product.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialise DaysSinceLastRainProductImpl.</span>
+
+<span class="sd">        Implementation class for DaysSinceLastRainProduct.</span>
+<span class="sd">        Initialise object parameters.</span>
+
+<span class="sd">        :param country: Region of dataset - country name or &#39;global&#39;.</span>
+<span class="sd">        :type country: string</span>
+<span class="sd">        :param product_date: Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding</span>
+<span class="sd">            the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,</span>
+<span class="sd">            the product_date refers to the start of the season (3 month period).</span>
+<span class="sd">        :type product_date:  datetime</span>
+<span class="sd">        :param interval: Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal</span>
+<span class="sd">        :type interval: string</span>
+<span class="sd">        :param vampire_defaults: VAMPIREDefaults object containing VAMPIRE system default values.</span>
+<span class="sd">        :type vampire_defaults: VampireDefaults object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DaysSinceLastRainProductImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;days_since_last_rain&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">country</span> <span class="o">=</span> <span class="n">country</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">product_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Days_Since_Last_Rain&#39;</span><span class="p">,</span> <span class="s1">&#39;default_data&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Days_Since_Last_Rain&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_source</span><span class="p">),</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">BaseDataset</span><span class="o">.</span><span class="n">BaseDataset</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">dataset_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_source</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
+                                                      <span class="n">product_date</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="p">,</span>
+                                                      <span class="n">vampire_defaults</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">start_date</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">end_date</span><span class="p">()</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="DaysSinceLastRainProductImpl.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.DaysSinceLastRainProductImpl.html#vampire.config_products.DaysSinceLastRainProductImpl.DaysSinceLastRainProductImpl.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate VAMPIRE config file header for Days Since Last Rain.</span>
+
+<span class="sd">        :return: Returns config file header section.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">config</span></div>
+
+
+<div class="viewcode-block" id="DaysSinceLastRainProductImpl.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.DaysSinceLastRainProductImpl.html#vampire.config_products.DaysSinceLastRainProductImpl.DaysSinceLastRainProductImpl.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_days</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crop_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Generate a config file process for the Days Since Last Rain product.</span>
+
+<span class="sd">        Generate VAMPIRE config file processes for the product including download and crop if specified.</span>
+
+<span class="sd">        :param data_dir: Directory path for precipitation files. Default is None.</span>
+<span class="sd">        :type data_dir: string</span>
+<span class="sd">        :param output_dir: Path for product output. If the output_dir is None, the VAMPIRE default Days Since Last Rain product directory will be used.</span>
+<span class="sd">        :type output_dir: string</span>
+<span class="sd">        :param file_pattern: Regular expression pattern for finding current precipitation file. Default is None.</span>
+<span class="sd">        :type file_pattern: string</span>
+<span class="sd">        :param threshold: Rainfall threshold value.</span>
+<span class="sd">        :type threshold: float</span>
+<span class="sd">        :param max_days: Number of days to evaluate for days since last rain.</span>
+<span class="sd">        :type max_days: int</span>
+<span class="sd">        :param download: Flag indicating whether data should be downloaded.</span>
+<span class="sd">        :type download: bool</span>
+<span class="sd">        :param crop: Flag indicating whether data should be cropped to a boundary.</span>
+<span class="sd">        :type crop: bool</span>
+<span class="sd">        :param crop_dir: Directory for output of cropped files.</span>
+<span class="sd">        :type crop_dir: string</span>
+
+<span class="sd">        :return: Returns string containing the configuration file process.</span>
+<span class="sd">        :rtype: string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;global&#39;</span><span class="p">:</span>
+            <span class="n">crop</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">cfg_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    ## Processing chain begin - Compute Days Since Last Rain</span><span class="se">\n</span><span class="s2">&quot;&quot;&quot;</span>
+        <span class="n">_max_days</span> <span class="o">=</span> <span class="n">max_days</span> <span class="c1"># number of days to check for rain prior to start date</span>
+        <span class="k">if</span> <span class="n">_max_days</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_max_days</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Days_Since_Last_Rain&#39;</span><span class="p">,</span> <span class="s1">&#39;default_max_days&#39;</span><span class="p">))</span>
+        <span class="c1"># set dataset start and end dates to cover the range required.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">set_start_date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=-</span><span class="n">_max_days</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">set_end_date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="p">)</span>
+
+        <span class="n">_c_str</span><span class="p">,</span> <span class="n">_data_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">download</span><span class="p">,</span> <span class="n">crop</span><span class="p">,</span> <span class="n">crop_dir</span><span class="p">)</span>
+        <span class="n">cfg_string</span> <span class="o">+=</span> <span class="n">_c_str</span>
+
+        <span class="n">_threshold</span> <span class="o">=</span> <span class="n">threshold</span> <span class="c1"># threshold of precipitation to count as &#39;wet&#39; day</span>
+        <span class="k">if</span> <span class="n">_threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Days_Since_Last_Rain&#39;</span><span class="p">,</span> <span class="s1">&#39;default_threshold&#39;</span><span class="p">)</span>
+
+        <span class="n">_data_pattern</span> <span class="o">=</span> <span class="n">file_pattern</span>
+        <span class="k">if</span> <span class="n">_data_pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;global&#39;</span><span class="p">:</span>
+                <span class="n">_data_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_source</span><span class="p">,</span> <span class="s1">&#39;global_daily_pattern&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_data_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_source</span><span class="p">,</span> <span class="s1">&#39;regional_daily_pattern&#39;</span><span class="p">)</span>
+
+        <span class="c1"># directory for days since last rainfall output</span>
+        <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+        <span class="k">if</span> <span class="n">_output_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Days_Since_Last_Rain&#39;</span><span class="p">,</span> <span class="s1">&#39;output_dir&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">_output_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">_output_dir</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="n">_output_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Days_Since_Last_Rain&#39;</span><span class="p">,</span> <span class="s1">&#39;regional_dslr_pattern&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;day&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+
+        <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    # compute days since last rainfall</span>
+<span class="s2">    - process: Analysis</span>
+<span class="s2">      type: days_since_last_rain</span>
+<span class="s2">      input_dir: </span><span class="si">{input_dir}</span><span class="s2"></span>
+<span class="s2">      output_dir: </span><span class="si">{output_dir}</span><span class="s2"></span>
+<span class="s2">      file_pattern: &#39;</span><span class="si">{file_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">      start_date: </span><span class="si">{start_date}</span><span class="s2"></span>
+<span class="s2">      threshold: </span><span class="si">{threshold}</span><span class="s2"></span>
+<span class="s2">      max_days: </span><span class="si">{max_days}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">input_dir</span><span class="o">=</span><span class="n">_data_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">file_pattern</span><span class="o">=</span><span class="n">_data_pattern</span><span class="p">,</span>
+            <span class="n">start_date</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">-</span><span class="si">{1:0&gt;2}</span><span class="s1">-</span><span class="si">{2:0&gt;2}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span><span class="o">.</span><span class="n">month</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span><span class="o">.</span><span class="n">day</span><span class="p">),</span>
+            <span class="n">threshold</span><span class="o">=</span><span class="n">_threshold</span><span class="p">,</span> <span class="n">max_days</span><span class="o">=</span><span class="n">_max_days</span>
+        <span class="p">)</span>
+        <span class="n">cfg_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    ## Processing chain end - Compute Days Since Last Rain</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cfg_string</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,297 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.precipitation_analysis_arc &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.precipitation_analysis_arc</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">arcpy</span>
+<span class="kn">import</span> <span class="nn">gdal</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Check out the ArcGIS Spatial Analyst extension license</span>
+<span class="k">if</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">CheckExtension</span><span class="p">(</span><span class="s2">&quot;Spatial&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Available&quot;</span><span class="p">:</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">CheckOutExtension</span><span class="p">(</span><span class="s2">&quot;Spatial&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">AddMessage</span><span class="p">(</span><span class="s2">&quot;Error: Couldn&#39;t get Spatial Analyst extenstion&quot;</span><span class="p">)</span>
+<span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">overwriteOutput</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="c1"># calculate a rainfall anomaly surface as int(100 * (current rainfall/long-term average rainfall) )</span>
+<div class="viewcode-block" id="calc_rainfall_anomaly"><a class="viewcode-back" href="../../../vampire.processing.precipitation_analysis_arc.html#vampire.processing.precipitation_analysis_arc.calc_rainfall_anomaly">[docs]</a><span class="k">def</span> <span class="nf">calc_rainfall_anomaly</span><span class="p">(</span><span class="n">cur_filename</span><span class="p">,</span> <span class="n">lta_filename</span><span class="p">,</span> <span class="n">dst_filename</span><span class="p">):</span>
+    <span class="n">_cur_raster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Raster</span><span class="p">(</span><span class="n">cur_filename</span><span class="p">)</span>
+    <span class="n">_lta_raster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Raster</span><span class="p">(</span><span class="n">lta_filename</span><span class="p">)</span>
+    <span class="n">dst_f</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Divide</span><span class="p">(</span><span class="n">_cur_raster</span><span class="p">,</span> <span class="n">_lta_raster</span><span class="p">)</span>
+    <span class="n">dst_100f</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Times</span><span class="p">(</span><span class="n">dst_f</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+    <span class="n">dst</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Int</span><span class="p">(</span><span class="n">dst_100f</span><span class="p">)</span>
+    <span class="n">dst</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">dst_filename</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="calc_standardized_precipitation_index"><a class="viewcode-back" href="../../../vampire.processing.precipitation_analysis_arc.html#vampire.processing.precipitation_analysis_arc.calc_standardized_precipitation_index">[docs]</a><span class="k">def</span> <span class="nf">calc_standardized_precipitation_index</span><span class="p">(</span><span class="n">cur_filename</span><span class="p">,</span> <span class="n">lta_filename</span><span class="p">,</span> <span class="n">ltsd_filename</span><span class="p">,</span> <span class="n">dst_filename</span><span class="p">):</span>
+    <span class="n">_cur_raster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Raster</span><span class="p">(</span><span class="n">cur_filename</span><span class="p">)</span>
+    <span class="n">_lta_raster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Raster</span><span class="p">(</span><span class="n">lta_filename</span><span class="p">)</span>
+    <span class="n">_ltsd_raster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Raster</span><span class="p">(</span><span class="n">ltsd_filename</span><span class="p">)</span>
+    <span class="n">dst_f</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Divide</span><span class="p">(</span><span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Minus</span><span class="p">(</span><span class="n">_cur_raster</span><span class="p">,</span> <span class="n">_lta_raster</span><span class="p">),</span> <span class="n">_ltsd_raster</span><span class="p">)</span>
+    <span class="n">dst</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Float</span><span class="p">(</span><span class="n">dst_f</span><span class="p">)</span>
+    <span class="n">dst</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">dst_filename</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<span class="c1"># calculate a drought index based on rainfall anomaly for the areas provided in the shapefile.</span>
+<span class="c1"># where rainfall anomaly is &lt; rainfall_anomaly_threshold, it is also checked against precipitation</span>
+<span class="c1"># to ensure there is also &lt; precipitation_threshold of rainfall during the interval.</span>
+<div class="viewcode-block" id="calc_drought_index"><a class="viewcode-back" href="../../../vampire.processing.precipitation_analysis_arc.html#vampire.processing.precipitation_analysis_arc.calc_drought_index">[docs]</a><span class="k">def</span> <span class="nf">calc_drought_index</span><span class="p">(</span><span class="n">ra_filename</span><span class="p">,</span> <span class="n">cur_filename</span><span class="p">,</span> <span class="n">shp_filename</span><span class="p">,</span> <span class="n">dst_filename</span><span class="p">,</span> <span class="n">ra_threshold</span><span class="p">,</span> <span class="n">pr_threshold</span><span class="p">):</span>
+
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<span class="c1"># Find the last day with precipitation greater than threshold in the list of rasters</span>
+<span class="c1"># returns a raster of number of days since last rain</span>
+<div class="viewcode-block" id="days_since_last_rain"><a class="viewcode-back" href="../../../vampire.processing.precipitation_analysis_arc.html#vampire.processing.precipitation_analysis_arc.days_since_last_rain">[docs]</a><span class="k">def</span> <span class="nf">days_since_last_rain</span><span class="p">(</span><span class="n">raster_list</span><span class="p">,</span> <span class="n">dslw_filename</span><span class="p">,</span> <span class="n">dsld_filename</span><span class="p">,</span> <span class="n">num_wet_days_filename</span><span class="p">,</span> <span class="n">rainfall_accum_filename</span><span class="p">,</span>
+                         <span class="n">temp_dir</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">max_days</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+
+    <span class="c1"># reclassify rasters to wet or dry - &gt;0.5 = 1 (wet), &lt;0.5 = 0 (dry)</span>
+    <span class="n">_reclass_rasters</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c1">##    rasters_list = arcpy.ListRasters()</span>
+    <span class="n">_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">_new_ras</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">raster_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ras</span> <span class="ow">in</span> <span class="n">raster_list</span><span class="p">:</span>
+        <span class="c1"># only look at last &#39;max_days&#39; rasters</span>
+        <span class="k">if</span> <span class="n">_count</span> <span class="o">&lt;</span> <span class="n">max_days</span><span class="p">:</span>
+            <span class="n">_new_ras</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="s1">&#39;temp_wd</span><span class="si">{0:0&gt;2}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_count</span><span class="p">))</span>
+<span class="c1">##            newras = os.path.join(temp_path, &#39;{0}_wd{1}&#39;.format(os.path.splitext(os.path.basename(ras))[0], output_filenames[1]))</span>
+<span class="c1">#    ##        newras = temp_path + &#39;/&#39; + os.path.splitext(os.path.basename(ras))[0] + &#39;_wd&#39; + &#39;.tif&#39;</span>
+<span class="c1">#            # check if file exists</span>
+<span class="c1">#            if os.path.isfile(newras) == False:</span>
+            <span class="n">_reclassify_wet_day</span><span class="p">(</span><span class="n">ras</span><span class="p">,</span> <span class="n">_new_ras</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+            <span class="n">_reclass_rasters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_new_ras</span><span class="p">)</span>
+            <span class="n">_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">break</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;successfully reclassified rasters&quot;</span><span class="p">)</span>
+<span class="c1">#    _reclass_rasters.sort(reverse=True)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">_reclass_rasters</span><span class="p">)</span>
+
+    <span class="c1"># calculate last wet day</span>
+<span class="c1">##    dslwfile = env.workspace + &quot;/lwd/output/dslw25_29.tif&quot;</span>
+<span class="c1">#    dslwfile = os.path.join(output_path, &#39;{0}_dslw{1}&#39;.format(output_filenames[0], output_filenames[1]))</span>
+<span class="c1">##    dsldfile = env.workspace + &quot;/lwd/output/dsld25_29.tif&quot;</span>
+<span class="c1">#    dsldfile = os.path.join(output_path, &#39;{0}_dsld{1}&#39;.format(output_filenames[0], output_filenames[1]))</span>
+<span class="c1">#    #lastWetDay(reclassRasters, outputfile, len(reclassRasters))</span>
+    <span class="n">_calc_num_days_since</span><span class="p">(</span><span class="n">rasters</span><span class="o">=</span><span class="n">_reclass_rasters</span><span class="p">,</span> <span class="n">dslw_fn</span><span class="o">=</span><span class="n">dslw_filename</span><span class="p">,</span> <span class="n">dsld_fn</span><span class="o">=</span><span class="n">dsld_filename</span><span class="p">,</span> <span class="n">max_days</span><span class="o">=</span><span class="n">_count</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;successfully calculated last wet day&quot;</span><span class="p">)</span>
+
+    <span class="c1"># calculate number of wet days</span>
+    <span class="n">cellStats</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">CellStatistics</span><span class="p">(</span><span class="n">_reclass_rasters</span><span class="p">,</span> <span class="s2">&quot;SUM&quot;</span><span class="p">)</span>
+<span class="c1">#    fname = os.path.join(output_path, &#39;{0}_nwd{1}&#39;.format(output_filenames[0], output_filenames[1]))</span>
+    <span class="n">cellStats</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">num_wet_days_filename</span><span class="p">)</span>
+    <span class="c1"># calculate total rainfall</span>
+<span class="c1">#    fname = os.path.join(output_path, &#39;{0}_tot_precip{1}&#39;.format(output_filenames[0], output_filenames[1]))</span>
+    <span class="n">cellStats</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">CellStatistics</span><span class="p">(</span><span class="n">raster_list</span><span class="p">,</span> <span class="s2">&quot;SUM&quot;</span><span class="p">)</span>
+    <span class="n">cellStats</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">rainfall_accum_filename</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+
+
+<span class="c1"># Reclassify raster to 1 if &gt;= 0.5mm rainfall, 0 otherwise (wet days)</span>
+<span class="k">def</span> <span class="nf">_reclassify_wet_day</span><span class="p">(</span><span class="n">in_raster</span><span class="p">,</span> <span class="n">out_raster</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+    <span class="n">_extent</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span>
+    <span class="n">_cellsize</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span><span class="o">=</span><span class="s2">&quot;MAXOF&quot;</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span><span class="o">=</span><span class="s2">&quot;MAXOF&quot;</span>
+    <span class="n">ras</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Raster</span><span class="p">(</span><span class="n">in_raster</span><span class="p">)</span>
+    <span class="n">out_ras</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">in_conditional_raster</span><span class="o">=</span><span class="n">in_raster</span><span class="p">,</span>
+                           <span class="n">in_true_raster_or_constant</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                           <span class="n">in_false_raster_or_constant</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                           <span class="n">where_clause</span><span class="o">=</span><span class="s2">&quot;VALUE &gt;</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">threshold</span><span class="p">)))</span>
+<span class="c1">#                           where_clause=&quot;VALUE &gt;={0}&quot;.format(threshold))</span>
+
+<span class="c1">#    ds = gdal.Open(in_raster)</span>
+<span class="c1">#    ras_array = numpy.array(ds.GetRasterBand(1).ReadAsArray())</span>
+<span class="c1">#    ras_array[ras_array == -9999] = numpy.nan</span>
+<span class="c1">#    ras_array[ras_array &lt; threshold] = 0</span>
+<span class="c1">#    ras_array[ras_array &gt;= threshold] = 1</span>
+<span class="c1">#    out_ras = arcpy.NumPyArrayToRaster(ras_array, x_cell_size = ras.meanCellWidth,</span>
+<span class="c1">#                                                 y_cell_size = ras.meanCellHeight)</span>
+    <span class="n">out_ras</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">out_raster</span><span class="p">)</span>
+<span class="c1">##    ras = arcpy.sa.Raster(in_raster)</span>
+<span class="c1">##    ras.save(&quot;s:/WFP/MODIS/Scratch/rasout.tif&quot;)</span>
+<span class="c1">###    out_con = arcpy.CopyRaster_management(ras, out_raster, &quot;DEFAULTS&quot;, &quot;&quot;, &quot;-9999&quot;, &quot;&quot;, &quot;&quot;, &quot;32_BIT_UNSIGNED&quot;)</span>
+<span class="c1">###    out_con = arcpy.sa.Reclassify(out_con, &quot;Value&quot;, arcpy.sa.RemapRange([[0.0, 0.5, 0], [0.5, 9999, 1]]) )</span>
+<span class="c1">##    out_con = Con(Raster(in_raster) &gt;= threshold, 1.0, 0.0)</span>
+<span class="c1">###    out_con = Con(ras, 1, 0, &quot;VALUE &gt;= 0.5&quot;)</span>
+<span class="c1">##    out_con.save(out_raster)</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="n">_cellsize</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="n">_extent</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+
+<span class="c1">#calculate number of days since the last wet (dslw) or dry (dsld) day</span>
+<span class="c1"># assumes input raster is 1 for wet and 0 for dry</span>
+<span class="c1"># for example to calculate the number of days since last wet day, all days classified as &quot;wet&quot;</span>
+<span class="c1"># will be 1 and the rest 0. Days with no data should be No Data</span>
+<span class="k">def</span> <span class="nf">_calc_num_days_since</span><span class="p">(</span><span class="n">rasters</span><span class="p">,</span> <span class="n">dslw_fn</span><span class="p">,</span> <span class="n">dsld_fn</span><span class="p">,</span> <span class="n">max_days</span><span class="p">):</span>
+    <span class="n">_counter</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># initialise masks - noDataMask is 1 where there is No Data across all rasters, 0 otherwise</span>
+    <span class="c1"># since some regions will have No Data for some days, but valid data on other days. Need to</span>
+    <span class="c1"># include these regions ALL the time.</span>
+    <span class="n">_no_data_mask</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">IsNull</span><span class="p">(</span><span class="n">rasters</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Highest Position provides position for all cell values - we need to mask out the dry cells</span>
+    <span class="c1"># dryMask is 1 if rainfall is 0 (dry), and -999 if No Data</span>
+    <span class="c1"># wetMask is 1 if rainfall is 1 (wet), and -999 if No Data</span>
+    <span class="n">_dry_mask</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">rasters</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;VALUE &lt;= 0&quot;</span><span class="p">)</span>
+    <span class="n">_wet_mask</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">BooleanNot</span><span class="p">(</span><span class="n">_dry_mask</span><span class="p">)</span>
+    <span class="n">_dry_mask</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">IsNull</span><span class="p">(</span><span class="n">_dry_mask</span><span class="p">),</span> <span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="n">_dry_mask</span><span class="p">)</span>
+    <span class="n">_wet_mask</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">IsNull</span><span class="p">(</span><span class="n">_wet_mask</span><span class="p">),</span> <span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="n">_wet_mask</span><span class="p">)</span>
+
+    <span class="c1">#collect X=numDays consecutive rasters</span>
+    <span class="c1"># rasters still contain NoData values</span>
+    <span class="n">_last_x_rasters</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">_last_dry_rasters</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># make sure we have enough data</span>
+    <span class="k">if</span> <span class="n">_counter</span><span class="o">+</span><span class="n">max_days</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">rasters</span><span class="p">):</span>
+        <span class="n">max_days</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rasters</span><span class="p">)</span><span class="o">-</span><span class="n">_counter</span>
+    <span class="c1">#</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_counter</span><span class="p">,(</span><span class="n">_counter</span><span class="o">+</span><span class="n">max_days</span><span class="p">)):</span>
+        <span class="c1"># create NoData mask where *all* rasters have NoData</span>
+        <span class="n">_no_data_mask</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">BooleanAnd</span><span class="p">(</span><span class="n">_no_data_mask</span><span class="p">,</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">IsNull</span><span class="p">(</span><span class="n">rasters</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="c1"># temporarily set No Data values to -999 so the grid cell isn&#39;t ignored</span>
+        <span class="c1"># in calculations</span>
+        <span class="n">_temp_raster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">IsNull</span><span class="p">(</span><span class="n">rasters</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="n">rasters</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="c1"># _dry_mask is 1 if dry day (&lt;0.5mm rain) OR No Data</span>
+        <span class="n">_dry_mask</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">BooleanAnd</span><span class="p">(</span><span class="n">_dry_mask</span><span class="p">,</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">_temp_raster</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;VALUE &lt;= 0&quot;</span><span class="p">))</span>
+        <span class="c1"># _wet_mask is 1 if wet day (&gt; threshold) OR No Data</span>
+        <span class="n">_wet_mask</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">BooleanAnd</span><span class="p">(</span><span class="n">_wet_mask</span><span class="p">,</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">_temp_raster</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;VALUE &lt;&gt; 0&quot;</span><span class="p">))</span>
+        <span class="c1"># raster[i] is 1 if wet, 0 if dry. inverseRaster = 0 if wet, 1 if dry</span>
+        <span class="n">_inverse_raster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">BooleanNot</span><span class="p">(</span><span class="n">rasters</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="c1">#remove NoData (set to 0)</span>
+<span class="c1">### temporarily remove this</span>
+<span class="c1">#        rasters[i] = arcpy.sa.Con(arcpy.sa.IsNull(rasters[i]), 0, rasters[i])</span>
+        <span class="n">_inverse_raster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">IsNull</span><span class="p">(</span><span class="n">_inverse_raster</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">_inverse_raster</span><span class="p">)</span>
+        <span class="n">_last_x_rasters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rasters</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">_last_dry_rasters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_inverse_raster</span><span class="p">)</span>
+
+    <span class="c1"># create raster with number of days since last rain</span>
+    <span class="n">_highest_position_wet</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">HighestPosition</span><span class="p">(</span><span class="n">_last_x_rasters</span><span class="p">)</span>
+    <span class="n">_highest_position_dry</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">HighestPosition</span><span class="p">(</span><span class="n">_last_dry_rasters</span><span class="p">)</span>
+
+    <span class="n">_days_since_last_wet</span> <span class="o">=</span> <span class="n">_highest_position_wet</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">_days_since_last_dry</span> <span class="o">=</span> <span class="n">_highest_position_dry</span> <span class="o">-</span> <span class="mi">1</span>
+
+<span class="c1">#    _days_since_last_dry.save(&quot;S:\\WFP2\\PRISM\\data\\Temp\\dsld.tif&quot;)</span>
+<span class="c1">#    _days_since_last_wet.save(&quot;S:\\WFP2\\PRISM\\data\\Temp\\dslw.tif&quot;)</span>
+
+<span class="c1">#    _no_data_mask.save(&quot;S:\\WFP2\\PRISM\\data\\Temp\\noDataMask.tif&quot;)</span>
+    <span class="n">_dry_mask</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">IsNull</span><span class="p">(</span><span class="n">_dry_mask</span><span class="p">),</span> <span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="n">_dry_mask</span><span class="p">)</span>
+    <span class="n">_wet_mask</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">IsNull</span><span class="p">(</span><span class="n">_wet_mask</span><span class="p">),</span> <span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="n">_wet_mask</span><span class="p">)</span>
+<span class="c1">#    _wet_mask.save(&quot;S:\\WFP2\\PRISM\\data\\Temp\\wetMask.tif&quot;)</span>
+<span class="c1">#    _dry_mask.save(&quot;S:\\WFP2\\PRISM\\data\\Temp\\dryMask.tif&quot;)</span>
+<span class="c1">#    outHighestPosition.save(&quot;S:/WFP/CHIRPS/Daily/2015/p25/lwd/hp.tif&quot;)</span>
+    <span class="c1"># reset NoData</span>
+    <span class="n">_dslw_no_data</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">SetNull</span><span class="p">(</span><span class="n">_no_data_mask</span><span class="p">,</span> <span class="n">_days_since_last_wet</span><span class="p">,</span> <span class="s2">&quot;VALUE &gt;= 1&quot;</span><span class="p">)</span>
+    <span class="n">_dsld_no_data</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">SetNull</span><span class="p">(</span><span class="n">_no_data_mask</span><span class="p">,</span> <span class="n">_days_since_last_dry</span><span class="p">,</span> <span class="s2">&quot;VALUE &gt;= 1&quot;</span><span class="p">)</span>
+<span class="c1">#    outFinal.save(env.workspace + &quot;/lwd/output/outdslw.tif&quot;)</span>
+<span class="c1">#    outFinal3.save(env.workspace + &quot;/lwd/output/outdsld.tif&quot;)</span>
+    <span class="n">_dslw_output</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">_dry_mask</span><span class="p">,</span> <span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="n">_dslw_no_data</span><span class="p">,</span> <span class="s2">&quot;VALUE &gt;= 1&quot;</span><span class="p">)</span>
+    <span class="n">_dsld_output</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Con</span><span class="p">(</span><span class="n">_wet_mask</span><span class="p">,</span> <span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="n">_dsld_no_data</span><span class="p">,</span> <span class="s2">&quot;VALUE &gt;= 1&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Save the output</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">SetRasterProperties_management</span><span class="p">(</span><span class="n">_dsld_output</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="s2">&quot;1 -999&quot;</span><span class="p">)</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">SetRasterProperties_management</span><span class="p">(</span><span class="n">_dslw_output</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="s2">&quot;1 -999&quot;</span><span class="p">)</span>
+    <span class="n">_dslw_output</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">dslw_fn</span><span class="p">)</span>
+    <span class="n">_dsld_output</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">dsld_fn</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="calc_flood_alert"><a class="viewcode-back" href="../../../vampire.processing.precipitation_analysis_arc.html#vampire.processing.precipitation_analysis_arc.calc_flood_alert">[docs]</a><span class="k">def</span> <span class="nf">calc_flood_alert</span><span class="p">(</span><span class="n">forecast_filename</span><span class="p">,</span> <span class="n">threshold_filename</span><span class="p">,</span> <span class="n">dst_filename</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">_forecast_raster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Raster</span><span class="p">(</span><span class="n">forecast_filename</span><span class="p">)</span>
+    <span class="n">_threshold_raster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Raster</span><span class="p">(</span><span class="n">threshold_filename</span><span class="p">)</span>
+    <span class="n">_cellsize</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="s2">&quot;MINOF&quot;</span>
+    <span class="n">dst</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">GreaterThanEqual</span><span class="p">(</span><span class="n">_forecast_raster</span><span class="p">,</span> <span class="n">_threshold_raster</span><span class="p">)</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="c1"># if value != 1:</span>
+    <span class="c1">#     dst2 = arcpy.sa.Times(dst, value)</span>
+    <span class="c1">#     dst = dst2</span>
+    <span class="n">dst</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">dst_filename</span><span class="p">)</span>
+    <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="n">_cellsize</span>
+    <span class="k">return</span> <span class="mi">0</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

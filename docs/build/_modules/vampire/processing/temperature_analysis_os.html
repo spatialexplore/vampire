@@ -1,0 +1,125 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.temperature_analysis_os &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.temperature_analysis_os</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">rasterio</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="calc_TCI"><a class="viewcode-back" href="../../../vampire.processing.temperature_analysis_os.html#vampire.processing.temperature_analysis_os.calc_TCI">[docs]</a><span class="k">def</span> <span class="nf">calc_TCI</span><span class="p">(</span><span class="n">cur_filename</span><span class="p">,</span> <span class="n">lta_max_filename</span><span class="p">,</span> <span class="n">lta_min_filename</span><span class="p">,</span> <span class="n">dst_filename</span><span class="p">):</span>
+    <span class="c1"># calculate Temperature Condition Index</span>
+    <span class="c1"># TCI = 100 x (LST_max - LST)/(LST_max - LST_min)</span>
+
+    <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">cur_filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">cur_r</span><span class="p">:</span>
+        <span class="n">cur_band</span> <span class="o">=</span> <span class="n">cur_r</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">profile</span> <span class="o">=</span> <span class="n">cur_r</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="nb">print</span> <span class="n">cur_r</span><span class="o">.</span><span class="n">nodatavals</span>
+        <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">lta_max_filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">lta_max_r</span><span class="p">:</span>
+            <span class="n">lta_max_a</span> <span class="o">=</span> <span class="n">lta_max_r</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">lta_min_filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">lta_min_r</span><span class="p">:</span>
+                <span class="n">lta_min_a</span> <span class="o">=</span> <span class="n">lta_min_r</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">masked</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">_numerator</span> <span class="o">=</span> <span class="n">lta_max_a</span> <span class="o">-</span> <span class="n">cur_band</span>
+                <span class="n">_denominator</span> <span class="o">=</span> <span class="n">lta_max_a</span> <span class="o">-</span> <span class="n">lta_min_a</span>
+                <span class="n">_tci</span> <span class="o">=</span> <span class="n">_numerator</span> <span class="o">/</span><span class="n">_denominator</span>
+                <span class="n">_tci</span> <span class="o">=</span> <span class="n">_tci</span><span class="o">*</span><span class="mf">100.0</span>
+                <span class="n">_res</span> <span class="o">=</span> <span class="n">_tci</span><span class="o">.</span><span class="n">filled</span><span class="p">(</span><span class="n">fill_value</span><span class="o">=</span><span class="n">cur_r</span><span class="o">.</span><span class="n">nodata</span><span class="p">)</span>
+                <span class="n">profile</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">rasterio</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">dst_filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">profile</span><span class="p">)</span> <span class="k">as</span> <span class="n">dst</span><span class="p">:</span>
+                    <span class="n">dst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_res</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">rasterio</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+
+                <span class="c1"># dst_f = np.zeros(cur_band.shape)</span>
+                <span class="c1"># newd_f = np.ma.masked_where(np.ma.mask_or(np.ma.getmask(cur_band), np.ma.getmask(lta_max_a)),</span>
+                <span class="c1">#                             dst_f)</span>
+                <span class="c1"># numerator=(lta_max_a - cur_band)</span>
+                <span class="c1"># denominator = (lta_max_a - lta_min_a)</span>
+                <span class="c1"># newd_f += (np.divide(numerator, denominator) * 100.0)</span>
+                <span class="c1">#</span>
+                <span class="c1"># res = newd_f.filled(fill_value=cur_r.nodata)</span>
+                <span class="c1"># res2 = np.ma.masked_where(res == cur_r.nodata, res)</span>
+                <span class="c1">#</span>
+                <span class="c1"># profile.update(dtype=rasterio.float64)</span>
+                <span class="c1"># with rasterio.open(dst_filename, &#39;w&#39;, **profile) as dst:</span>
+                <span class="c1">#     dst.write(res2.astype(rasterio.float64), 1)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

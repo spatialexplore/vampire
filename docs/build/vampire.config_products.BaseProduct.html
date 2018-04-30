@@ -1,0 +1,1026 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.BaseProduct module &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vampire.config_products.BaseProduct">
+<span id="vampire-config-products-baseproduct-module"></span><h1>vampire.config_products.BaseProduct module<a class="headerlink" href="#module-vampire.config_products.BaseProduct" title="Permalink to this headline">¶</a></h1>
+<p>Data Products module.</p>
+<p>Provides classes for each data product supported within Vampire. New products should be added here.</p>
+<dl class="class">
+<dt id="vampire.config_products.BaseProduct.BaseProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseProduct.</code><code class="descname">BaseProduct</code><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#BaseProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.BaseProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Base class for data product configuration objects.</p>
+<p>Manages registration of data product configurations and creation of data product configuration objects.
+Data product configurations provide the ability to generate config file sections related to the specific
+data product (e.g. product generation, publishing of data product to database or GIS server).</p>
+<dl class="classmethod">
+<dt id="vampire.config_products.BaseProduct.BaseProduct.create">
+<em class="property">classmethod </em><code class="descname">create</code><span class="sig-paren">(</span><em>product_type</em>, <em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#BaseProduct.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.BaseProduct.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create data product of the specified type.</p>
+<p>Creates the data product identified by product_type and sets required values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>product_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Product name.</li>
+<li><strong>country</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Country data product will be created for. This is used for downloading data and identifying appropriate resources and default values during processing.</li>
+<li><strong>product_date</strong> (<a class="reference external" href="https://docs.python.org/3/library/datetime.html#module-datetime" title="(in Python v3.6)"><em>datetime</em></a>) – Date for product being generated.</li>
+<li><strong>interval</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Interval for product generation - daily, weekly, monthly, seasonal.</li>
+<li><strong>vampire_defaults</strong> (<a class="reference internal" href="vampire.VampireDefaults.html#vampire.VampireDefaults.VampireDefaults" title="vampire.VampireDefaults.VampireDefaults"><em>VampireDefaults</em></a>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Data product object of type specified (a registered subclass of BaseProduct).</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="vampire.config_products.BaseProduct.BaseProduct.register_subclass">
+<em class="property">classmethod </em><code class="descname">register_subclass</code><span class="sig-paren">(</span><em>product_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#BaseProduct.register_subclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.BaseProduct.register_subclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register product with the product manager.</p>
+<p>Registers the data product identified by product_type with the data product manager.
+This allows the appropriate product to be created automatically when requested.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>product_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Product name.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.BaseProduct.subclasses">
+<code class="descname">subclasses</code><em class="property"> = {'chirps_longterm_average': &lt;class 'vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct'&gt;, 'days_since_last_rain': &lt;class 'vampire.config_products.BaseProduct.DaysSinceLastRainProduct'&gt;, 'evi_longterm_average': &lt;class 'vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct'&gt;, 'flood_forecast': &lt;class 'vampire.config_products.BaseProduct.FloodForecastProduct'&gt;, 'lst_longterm_average': &lt;class 'vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct'&gt;, 'rainfall_anomaly': &lt;class 'vampire.config_products.BaseProduct.RainfallAnomalyProduct'&gt;, 'spi': &lt;class 'vampire.config_products.BaseProduct.SPIProduct'&gt;, 'tci': &lt;class 'vampire.config_products.BaseProduct.TCIProduct'&gt;, 'vci': &lt;class 'vampire.config_products.BaseProduct.VCIProduct'&gt;, 'vhi': &lt;class 'vampire.config_products.BaseProduct.VHIProduct'&gt;}</em><a class="headerlink" href="#vampire.config_products.BaseProduct.BaseProduct.subclasses" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseProduct.</code><code class="descname">CHIRPSLongtermAverageProduct</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#CHIRPSLongtermAverageProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseProduct.BaseProduct" title="vampire.config_products.BaseProduct.BaseProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseProduct.BaseProduct</span></code></a></p>
+<p>CHIRPS long-term statistics data product configuration.</p>
+<p>Manages generation of configuration file sections for CHIRPS long-term statistics data products.</p>
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>input_dir=None</em>, <em>output_dir=None</em>, <em>input_pattern=None</em>, <em>output_pattern=None</em>, <em>functions=None</em>, <em>download=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#CHIRPSLongtermAverageProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating CHIRPS long-term statistics.</p>
+<p>Generate config file entries required to create long-term statistics from CHIRPS rainfall data for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>input_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the CHIRPS precipitation files are located.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the CHIRPS long-term statistics output file(s).</li>
+<li><strong>input_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the files to be included in the long-term statistics calculations.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the long-term statistics output file name(s). May refer to elements within the input_pattern.</li>
+<li><strong>functions</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – List of functions to be calculated. Options are ‘AVG’, ‘MIN’, ‘MAX’, ‘STD’.</li>
+<li><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag specifying whether the data needs to be downloaded first. If true, appropriate download configuration sections will be generated.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating CHIRPS long-term statistics.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#CHIRPSLongtermAverageProduct.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to CHIRPS long-term statistics that go in the config file header.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.product_dir">
+<code class="descname">product_dir</code><a class="headerlink" href="#vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.product_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get directory name for product output.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.product_file">
+<code class="descname">product_file</code><a class="headerlink" href="#vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.product_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get full path to the output product file name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.product_pattern">
+<code class="descname">product_pattern</code><a class="headerlink" href="#vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.product_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get output product file name pattern (regular expression used to search for the product file).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.CHIRPSLongtermAverageProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseProduct.DaysSinceLastRainProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseProduct.</code><code class="descname">DaysSinceLastRainProduct</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#DaysSinceLastRainProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.DaysSinceLastRainProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseProduct.BaseProduct" title="vampire.config_products.BaseProduct.BaseProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseProduct.BaseProduct</span></code></a></p>
+<p>Days Since Last Rain data product configuration.</p>
+<p>Manages generation of configuration file sections for Days Since Last Rain data products including product
+generation and publishing.</p>
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.DaysSinceLastRainProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>data_dir=None</em>, <em>output_dir=None</em>, <em>file_pattern=None</em>, <em>threshold=None</em>, <em>max_days=None</em>, <em>download=True</em>, <em>crop=True</em>, <em>crop_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#DaysSinceLastRainProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.DaysSinceLastRainProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a config file process for the Days Since Last Rain product.</p>
+<p>Generate VAMPIRE config file processes for the product including download and crop if specified.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory path for precipitation files. Default is None.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Path for product output. If the output_dir is None, the VAMPIRE default Days Since Last Rain product directory will be used.</li>
+<li><strong>file_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern for finding current precipitation file. Default is None.</li>
+<li><strong>threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.6)"><em>float</em></a>) – Rainfall threshold value.</li>
+<li><strong>max_days</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – Number of days to evaluate for days since last rain.</li>
+<li><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating whether data should be downloaded.</li>
+<li><strong>crop</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag indicating whether data should be cropped to a boundary.</li>
+<li><strong>crop_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory for output of cropped files.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Returns string containing the configuration file process.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.DaysSinceLastRainProduct.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#DaysSinceLastRainProduct.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.DaysSinceLastRainProduct.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to Days Since Last Rain that go in the config file header.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.DaysSinceLastRainProduct.generate_publish_config">
+<code class="descname">generate_publish_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#DaysSinceLastRainProduct.generate_publish_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.DaysSinceLastRainProduct.generate_publish_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config section to publish Days Since Last Rain data product.</p>
+<p>Generates configuration file section to publish the Days Since Last Rain output file to a GIS server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Config file sections required for publishing Days Since Last Rain.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.DaysSinceLastRainProduct.product_dir">
+<code class="descname">product_dir</code><a class="headerlink" href="#vampire.config_products.BaseProduct.DaysSinceLastRainProduct.product_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get directory name for product output.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.DaysSinceLastRainProduct.product_file">
+<code class="descname">product_file</code><a class="headerlink" href="#vampire.config_products.BaseProduct.DaysSinceLastRainProduct.product_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get full path to the output product file name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.DaysSinceLastRainProduct.product_pattern">
+<code class="descname">product_pattern</code><a class="headerlink" href="#vampire.config_products.BaseProduct.DaysSinceLastRainProduct.product_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get output product file name pattern (regular expression used to search for the product file).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.DaysSinceLastRainProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.DaysSinceLastRainProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.DaysSinceLastRainProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.DaysSinceLastRainProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseProduct.FloodForecastProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseProduct.</code><code class="descname">FloodForecastProduct</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#FloodForecastProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.FloodForecastProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseProduct.BaseProduct" title="vampire.config_products.BaseProduct.BaseProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseProduct.BaseProduct</span></code></a></p>
+<p>Flood Forecast data product configuration.</p>
+<p>Manages generation of configuration file sections for Flood Forecast data products including product
+generation and publishing.</p>
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.FloodForecastProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>data_dir=None</em>, <em>output_dir=None</em>, <em>file_pattern=None</em>, <em>days=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#FloodForecastProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.FloodForecastProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating Flood Forecasts.</p>
+<p>Generate config file entries required to create Flood Forecasts for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the GFS files for the product date are located.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the Flood Forecast output files.</li>
+<li><strong>file_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the GFS file for the product date.</li>
+<li><strong>days</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – Number of days to forecast for.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating Flood Forecasts.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.FloodForecastProduct.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#FloodForecastProduct.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.FloodForecastProduct.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to Flood Forecast that go in the config file header.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.FloodForecastProduct.generate_publish_config">
+<code class="descname">generate_publish_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#FloodForecastProduct.generate_publish_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.FloodForecastProduct.generate_publish_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config section to publish Flood Forecast data product.</p>
+<p>Generates configuration file section to publish the Flood Forecast output file to a GIS server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Config file sections required for publishing Flood Forecasts.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.FloodForecastProduct.product_dir">
+<code class="descname">product_dir</code><a class="headerlink" href="#vampire.config_products.BaseProduct.FloodForecastProduct.product_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get directory name for product output.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.FloodForecastProduct.product_file">
+<code class="descname">product_file</code><a class="headerlink" href="#vampire.config_products.BaseProduct.FloodForecastProduct.product_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get full path to the output product file name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.FloodForecastProduct.product_pattern">
+<code class="descname">product_pattern</code><a class="headerlink" href="#vampire.config_products.BaseProduct.FloodForecastProduct.product_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get output product file name pattern (regular expression used to search for the product file).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.FloodForecastProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.FloodForecastProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.FloodForecastProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.FloodForecastProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseProduct.</code><code class="descname">MODISEVILongtermAverageProduct</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#MODISEVILongtermAverageProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseProduct.BaseProduct" title="vampire.config_products.BaseProduct.BaseProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseProduct.BaseProduct</span></code></a></p>
+<p>MODIS Enhanced Vegetation Index Long-term Average data product configuration.</p>
+<p>Manages generation of configuration file sections for MODIS Enhanced Vegetation Index Long-term Average data products including product
+generation.</p>
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>input_dir=None</em>, <em>output_dir=None</em>, <em>input_pattern=None</em>, <em>output_pattern=None</em>, <em>functions=None</em>, <em>download=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#MODISEVILongtermAverageProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating long-term statistics for MODIS EVI data.</p>
+<p>Generate config file entries required to create long-term statistics for MODIS Enhanced Vegetation Index
+(EVI) for the specified country and interval. Statistics include average, minimum, maximum, standard deviation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>input_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the MODIS EVI files are located.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the SPI output file.</li>
+<li><strong>input_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the files to be included in the long-term statistics calculations.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the EVI statistics output file name. May refer to elements within the input_pattern.</li>
+<li><strong>functions</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – List of functions to be calculated. Options are ‘AVG’, ‘MIN’, ‘MAX’, ‘STD’.</li>
+<li><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag specifying whether the data needs to be downloaded first. If true, appropriate download configuration sections will be generated.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating MODIS EVI long-term statistics.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#MODISEVILongtermAverageProduct.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to MODIS EVI long-term average that go in the config file header.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.product_dir">
+<code class="descname">product_dir</code><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.product_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get directory name for product output.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.product_file">
+<code class="descname">product_file</code><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.product_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get full path to the output product file name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.product_pattern">
+<code class="descname">product_pattern</code><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.product_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get output product file name pattern (regular expression used to search for the product file).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISEVILongtermAverageProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseProduct.</code><code class="descname">MODISLSTLongtermAverageProduct</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#MODISLSTLongtermAverageProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseProduct.BaseProduct" title="vampire.config_products.BaseProduct.BaseProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseProduct.BaseProduct</span></code></a></p>
+<p>MODIS Land Surface Temperature Long-term Average data product configuration.</p>
+<p>Manages generation of configuration file sections for MODIS Land Surface Temperature Long-term Average data products including product
+generation and publishing.</p>
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>input_dir=None</em>, <em>output_dir=None</em>, <em>input_pattern=None</em>, <em>output_pattern=None</em>, <em>functions=None</em>, <em>download=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#MODISLSTLongtermAverageProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating MODIS LST long-term statistics.</p>
+<p>Generate config file entries required to create long-term statistics from MODIS Land Surface Temperature data for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>input_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the MODIS LST files are located.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the long-term statistics output files.</li>
+<li><strong>input_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the files to be included in the long-term statistics calculations.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the LST statistics output file name. May refer to elements within the input_pattern.</li>
+<li><strong>functions</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – List of functions to be calculated. Options are ‘AVG’, ‘MIN’, ‘MAX’, ‘STD’.</li>
+<li><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Flag specifying whether the data needs to be downloaded first. If true, appropriate download configuration sections will be generated.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating MODIS LST long-term averages.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#MODISLSTLongtermAverageProduct.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to LST long-term average that go in the config file header.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.product_dir">
+<code class="descname">product_dir</code><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.product_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get directory name for product output.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.product_file">
+<code class="descname">product_file</code><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.product_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get full path to the output product file name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.product_pattern">
+<code class="descname">product_pattern</code><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.product_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get output product file name pattern (regular expression used to search for the product file).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.MODISLSTLongtermAverageProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseProduct.RainfallAnomalyProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseProduct.</code><code class="descname">RainfallAnomalyProduct</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#RainfallAnomalyProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.RainfallAnomalyProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseProduct.BaseProduct" title="vampire.config_products.BaseProduct.BaseProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseProduct.BaseProduct</span></code></a></p>
+<p>Rainfall Anomaly data product configuration.</p>
+<p>Manages generation of configuration file sections for Rainfall Anomaly data products including product
+generation and publishing.</p>
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.RainfallAnomalyProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>output_dir=None</em>, <em>cur_file=None</em>, <em>cur_dir=None</em>, <em>cur_pattern=None</em>, <em>lta_file=None</em>, <em>lta_dir=None</em>, <em>lta_pattern=None</em>, <em>output_file=None</em>, <em>output_pattern=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#RainfallAnomalyProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.RainfallAnomalyProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating Rainfall Anomaly.</p>
+<p>Generate config file entries required to create Rainfall Anomaly for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the Rainfall Anomaly output file.</li>
+<li><strong>cur_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Precipitation file for the product date.</li>
+<li><strong>cur_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the precipitation file for the product date is located.</li>
+<li><strong>cur_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the precipitation file for the product date.</li>
+<li><strong>lta_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Long-term average precipitation file for the product date.</li>
+<li><strong>lta_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the long-term average precipitation file is located.</li>
+<li><strong>lta_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the long-term average precipitation file for the product date.</li>
+<li><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Filename for Rainfall Anomaly output file.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the Rainfall Anomaly output file name. May refer to elements within the cur_pattern.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating Rainfall Anomaly.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.RainfallAnomalyProduct.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#RainfallAnomalyProduct.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.RainfallAnomalyProduct.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to Rainfall Anomaly that go in the config file header.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.RainfallAnomalyProduct.generate_publish_config">
+<code class="descname">generate_publish_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#RainfallAnomalyProduct.generate_publish_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.RainfallAnomalyProduct.generate_publish_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config section to publish Rainfall Anomaly data product.</p>
+<p>Generates configuration file section to publish the Rainfall Anomaly output file to a GIS server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Config file sections required for publishing Rainfall Anomaly.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.RainfallAnomalyProduct.product_dir">
+<code class="descname">product_dir</code><a class="headerlink" href="#vampire.config_products.BaseProduct.RainfallAnomalyProduct.product_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get directory name for product output.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.RainfallAnomalyProduct.product_file">
+<code class="descname">product_file</code><a class="headerlink" href="#vampire.config_products.BaseProduct.RainfallAnomalyProduct.product_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get full path to the output product file name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.RainfallAnomalyProduct.product_pattern">
+<code class="descname">product_pattern</code><a class="headerlink" href="#vampire.config_products.BaseProduct.RainfallAnomalyProduct.product_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get output product file name pattern (regular expression used to search for the product file).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.RainfallAnomalyProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.RainfallAnomalyProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.RainfallAnomalyProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.RainfallAnomalyProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseProduct.SPIProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseProduct.</code><code class="descname">SPIProduct</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#SPIProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.SPIProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseProduct.BaseProduct" title="vampire.config_products.BaseProduct.BaseProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseProduct.BaseProduct</span></code></a></p>
+<p>Standardized Precipitation Index data product configuration.</p>
+<p>Manages generation of configuration file sections for Standardized Precipitation Index data products including product
+generation and publishing.</p>
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.SPIProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>output_dir=None</em>, <em>cur_file=None</em>, <em>cur_dir=None</em>, <em>cur_pattern=None</em>, <em>lta_file=None</em>, <em>lta_dir=None</em>, <em>lta_pattern=None</em>, <em>ltsd_file=None</em>, <em>ltsd_dir=None</em>, <em>ltsd_pattern=None</em>, <em>output_file=None</em>, <em>output_pattern=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#SPIProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.SPIProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating Standardized Precipitation Index (SPI).</p>
+<p>Generate config file entries required to create SPI for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the SPI output file.</li>
+<li><strong>cur_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Precipitation file for the product date.</li>
+<li><strong>cur_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the precipitation file for the product date is located.</li>
+<li><strong>cur_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the precipitation file for the product date.</li>
+<li><strong>lta_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Long-term average precipitation file for the product date.</li>
+<li><strong>lta_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the long-term average precipitation file is located.</li>
+<li><strong>lta_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the long-term average precipitation file for the product date.</li>
+<li><strong>ltsd_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Long-term standard deviation precipitation file for the product date.</li>
+<li><strong>ltsd_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the long-term standard deviation precipitation file is located.</li>
+<li><strong>ltsd_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the long-term standard deviation precipitation file for the product date.</li>
+<li><strong>output_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Filename for SPI output file.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the SPI output file name. May refer to elements within the cur_pattern.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating SPI.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.SPIProduct.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#SPIProduct.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.SPIProduct.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to SPI that go in the config file header.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.SPIProduct.generate_publish_config">
+<code class="descname">generate_publish_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#SPIProduct.generate_publish_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.SPIProduct.generate_publish_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config section to publish Standardised Precipitation Index data product.</p>
+<p>Generates configuration file section to publish the Standardised Precipitation Index output file to a GIS server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Config file sections required for publishing Standardised Precipitation Index.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.SPIProduct.product_dir">
+<code class="descname">product_dir</code><a class="headerlink" href="#vampire.config_products.BaseProduct.SPIProduct.product_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get directory name for product output.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.SPIProduct.product_file">
+<code class="descname">product_file</code><a class="headerlink" href="#vampire.config_products.BaseProduct.SPIProduct.product_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get full path to the output product file name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.SPIProduct.product_pattern">
+<code class="descname">product_pattern</code><a class="headerlink" href="#vampire.config_products.BaseProduct.SPIProduct.product_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get output product file name pattern (regular expression used to search for the product file).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.SPIProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.SPIProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.SPIProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.SPIProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseProduct.TCIProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseProduct.</code><code class="descname">TCIProduct</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#TCIProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.TCIProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseProduct.BaseProduct" title="vampire.config_products.BaseProduct.BaseProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseProduct.BaseProduct</span></code></a></p>
+<p>Temperature Condition Index data product configuration.</p>
+<p>Manages generation of configuration file sections for Temperature Condition Index data products including product
+generation.</p>
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.TCIProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>lst_cur_file=None</em>, <em>lst_cur_dir=None</em>, <em>lst_cur_pattern=None</em>, <em>lst_max_file=None</em>, <em>lst_max_dir=None</em>, <em>lst_max_pattern=None</em>, <em>lst_min_file=None</em>, <em>lst_min_dir=None</em>, <em>lst_min_pattern=None</em>, <em>output_filename=None</em>, <em>output_dir=None</em>, <em>output_pattern=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#TCIProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.TCIProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating VCI.</p>
+<p>Generate config file entries required to create VCI for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>lst_cur_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Land Surface Temperature (LST) file for the product date.</li>
+<li><strong>lst_cur_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the LST file for the product date is located.</li>
+<li><strong>lst_cur_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the LST file for the product date.</li>
+<li><strong>lst_max_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – LST long-term maximum file.</li>
+<li><strong>lst_max_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the long-term maximum LST file is located.</li>
+<li><strong>lst_max_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the LST long-term maximum file.</li>
+<li><strong>lst_min_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – LST long-term minimum file.</li>
+<li><strong>lst_min_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the long-term maximum LST file is located.</li>
+<li><strong>lst_min_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the LST long-term minimum file.</li>
+<li><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Filename for TCI output file.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the TCI output file.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the TCI output file name. May refer to elements within the lst_cur_pattern.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating TCI.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.TCIProduct.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#TCIProduct.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.TCIProduct.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to TCI that go in the config file header.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.TCIProduct.product_dir">
+<code class="descname">product_dir</code><a class="headerlink" href="#vampire.config_products.BaseProduct.TCIProduct.product_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get directory name for product output.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.TCIProduct.product_file">
+<code class="descname">product_file</code><a class="headerlink" href="#vampire.config_products.BaseProduct.TCIProduct.product_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get full path to the output product file name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.TCIProduct.product_pattern">
+<code class="descname">product_pattern</code><a class="headerlink" href="#vampire.config_products.BaseProduct.TCIProduct.product_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get output product file name pattern (regular expression used to search for the product file).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.TCIProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.TCIProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.TCIProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.TCIProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseProduct.VCIProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseProduct.</code><code class="descname">VCIProduct</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#VCIProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.VCIProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseProduct.BaseProduct" title="vampire.config_products.BaseProduct.BaseProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseProduct.BaseProduct</span></code></a></p>
+<p>Vegetation Condition Index data product configuration.</p>
+<p>Manages generation of configuration file sections for Vegetation Condition Index data products including product
+generation and publishing.</p>
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.VCIProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>evi_cur_file=None</em>, <em>evi_cur_dir=None</em>, <em>evi_cur_pattern=None</em>, <em>evi_max_file=None</em>, <em>evi_max_dir=None</em>, <em>evi_max_pattern=None</em>, <em>evi_min_file=None</em>, <em>evi_min_dir=None</em>, <em>evi_min_pattern=None</em>, <em>output_filename=None</em>, <em>output_dir=None</em>, <em>output_pattern=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#VCIProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.VCIProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating VCI.</p>
+<p>Generate config file entries required to create VCI for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>evi_cur_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Enhanced Vegetation Index (EVI) file for the product date.</li>
+<li><strong>evi_cur_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the EVI file for the product date is located.</li>
+<li><strong>evi_cur_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the EVI file for the product date.</li>
+<li><strong>evi_max_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – EVI long-term maximum file.</li>
+<li><strong>evi_max_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the long-term maximum EVI file is located.</li>
+<li><strong>evi_max_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the EVI long-term maximum file.</li>
+<li><strong>evi_min_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – EVI long-term minimum file.</li>
+<li><strong>evi_min_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the long-term maximum EVI file is located.</li>
+<li><strong>evi_min_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the EVI long-term minimum file.</li>
+<li><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Filename for VCI output file.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the VCI output file.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the VCI output file name. May refer to elements within the evi_cur_pattern.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating VCI.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.VCIProduct.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#VCIProduct.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.VCIProduct.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to VCI that go in the config file header.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.VCIProduct.product_dir">
+<code class="descname">product_dir</code><a class="headerlink" href="#vampire.config_products.BaseProduct.VCIProduct.product_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get directory name for product output.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.VCIProduct.product_file">
+<code class="descname">product_file</code><a class="headerlink" href="#vampire.config_products.BaseProduct.VCIProduct.product_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get full path to the output product file name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.VCIProduct.product_pattern">
+<code class="descname">product_pattern</code><a class="headerlink" href="#vampire.config_products.BaseProduct.VCIProduct.product_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get output product file name pattern (regular expression used to search for the product file).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.VCIProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.VCIProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.VCIProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.VCIProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.config_products.BaseProduct.VHIProduct">
+<em class="property">class </em><code class="descclassname">vampire.config_products.BaseProduct.</code><code class="descname">VHIProduct</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#VHIProduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.VHIProduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#vampire.config_products.BaseProduct.BaseProduct" title="vampire.config_products.BaseProduct.BaseProduct"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.BaseProduct.BaseProduct</span></code></a></p>
+<p>Vegetation Health Index data product configuration.</p>
+<p>Manages generation of configuration file sections for Vegetation Health Index data products including product
+generation, masking the product using a boundary, and publishing.</p>
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.VHIProduct.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>tci_file=None</em>, <em>tci_dir=None</em>, <em>tci_pattern=None</em>, <em>vci_file=None</em>, <em>vci_dir=None</em>, <em>vci_pattern=None</em>, <em>output_file=None</em>, <em>output_dir=None</em>, <em>output_pattern=None</em>, <em>reproject='TCI'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#VHIProduct.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.VHIProduct.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating VCI.</p>
+<p>Generate config file entries required to create VCI for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tci_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Temperature Condition Index (TCI) file for the product date.</li>
+<li><strong>tci_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the TCI file for the product date is located.</li>
+<li><strong>tci_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the TCI file for the product date.</li>
+<li><strong>vci_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Vegetation Condition Index (VCI) file for the product date.</li>
+<li><strong>vci_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the VCI file is located.</li>
+<li><strong>vci_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the VCI file for the product date.</li>
+<li><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Filename for VCI output file.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the VCI output file.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the VCI output file name. May refer to elements within the evi_cur_pattern.</li>
+<li><strong>reproject</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Data source to use for output resolution. The output product file will be reprojected to match the specified source. Valid options are ‘TCI’ and ‘VCI’. The default value is ‘TCI’.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating VHI.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.VHIProduct.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#VHIProduct.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.VHIProduct.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to VHI that go in the config file header.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.VHIProduct.generate_mask_config">
+<code class="descname">generate_mask_config</code><span class="sig-paren">(</span><em>boundary_file=None</em>, <em>boundary_dir=None</em>, <em>boundary_pattern=None</em>, <em>boundary_field=None</em>, <em>output_file=None</em>, <em>output_dir=None</em>, <em>output_pattern=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#VHIProduct.generate_mask_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.VHIProduct.generate_mask_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config section to mask VHI data product by a boundary.</p>
+<p>Generates configuration file section to mask the VHI output file using a shapefile boundary.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>boundary_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Name of boundary file (shapefile) to use as mask.</li>
+<li><strong>boundary_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the TCI file for the product date is located.</li>
+<li><strong>boundary_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the boundary file.</li>
+<li><strong>boundary_field</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – </li>
+<li><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Filename for masked VHI output file.</li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the masked VHI output file.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Pattern to be used to generate the masked VHI output file name.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating VHI boundary mask.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.BaseProduct.VHIProduct.generate_publish_config">
+<code class="descname">generate_publish_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/BaseProduct.html#VHIProduct.generate_publish_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.BaseProduct.VHIProduct.generate_publish_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config section to publish VHI data product.</p>
+<p>Generates configuration file section to publish the VHI output file to a GIS server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Config file sections required for publishing VHI.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.VHIProduct.product_dir">
+<code class="descname">product_dir</code><a class="headerlink" href="#vampire.config_products.BaseProduct.VHIProduct.product_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get directory name for product output.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.VHIProduct.product_file">
+<code class="descname">product_file</code><a class="headerlink" href="#vampire.config_products.BaseProduct.VHIProduct.product_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get full path to the output product file name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.VHIProduct.product_pattern">
+<code class="descname">product_pattern</code><a class="headerlink" href="#vampire.config_products.BaseProduct.VHIProduct.product_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get output product file name pattern (regular expression used to search for the product file).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.VHIProduct.valid_from_date">
+<code class="descname">valid_from_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.VHIProduct.valid_from_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.config_products.BaseProduct.VHIProduct.valid_to_date">
+<code class="descname">valid_to_date</code><a class="headerlink" href="#vampire.config_products.BaseProduct.VHIProduct.valid_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get date the output product file is valid until.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/vampire.config_products.BaseProduct.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

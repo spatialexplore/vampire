@@ -1,0 +1,157 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.FloodForecastProductImpl module &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vampire.config_products.FloodForecastProductImpl">
+<span id="vampire-config-products-floodforecastproductimpl-module"></span><h1>vampire.config_products.FloodForecastProductImpl module<a class="headerlink" href="#module-vampire.config_products.FloodForecastProductImpl" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl">
+<em class="property">class </em><code class="descclassname">vampire.config_products.FloodForecastProductImpl.</code><code class="descname">FloodForecastProductImpl</code><span class="sig-paren">(</span><em>country</em>, <em>product_date</em>, <em>interval</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/FloodForecastProductImpl.html#FloodForecastProductImpl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="vampire.config_products.RasterProductImpl.html#vampire.config_products.RasterProductImpl.RasterProductImpl" title="vampire.config_products.RasterProductImpl.RasterProductImpl"><code class="xref py py-class docutils literal"><span class="pre">vampire.config_products.RasterProductImpl.RasterProductImpl</span></code></a></p>
+<p>Implementation of Flood Area Impact config file process generation.</p>
+<p>Implementation class for generating config file entries for Area impact of Flood Forecasting data product.</p>
+<dl class="method">
+<dt id="vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl.generate_config">
+<code class="descname">generate_config</code><span class="sig-paren">(</span><em>data_dir=None</em>, <em>file_pattern=None</em>, <em>threshold_file=None</em>, <em>threshold_dir=None</em>, <em>threshold_pattern=None</em>, <em>accumulate_days=None</em>, <em>flood_years=None</em>, <em>output_file=None</em>, <em>output_dir=None</em>, <em>output_pattern=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/FloodForecastProductImpl.html#FloodForecastProductImpl.generate_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl.generate_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config file section for generating Flood Forecasts.</p>
+<p>Generate config file entries required to create Flood Forecasts for the specified country, date and interval.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory where the GFS files for the product date are located.</li>
+<li><strong>file_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Regular expression pattern to used to find the GFS file for the product date.</li>
+<li><strong>threshold_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – </li>
+<li><strong>threshold_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – </li>
+<li><strong>threshold_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – </li>
+<li><strong>accumulate_days</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – Number of days to forecast for.</li>
+<li><strong>flood_years</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – </li>
+<li><strong>output_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – </li>
+<li><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – Directory to save the Flood Forecast output files.</li>
+<li><strong>output_pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)"><em>string</em></a>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Config file sections required for generating Flood Forecasts.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl.generate_flood_forecast_section">
+<code class="descname">generate_flood_forecast_section</code><span class="sig-paren">(</span><em>data_dir</em>, <em>file_pattern</em>, <em>threshold_file</em>, <em>threshold_dir</em>, <em>threshold_pattern</em>, <em>output_file</em>, <em>output_dir</em>, <em>output_pattern</em>, <em>num_years</em>, <em>output_value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/FloodForecastProductImpl.html#FloodForecastProductImpl.generate_flood_forecast_section"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl.generate_flood_forecast_section" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl.generate_header">
+<code class="descname">generate_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/FloodForecastProductImpl.html#FloodForecastProductImpl.generate_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl.generate_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate details related to Flood Forecast that go in the config file header.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl.generate_publish_config">
+<code class="descname">generate_publish_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/config_products/FloodForecastProductImpl.html#FloodForecastProductImpl.generate_publish_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.config_products.FloodForecastProductImpl.FloodForecastProductImpl.generate_publish_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate config section to publish Flood Forecast data product.</p>
+<p>Generates configuration file section to publish the Flood Forecast output file to a GIS server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Config file sections required for publishing Flood Forecasts.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.6)">string</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/vampire.config_products.FloodForecastProductImpl.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

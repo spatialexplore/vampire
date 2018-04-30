@@ -1,0 +1,397 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.RainfallAnomalyProductImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_products.RainfallAnomalyProductImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">BaseDataset</span>
+<span class="kn">import</span> <span class="nn">RasterProductImpl</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RainfallAnomalyProductImpl"><a class="viewcode-back" href="../../../vampire.config_products.RainfallAnomalyProductImpl.html#vampire.config_products.RainfallAnomalyProductImpl.RainfallAnomalyProductImpl">[docs]</a><span class="k">class</span> <span class="nc">RainfallAnomalyProductImpl</span><span class="p">(</span><span class="n">RasterProductImpl</span><span class="o">.</span><span class="n">RasterProductImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise RainfallAnomalyProductImpl.</span>
+
+<span class="sd">    Implementation class for RainfallAnomalyProduct.</span>
+<span class="sd">    Initialise object parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    country : string</span>
+<span class="sd">        Region of dataset - country name or &#39;global&#39;.</span>
+<span class="sd">    product_date : datetime</span>
+<span class="sd">        Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding</span>
+<span class="sd">        the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,</span>
+<span class="sd">        the product_date refers to the start of the season (3 month period).</span>
+<span class="sd">    interval : string</span>
+<span class="sd">        Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal</span>
+<span class="sd">    vampire_defaults : object</span>
+<span class="sd">        VAMPIREDefaults object containing VAMPIRE system default values.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">country</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RainfallAnomalyProductImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_name</span> <span class="o">=</span> <span class="s1">&#39;rainfall_anomaly&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">country</span> <span class="o">=</span> <span class="n">country</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">product_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;default_interval&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">chirps_dataset</span> <span class="o">=</span> <span class="n">BaseDataset</span><span class="o">.</span><span class="n">BaseDataset</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">dataset_type</span><span class="o">=</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
+                                                             <span class="n">product_date</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="p">,</span>
+                                                             <span class="n">vampire_defaults</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_from_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chirps_dataset</span><span class="o">.</span><span class="n">start_date</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_to_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chirps_dataset</span><span class="o">.</span><span class="n">end_date</span><span class="p">()</span>
+        <span class="k">return</span>
+
+    <span class="sd">&quot;&quot;&quot; Generate VAMPIRE config file header for CHIRPS datasets.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    None</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    string</span>
+<span class="sd">        Returns config file header section.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RainfallAnomalyProductImpl.generate_header"><a class="viewcode-back" href="../../../vampire.config_products.RainfallAnomalyProductImpl.html#vampire.config_products.RainfallAnomalyProductImpl.RainfallAnomalyProductImpl.generate_header">[docs]</a>    <span class="k">def</span> <span class="nf">generate_header</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chirps_dataset</span><span class="o">.</span><span class="n">generate_header</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">config</span></div>
+
+
+    <span class="sd">&quot;&quot;&quot; Generate a config file process for the rainfall anomaly product.</span>
+
+<span class="sd">    Generate VAMPIRE config file processes for the product including download and crop if specified.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    output_dir : string</span>
+<span class="sd">        Path for product output. If the output_dir is None, the VAMPIRE default rainfall anomaly product directory</span>
+<span class="sd">        will be used.</span>
+<span class="sd">    cur_file : string</span>
+<span class="sd">        Path for current precipitation file. Default is None. If None, cur_dir and cur_pattern will be used to find</span>
+<span class="sd">        the file.</span>
+<span class="sd">    cur_dir : string</span>
+<span class="sd">        Directory path for current precipitation file. Default is None. If cur_file is set, cur_dir is not used.</span>
+<span class="sd">    cur_pattern : string</span>
+<span class="sd">        Regular expression pattern for finding current precipitation file. Default is None. If cur_file is set,</span>
+<span class="sd">        cur_pattern is not used.</span>
+<span class="sd">    lta_file : string</span>
+<span class="sd">        Path for long-term average precipitation file. Default is None. If None, lta_dir and lta_pattern will be</span>
+<span class="sd">        used to find the file.</span>
+<span class="sd">    lta_dir : string</span>
+<span class="sd">        Directory path for long-term average precipitation file. Default is None. If lta_file is set, lta_dir is not</span>
+<span class="sd">        used.</span>
+<span class="sd">    lta_pattern : string</span>
+<span class="sd">        Regular expression pattern for finding long-term average precipitation file. Default is None. If lta_file is</span>
+<span class="sd">        set, lta_pattern is not used.</span>
+<span class="sd">    output_file : string</span>
+<span class="sd">        Directory path for output rainfall anomaly file. Default is None. If output_file is set, output_dir is not used.</span>
+<span class="sd">    output_pattern : string</span>
+<span class="sd">        Pattern for specifying output filename. Used in conjuction with cur_pattern. Default is None. If output_file is</span>
+<span class="sd">        set, output_pattern is not used.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    string</span>
+<span class="sd">        Returns string containing the configuration file process.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RainfallAnomalyProductImpl.generate_config"><a class="viewcode-back" href="../../../vampire.config_products.RainfallAnomalyProductImpl.html#vampire.config_products.RainfallAnomalyProductImpl.RainfallAnomalyProductImpl.generate_config">[docs]</a>    <span class="k">def</span> <span class="nf">generate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cur_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cur_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cur_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">lta_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lta_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lta_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    ## Processing chain begin - Compute Rainfall Anomaly</span><span class="se">\n</span><span class="s2">&quot;&quot;&quot;</span>
+        <span class="n">_c_str</span><span class="p">,</span> <span class="n">_data_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chirps_dataset</span><span class="o">.</span><span class="n">generate_config</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">config</span> <span class="o">+=</span> <span class="n">_c_str</span>
+		
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="n">output_file</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_file</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_out_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_out_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;output_dir&#39;</span><span class="p">)</span>
+
+        <span class="c1"># if cur_file is specified, cur_dir is not used.</span>
+        <span class="k">if</span> <span class="n">cur_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_cur_file</span> <span class="o">=</span> <span class="n">cur_file</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_cur_file</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># if cur_dir is specified, it is used with the default pattern to find the current rainfall file</span>
+        <span class="c1"># if not specified, cur_dir is determined from the default values.</span>
+        <span class="k">if</span> <span class="n">cur_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_cur_dir</span> <span class="o">=</span> <span class="n">cur_dir</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;global&#39;</span><span class="p">:</span>
+                <span class="n">_cur_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;data_dir&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">capitalize</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_cur_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;data_dir&#39;</span><span class="p">),</span>
+                                        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(),</span>
+                                                     <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country_code</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+                <span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;global&#39;</span><span class="p">:</span>
+            <span class="n">_output_file_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span>
+                                                    <span class="s1">&#39;ra_global_output_</span><span class="si">{0}</span><span class="s1">_pattern&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">))</span>
+            <span class="n">_cur_file_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;global_</span><span class="si">{0}</span><span class="s1">_pattern&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">))</span>
+            <span class="n">_lta_file_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Longterm_Average&#39;</span><span class="p">,</span>
+                                                 <span class="s1">&#39;global_lta_</span><span class="si">{0}</span><span class="s1">_pattern&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_file_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span>
+                                                    <span class="s1">&#39;ra_regional_output_</span><span class="si">{0}</span><span class="s1">_pattern&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">))</span>
+            <span class="n">_cur_file_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;regional_</span><span class="si">{0}</span><span class="s1">_pattern&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">))</span>
+            <span class="n">_lta_file_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Longterm_Average&#39;</span><span class="p">,</span>
+                                                 <span class="s1">&#39;regional_lta_</span><span class="si">{0}</span><span class="s1">_pattern&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">output_pattern</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_output_file_pattern</span> <span class="o">=</span> <span class="n">output_pattern</span>
+        <span class="k">if</span> <span class="n">cur_pattern</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_cur_file_pattern</span> <span class="o">=</span> <span class="n">cur_pattern</span>
+        <span class="k">if</span> <span class="n">lta_pattern</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_lta_file_pattern</span> <span class="o">=</span> <span class="n">lta_pattern</span>
+
+        <span class="n">_interval_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_dir</span> <span class="o">=</span> <span class="n">_out_dir</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;dekad&#39;</span><span class="p">:</span>
+            <span class="n">interval_name</span> <span class="o">=</span> <span class="s1">&#39;dekad&#39;</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">)</span> <span class="o">&lt;=</span><span class="mi">10</span><span class="p">:</span>
+                <span class="n">_dekad</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">day</span><span class="p">)</span> <span class="o">&lt;=</span><span class="mi">20</span><span class="p">:</span>
+                <span class="n">_dekad</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_dekad</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">_cur_file_pattern</span> <span class="o">=</span> <span class="n">_cur_file_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;dekad&gt;\d</span><span class="si">{1}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;dekad&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_dekad</span><span class="p">))</span>
+            <span class="n">_lta_file_pattern</span> <span class="o">=</span> <span class="n">_lta_file_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{02}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                                                          <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+            <span class="n">_lta_file_pattern</span> <span class="o">=</span> <span class="n">_lta_file_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;dekad&gt;\d</span><span class="si">{1}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;dekad&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_dekad</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;ra_regional_dekad_pattern&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                                                                <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                                                                <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;dekad&gt;\d</span><span class="si">{1}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                                                                <span class="s1">&#39;(?P&lt;dekad&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_dekad</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;monthly&#39;</span><span class="p">:</span>
+            <span class="n">_interval_name</span> <span class="o">=</span> <span class="s1">&#39;month&#39;</span>
+            <span class="c1"># replace generic month in pattern with the specific one needed so the correct file is found.</span>
+            <span class="n">_cur_file_pattern</span> <span class="o">=</span> <span class="n">_cur_file_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                                                          <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+            <span class="n">_lta_file_pattern</span> <span class="o">=</span> <span class="n">_lta_file_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                                                          <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;ra_regional_monthly_pattern&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                                                                <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                                                                <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;seasonal&#39;</span><span class="p">:</span>
+            <span class="n">_interval_name</span> <span class="o">=</span> <span class="s1">&#39;season&#39;</span>
+            <span class="c1"># replace generic season in pattern with the specific one needed so the correct file is found.</span>
+            <span class="c1">#TODO need to get the season somehow - is product date the first month of the season? last month?</span>
+            <span class="n">_season</span> <span class="o">=</span> <span class="s1">&#39;010203&#39;</span>
+            <span class="n">_lta_file_pattern</span> <span class="o">=</span> <span class="n">_lta_file_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;season&gt;\d</span><span class="si">{6}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;season&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_season</span><span class="p">))</span>
+            <span class="n">_cur_file_pattern</span> <span class="o">=</span> <span class="n">_cur_file_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;season&gt;\d</span><span class="si">{6}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;season&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_season</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS_Rainfall_Anomaly&#39;</span><span class="p">,</span> <span class="s1">&#39;ra_regional_seasonal_pattern&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                                                                <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;season&gt;\d</span><span class="si">{6}</span><span class="s1">)&#39;</span><span class="p">,</span>
+                                                                <span class="s1">&#39;(?P&lt;season&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_season</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Unrecognised interval </span><span class="si">{0}</span><span class="s1">. Unable to generate rainfall anomaly config.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s1">&#39;Unrecognised interval </span><span class="si">{0}</span><span class="s1">. Unable to generate rainfall anomaly config.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">)</span>
+
+        <span class="c1"># replace generic year in pattern with the specific one needed so the correct file is found.</span>
+        <span class="n">_cur_file_pattern</span> <span class="o">=</span> <span class="n">_cur_file_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+
+        <span class="c1"># if lta_file is specified, lta_dir is not used.</span>
+        <span class="k">if</span> <span class="n">lta_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_lta_file</span> <span class="o">=</span> <span class="n">lta_file</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_lta_file</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># if lta_dir is specified, it is used with the default pattern to find the long-term average rainfall file</span>
+        <span class="c1"># if not specified, lta_dir is determined from the default values.</span>
+        <span class="k">if</span> <span class="n">lta_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_lta_dir</span> <span class="o">=</span> <span class="n">lta_dir</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;global&#39;</span><span class="p">:</span>
+                <span class="n">_lta_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;global_product_dir&#39;</span><span class="p">),</span>
+                                        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(),</span>
+                                                     <span class="s1">&#39;Statistics_By</span><span class="si">{interval_name}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                                     <span class="n">interval_name</span><span class="o">=</span><span class="n">_interval_name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">())))</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">country</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_home_country</span><span class="p">():</span>
+                <span class="n">_lta_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;home_country_product_dir&#39;</span><span class="p">),</span>
+                                        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(),</span>
+                                                     <span class="s1">&#39;Statistics_By</span><span class="si">{interval_name}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                                     <span class="n">interval_name</span><span class="o">=</span><span class="n">_interval_name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">())))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_lta_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;regional_product_dir_prefix&#39;</span><span class="p">),</span>
+                                        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CHIRPS&#39;</span><span class="p">,</span> <span class="s1">&#39;regional_product_dir_suffix&#39;</span><span class="p">),</span>
+                                                     <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(),</span>
+                                                                  <span class="s1">&#39;Statistics_By</span><span class="si">{interval_name}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                                                  <span class="n">interval_name</span><span class="o">=</span><span class="n">_interval_name</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()))))</span>
+
+
+        <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_rainfall_anomaly_section</span><span class="p">(</span><span class="n">cur_file</span><span class="o">=</span><span class="n">_cur_file</span><span class="p">,</span> <span class="n">cur_dir</span><span class="o">=</span><span class="n">_cur_dir</span><span class="p">,</span>
+                                                         <span class="n">cur_pattern</span><span class="o">=</span><span class="n">_cur_file_pattern</span><span class="p">,</span> <span class="n">lta_file</span><span class="o">=</span><span class="n">_lta_file</span><span class="p">,</span>
+                                                         <span class="n">lta_dir</span><span class="o">=</span><span class="n">_lta_dir</span><span class="p">,</span> <span class="n">lta_pattern</span><span class="o">=</span><span class="n">_lta_file_pattern</span><span class="p">,</span>
+                                                         <span class="n">output_file</span><span class="o">=</span><span class="n">_output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">_out_dir</span><span class="p">,</span>
+                                                         <span class="n">output_pattern</span><span class="o">=</span><span class="n">_output_file_pattern</span><span class="p">)</span>
+        <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    ## Processing chain end - Compute Rainfall Anomaly&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">config</span></div>
+
+
+    <span class="sd">&quot;&quot;&quot; Generate a config file process for the rainfall anomaly product.</span>
+
+<span class="sd">    Internal method to actually generate rainfall anomaly VAMPIRE config file process.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cur_file : string</span>
+<span class="sd">        Path for current precipitation file.</span>
+<span class="sd">    cur_dir : string</span>
+<span class="sd">        Directory path for current precipitation file.</span>
+<span class="sd">    cur_pattern : string</span>
+<span class="sd">        Regular expression pattern for finding current precipitation file.</span>
+<span class="sd">    lta_file : string</span>
+<span class="sd">        Path for long-term average precipitation file.</span>
+<span class="sd">    lta_dir : string</span>
+<span class="sd">        Directory path for long-term average precipitation file.</span>
+<span class="sd">    lta_pattern : string</span>
+<span class="sd">        Regular expression pattern for finding long-term average precipitation file.</span>
+<span class="sd">    output_file : string</span>
+<span class="sd">        Directory path for output rainfall anomaly file.</span>
+<span class="sd">    output_dir : string</span>
+<span class="sd">        Path for product output.</span>
+<span class="sd">    output_pattern : string</span>
+<span class="sd">        Pattern for specifying output filename.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    string</span>
+<span class="sd">        Returns string containing the configuration file process.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_generate_rainfall_anomaly_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cur_file</span><span class="p">,</span> <span class="n">cur_dir</span><span class="p">,</span> <span class="n">cur_pattern</span><span class="p">,</span> <span class="n">lta_file</span><span class="p">,</span> <span class="n">lta_dir</span><span class="p">,</span> <span class="n">lta_pattern</span><span class="p">,</span>
+                                          <span class="n">output_file</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    # compute rainfall anomaly</span>
+<span class="s2">    - process: Analysis</span>
+<span class="s2">      type: rainfall_anomaly&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cur_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      current_file: </span><span class="si">{cur_file}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cur_file</span><span class="o">=</span><span class="n">cur_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      current_dir: </span><span class="si">{cur_dir}</span><span class="s2"></span>
+<span class="s2">      current_file_pattern: &#39;</span><span class="si">{cur_pattern}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cur_dir</span><span class="o">=</span><span class="n">cur_dir</span><span class="p">,</span> <span class="n">cur_pattern</span><span class="o">=</span><span class="n">cur_pattern</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">lta_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      longterm_avg_file: </span><span class="si">{lta_file}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lta_file</span><span class="o">=</span><span class="n">lta_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      longterm_avg_dir: </span><span class="si">{lta_dir}</span><span class="s2"></span>
+<span class="s2">      longterm_avg_file_pattern: &#39;</span><span class="si">{lta_pattern}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lta_dir</span><span class="o">=</span><span class="n">lta_dir</span><span class="p">,</span> <span class="n">lta_pattern</span><span class="o">=</span><span class="n">lta_pattern</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">output_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      output_file: </span><span class="si">{output_file}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_file</span><span class="o">=</span><span class="n">output_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      output_dir: </span><span class="si">{out_dir}</span><span class="s2"></span>
+<span class="s2">      output_file_pattern: &#39;</span><span class="si">{out_pattern}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">out_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">out_pattern</span><span class="o">=</span><span class="n">output_pattern</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">config</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

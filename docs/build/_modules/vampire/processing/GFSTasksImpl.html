@@ -1,0 +1,426 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.GFSTasksImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.GFSTasksImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">ast</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+
+<span class="kn">import</span> <span class="nn">directory_utils</span>
+<span class="kn">import</span> <span class="nn">filename_utils</span>
+<span class="kn">import</span> <span class="nn">VampireDefaults</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">calculate_statistics_arc</span> <span class="k">as</span> <span class="nn">calculate_statistics</span>
+    <span class="kn">import</span> <span class="nn">precipitation_analysis_arc</span> <span class="k">as</span> <span class="nn">precip_analysis</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">calculate_statistics_os</span> <span class="k">as</span> <span class="nn">calculate_statistics</span>
+    <span class="kn">import</span> <span class="nn">precipitation_analysis_os</span> <span class="k">as</span> <span class="nn">precip_analysis</span>
+
+
+<div class="viewcode-block" id="ConfigFileError"><a class="viewcode-back" href="../../../vampire.processing.GFSTasksImpl.html#vampire.processing.GFSTasksImpl.ConfigFileError">[docs]</a><span class="k">class</span> <span class="nc">ConfigFileError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Raise when the config file contains an error&#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="n">e</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ConfigFileError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GFSTasksImpl"><a class="viewcode-back" href="../../../vampire.processing.GFSTasksImpl.html#vampire.processing.GFSTasksImpl.GFSTasksImpl">[docs]</a><span class="k">class</span> <span class="nc">GFSTasksImpl</span><span class="p">():</span>
+    <span class="n">subclasses</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="GFSTasksImpl.register_subclass"><a class="viewcode-back" href="../../../vampire.processing.GFSTasksImpl.html#vampire.processing.GFSTasksImpl.GFSTasksImpl.register_subclass">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">register_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">product_type</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">subclass</span><span class="p">):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">product_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">subclass</span>
+            <span class="k">return</span> <span class="n">subclass</span>
+        <span class="k">return</span> <span class="n">decorator</span></div>
+
+<div class="viewcode-block" id="GFSTasksImpl.create"><a class="viewcode-back" href="../../../vampire.processing.GFSTasksImpl.html#vampire.processing.GFSTasksImpl.GFSTasksImpl.create">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">process_type</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">process_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad process type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">process_type</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">vampire_defaults</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">VampireDefaults</span><span class="o">.</span><span class="n">VampireDefaults</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">subclasses</span><span class="p">[</span><span class="n">process_type</span><span class="p">](</span><span class="n">params</span><span class="p">,</span> <span class="n">vp</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="GFSDownloadTask"><a class="viewcode-back" href="../../../vampire.processing.GFSTasksImpl.html#vampire.processing.GFSTasksImpl.GFSDownloadTask">[docs]</a><span class="nd">@GFSTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;download&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">GFSDownloadTask</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising GFS download task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="GFSDownloadTask.process"><a class="viewcode-back" href="../../../vampire.processing.GFSTasksImpl.html#vampire.processing.GFSTasksImpl.GFSDownloadTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Downloading GFS data&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No ouput directory &#39;output_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="n">_dates</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_start_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_end_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_overwrite</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">_variable</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_level</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_forecast_hr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_accumulate_days</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;dates&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_dates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;dates&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;start_date&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_start_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;end_date&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_end_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;overwrite&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_overwrite</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="s1">&#39;variable&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_variable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;variable&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;level&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;level&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;forecast_hr&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_forecast_hr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;forecast_hr&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;accumulate_days&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_accumulate_days</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;accumulate_days&#39;</span><span class="p">]</span>
+
+        <span class="n">_raw_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;raw&quot;</span><span class="p">)</span>
+        <span class="c1"># download data (and accumulate to daily)</span>
+        <span class="n">_raw_files_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_data</span><span class="p">(</span><span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="c1"># interval=self.params[&#39;interval&#39;],</span>
+                                             <span class="n">variable</span><span class="o">=</span><span class="n">_variable</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">_level</span><span class="p">,</span> <span class="n">forecast_hr</span><span class="o">=</span><span class="n">_forecast_hr</span><span class="p">,</span>
+                                             <span class="n">dates</span><span class="o">=</span><span class="n">_dates</span><span class="p">,</span> <span class="n">start_date</span><span class="o">=</span><span class="n">_start_date</span><span class="p">,</span>
+                                             <span class="n">end_date</span><span class="o">=</span><span class="n">_end_date</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">_overwrite</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="GFSDownloadTask.download_data"><a class="viewcode-back" href="../../../vampire.processing.GFSTasksImpl.html#vampire.processing.GFSTasksImpl.GFSDownloadTask.download_data">[docs]</a>    <span class="k">def</span> <span class="nf">download_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="c1">#interval,</span>
+                      <span class="n">variable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">forecast_hr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">start_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">accumulate_days</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_days</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Download GFS precipitation data for given interval and accumulate to given number of days if specified</span>
+
+<span class="sd">        Download GFS precipitation data for given interval. Will download all available data unless start</span>
+<span class="sd">        and/or end dates are provided.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        output_dir : str</span>
+<span class="sd">            Filename of raster file</span>
+<span class="sd">        interval : str</span>
+<span class="sd">            Filename of vector file</span>
+<span class="sd">        dates : str</span>
+<span class="sd">            Name of field labelling the zones within vector file</span>
+<span class="sd">        start_date : str</span>
+<span class="sd">            Filename of output table (.dbf or .csv)</span>
+<span class="sd">        end_date : str</span>
+<span class="sd">            F</span>
+<span class="sd">        overwrite : boolean</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">            Returns None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering download_data&#39;</span><span class="p">)</span>
+        <span class="n">base_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GFS&#39;</span><span class="p">,</span> <span class="s1">&#39;base_url&#39;</span><span class="p">)</span> <span class="c1">#&#39;http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl?&#39;</span>
+        <span class="c1">#file=gfs.t18z.pgrb2.0p25.f006&amp;lev_surface=on&amp;var_APCP=on&amp;leftlon=0&amp;rightlon=360&amp;toplat=90&amp;bottomlat=-90&amp;dir=%2Fgfs.2017080818&#39; #pub/data/nccf/com/gfs/prod/gfs.&#39; # real-time location</span>
+        <span class="n">_hh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GFS&#39;</span><span class="p">,</span> <span class="s1">&#39;model_cycle_runtime&#39;</span><span class="p">)</span> <span class="c1">#18&#39;</span>
+        <span class="k">if</span> <span class="n">forecast_hr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_fcst_hr</span> <span class="o">=</span> <span class="n">forecast_hr</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_fcst_hr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GFS&#39;</span><span class="p">,</span> <span class="s1">&#39;forecast_hour&#39;</span><span class="p">)</span> <span class="c1">#&#39;006&#39;</span>
+        <span class="k">if</span> <span class="n">level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_level</span> <span class="o">=</span> <span class="n">level</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GFS&#39;</span><span class="p">,</span> <span class="s1">&#39;level&#39;</span><span class="p">)</span> <span class="c1">#&#39;surface&#39;</span>
+        <span class="k">if</span> <span class="n">variable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_var</span> <span class="o">=</span> <span class="n">variable</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GFS&#39;</span><span class="p">,</span> <span class="s1">&#39;variable&#39;</span><span class="p">)</span> <span class="c1">#&#39;APCP&#39;</span>
+<span class="c1">#        _date = &#39;20170808&#39; + _hh</span>
+        <span class="n">_extent</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GFS&#39;</span><span class="p">,</span> <span class="s1">&#39;extent&#39;</span><span class="p">))</span> <span class="c1">#[0, 360, 90, -90]</span>
+
+        <span class="k">if</span> <span class="n">accumulate_days</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_accumulate_days</span> <span class="o">=</span> <span class="n">accumulate_days</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_accumulate_days</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GFS&#39;</span><span class="p">,</span> <span class="s1">&#39;default_accumulate&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">max_days</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_max_hrs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_days</span><span class="p">)</span> <span class="o">*</span> <span class="mi">24</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_max_hrs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GFS&#39;</span><span class="p">,</span> <span class="s1">&#39;max_days&#39;</span><span class="p">))</span> <span class="o">*</span> <span class="mi">24</span>
+
+        <span class="k">if</span> <span class="n">output_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;GFS&#39;</span><span class="p">,</span> <span class="s1">&#39;data_dir&#39;</span><span class="p">)</span>
+
+        <span class="n">files_list</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c1">#        accum_files_list = []</span>
+        <span class="n">_cur_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dates</span><span class="p">:</span>
+<span class="c1">#            _d = datetime.datetime.strptime(i, &#39;%Y-%m-%d&#39;)</span>
+            <span class="n">_date</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0:04d}{1:02d}{2:02d}{3}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">day</span><span class="p">,</span> <span class="n">_hh</span><span class="p">)</span>
+            <span class="n">_file</span> <span class="o">=</span> <span class="s1">&#39;gfs.t&#39;</span> <span class="o">+</span> <span class="n">_hh</span> <span class="o">+</span> <span class="s1">&#39;z.pgrb2.0p25.f&#39;</span> <span class="o">+</span> <span class="n">_fcst_hr</span>
+            <span class="n">_file_str</span> <span class="o">=</span> <span class="s1">&#39;file=&#39;</span> <span class="o">+</span> <span class="n">_file</span>
+            <span class="n">_level_str</span> <span class="o">=</span> <span class="s1">&#39;lev_&#39;</span> <span class="o">+</span> <span class="n">_level</span> <span class="o">+</span> <span class="s1">&#39;=on&#39;</span>
+            <span class="n">_var_str</span> <span class="o">=</span> <span class="s1">&#39;var_&#39;</span> <span class="o">+</span> <span class="n">_var</span> <span class="o">+</span> <span class="s1">&#39;=on&#39;</span>
+            <span class="n">_extent_str</span> <span class="o">=</span> <span class="s1">&#39;leftlon=</span><span class="si">{0}</span><span class="s1">&amp;rightlon=</span><span class="si">{1}</span><span class="s1">&amp;toplat=</span><span class="si">{2}</span><span class="s1">&amp;bottomlat=</span><span class="si">{3}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_extent</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">_extent</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">_extent</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">_extent</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+            <span class="n">_dir_str</span> <span class="o">=</span> <span class="s1">&#39;dir=</span><span class="si">%2F</span><span class="s1">gfs.&#39;</span> <span class="o">+</span> <span class="n">_date</span>
+<span class="c1">#            _fcst_hr_num = &#39;0:03d&#39;.format(int(_fcst_hr))</span>
+
+            <span class="c1"># if _fcst_hr_num &lt; 100:</span>
+            <span class="c1">#     fcst_hr_str = &#39;0&#39; + str(_fcst_hr_num)</span>
+            <span class="c1"># else:</span>
+            <span class="c1">#     fcst_hr_str = _fcst_hr</span>
+
+ <span class="c1">#          # fnamein = &#39;gfs.t&#39; + hh + &#39;z.pgrbf&#39; + fcst_hr_str + &#39;.grib2&#39;</span>
+ <span class="c1">#          # fpathin = base_url + datenow + &#39;/&#39; + fnamein</span>
+            <span class="n">_download_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_output_dir</span><span class="p">,</span> <span class="n">_date</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_download_dir</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">_download_dir</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">_download_dir</span><span class="p">)</span>
+            <span class="c1"># every six hours from 6 to 240, then every 12 hours</span>
+            <span class="n">_step</span> <span class="o">=</span> <span class="mi">6</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">_step</span>
+            <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">_max_hrs</span><span class="p">:</span>
+                <span class="n">_fcst_hr_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0:03d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">_file</span> <span class="o">=</span> <span class="s1">&#39;gfs.t&#39;</span> <span class="o">+</span> <span class="n">_hh</span> <span class="o">+</span> <span class="s1">&#39;z.pgrb2.0p25.f&#39;</span> <span class="o">+</span> <span class="n">_fcst_hr_str</span>
+                <span class="n">_file_str</span> <span class="o">=</span> <span class="s1">&#39;file=&#39;</span> <span class="o">+</span> <span class="n">_file</span>
+                <span class="n">url</span> <span class="o">=</span> <span class="n">base_url</span> <span class="o">+</span> <span class="n">_file_str</span> <span class="o">+</span> <span class="s1">&#39;&amp;&#39;</span> <span class="o">+</span> <span class="n">_level_str</span> <span class="o">+</span> <span class="s1">&#39;&amp;&#39;</span> <span class="o">+</span> <span class="n">_var_str</span> <span class="o">+</span> <span class="s1">&#39;&amp;&#39;</span> <span class="o">+</span> <span class="n">_extent_str</span> <span class="o">+</span> <span class="s1">&#39;&amp;&#39;</span> <span class="o">+</span> <span class="n">_dir_str</span>
+                <span class="n">_fname</span> <span class="o">=</span> <span class="n">_file</span> <span class="o">+</span> <span class="s1">&#39;.grb&#39;</span>
+                <span class="k">if</span> <span class="n">overwrite</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_fname</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">urllib</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">_fname</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="n">urllib</span><span class="o">.</span><span class="n">ContentTooShortError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="nb">print</span> <span class="s2">&quot;Content too short!! Didn&#39;t download &quot;</span> <span class="o">+</span> <span class="n">_file</span>
+                        <span class="k">continue</span>
+                    <span class="n">files_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_fname</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">240</span><span class="p">:</span>
+                    <span class="c1"># change step to 12 hrs</span>
+                    <span class="n">_step</span> <span class="o">=</span> <span class="mi">12</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">_step</span>
+
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">_cur_dir</span><span class="p">)</span> <span class="c1"># change back to working directory</span>
+        <span class="k">return</span> <span class="n">files_list</span> <span class="c1">#, accum_files_list</span></div></div>
+
+
+<div class="viewcode-block" id="GFSAccumulateTask"><a class="viewcode-back" href="../../../vampire.processing.GFSTasksImpl.html#vampire.processing.GFSTasksImpl.GFSAccumulateTask">[docs]</a><span class="nd">@GFSTasksImpl</span><span class="o">.</span><span class="n">register_subclass</span><span class="p">(</span><span class="s1">&#39;accumulate&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">GFSAccumulateTask</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDownloadTask object.</span>
+
+<span class="sd">    Implementation class for downloading MODIS products.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising GFS accumulate task&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="GFSAccumulateTask.process"><a class="viewcode-back" href="../../../vampire.processing.GFSTasksImpl.html#vampire.processing.GFSTasksImpl.GFSAccumulateTask.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Accumulating GFS data&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;data_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No data directory &#39;data_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_dir&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigFileError</span><span class="p">(</span><span class="s2">&quot;No output directory &#39;output_dir&#39; specified.&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="n">_accumulate_days</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_dates</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_data_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_output_pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_overwrite</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="s1">&#39;number_of_days&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_accumulate_days</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;number_of_days&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;dates&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_dates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;dates&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;data_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_data_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;data_pattern&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;output_pattern&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;output_pattern&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;overwrite&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">_overwrite</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;overwrite&#39;</span><span class="p">]</span>
+        <span class="c1"># accumulate downloaded data</span>
+        <span class="n">_accum_files_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accumulate_data</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">data_pattern</span><span class="o">=</span><span class="n">_data_pattern</span><span class="p">,</span>
+                                                 <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">_output_pattern</span><span class="p">,</span>
+                                                 <span class="n">num_days</span><span class="o">=</span><span class="n">_accumulate_days</span><span class="p">,</span> <span class="n">dates</span><span class="o">=</span><span class="n">_dates</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">_overwrite</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+    <span class="k">def</span> <span class="nf">_accumulate_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files_list</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">output_file</span><span class="p">):</span>
+        <span class="n">_output</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="s2">&quot;accumulate files </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">files_list</span><span class="p">)</span>
+        <span class="n">calculate_statistics</span><span class="o">.</span><span class="n">calc_sum</span><span class="p">(</span><span class="n">file_list</span><span class="o">=</span><span class="n">files_list</span><span class="p">,</span> <span class="n">sum_file</span><span class="o">=</span><span class="n">_output</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">files_list</span>
+
+<div class="viewcode-block" id="GFSAccumulateTask.accumulate_data"><a class="viewcode-back" href="../../../vampire.processing.GFSTasksImpl.html#vampire.processing.GFSTasksImpl.GFSAccumulateTask.accumulate_data">[docs]</a>    <span class="k">def</span> <span class="nf">accumulate_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">num_days</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Accumulate GFS precipitation data for given interval and accumulate to given number of days if specified</span>
+
+<span class="sd">        Download GFS precipitation data for given interval. Will download all available data unless start</span>
+<span class="sd">        and/or end dates are provided.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        output_dir : str</span>
+<span class="sd">            Filename of raster file</span>
+<span class="sd">        interval : str</span>
+<span class="sd">            Filename of vector file</span>
+<span class="sd">        dates : str</span>
+<span class="sd">            Name of field labelling the zones within vector file</span>
+<span class="sd">        start_date : str</span>
+<span class="sd">            Filename of output table (.dbf or .csv)</span>
+<span class="sd">        end_date : str</span>
+<span class="sd">            F</span>
+<span class="sd">        overwrite : boolean</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">            Returns None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;entering accumulate_data&#39;</span><span class="p">)</span>
+        <span class="n">files_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">_dates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">dates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># get date from data directory name</span>
+            <span class="n">_dir_s</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">data_dir</span><span class="p">)[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">_dir_s</span><span class="p">,</span> <span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">_dates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_date</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_dates</span> <span class="o">=</span> <span class="n">dates</span>
+
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">_dates</span><span class="p">:</span>
+            <span class="c1"># find all files</span>
+            <span class="n">_allfiles</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">data_pattern</span><span class="p">)</span>
+            <span class="n">_allfiles</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+            <span class="n">_cur_day</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">_cur_hr</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">_cur_accum_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">_accum_window_start</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">_accum_window_end</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">_day_ptrs</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="n">_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">data_pattern</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">fname</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_allfiles</span><span class="p">):</span>
+                <span class="c1"># get forecast hour from filename</span>
+                <span class="n">_base_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+                <span class="n">_result</span> <span class="o">=</span> <span class="n">_pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">_base_fname</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">_result</span><span class="p">:</span>
+                    <span class="n">_forecast_hr</span> <span class="o">=</span> <span class="n">_result</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;forecast_hr&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">_forecast_hr</span><span class="p">)</span> <span class="o">%</span> <span class="mi">24</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="c1"># end of day</span>
+                        <span class="n">_cur_day</span> <span class="o">=</span> <span class="n">_cur_day</span> <span class="o">+</span> <span class="mi">1</span>
+                        <span class="n">_day_ptrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">_cur_day</span> <span class="o">&gt;=</span> <span class="n">num_days</span><span class="p">:</span>
+                            <span class="c1"># accumulate last num_days</span>
+                            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">output_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{forecast_day}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span>
+                                                                                                   <span class="nb">range</span><span class="p">(</span><span class="n">_cur_day</span><span class="o">-</span><span class="n">num_days</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>
+                                                                                                         <span class="n">_cur_day</span><span class="o">+</span><span class="mi">1</span><span class="p">))))</span>
+                            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">_output_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{year}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+                            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">_output_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{month}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0:0&gt;2}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+                            <span class="n">_output_pattern</span> <span class="o">=</span> <span class="n">_output_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{day}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0:0&gt;2}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+                            <span class="n">_new_filename</span> <span class="o">=</span> <span class="n">filename_utils</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span><span class="n">_base_fname</span><span class="p">,</span> <span class="n">data_pattern</span><span class="p">,</span> <span class="n">_output_pattern</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">_new_filename</span><span class="p">))</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
+                                <span class="n">_accum_files</span> <span class="o">=</span> <span class="n">_allfiles</span><span class="p">[</span><span class="n">_accum_window_start</span><span class="p">:</span><span class="n">_accum_window_end</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_accumulate_data</span><span class="p">(</span><span class="n">_allfiles</span><span class="p">[</span><span class="n">_accum_window_start</span><span class="p">:</span><span class="n">_accum_window_end</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">_new_filename</span><span class="p">)</span>
+                            <span class="n">_accum_window_start</span> <span class="o">=</span> <span class="n">_day_ptrs</span><span class="p">[</span><span class="n">_cur_day</span><span class="o">-</span><span class="n">num_days</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span>
+                            <span class="n">files_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_new_filename</span><span class="p">)</span>
+                    <span class="n">_accum_window_end</span> <span class="o">=</span> <span class="n">_accum_window_end</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="nb">print</span> <span class="n">files_list</span>
+        <span class="k">return</span> <span class="n">files_list</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

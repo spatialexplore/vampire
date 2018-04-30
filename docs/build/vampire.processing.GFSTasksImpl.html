@@ -1,0 +1,190 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.GFSTasksImpl module &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vampire.processing.GFSTasksImpl">
+<span id="vampire-processing-gfstasksimpl-module"></span><h1>vampire.processing.GFSTasksImpl module<a class="headerlink" href="#module-vampire.processing.GFSTasksImpl" title="Permalink to this headline">¶</a></h1>
+<dl class="exception">
+<dt id="vampire.processing.GFSTasksImpl.ConfigFileError">
+<em class="property">exception </em><code class="descclassname">vampire.processing.GFSTasksImpl.</code><code class="descname">ConfigFileError</code><span class="sig-paren">(</span><em>message</em>, <em>e</em>, <em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/GFSTasksImpl.html#ConfigFileError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.GFSTasksImpl.ConfigFileError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.ValueError</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.processing.GFSTasksImpl.GFSAccumulateTask">
+<em class="property">class </em><code class="descclassname">vampire.processing.GFSTasksImpl.</code><code class="descname">GFSAccumulateTask</code><span class="sig-paren">(</span><em>params</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/GFSTasksImpl.html#GFSAccumulateTask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.GFSTasksImpl.GFSAccumulateTask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Initialise MODISDownloadTask object.</p>
+<p>Implementation class for downloading MODIS products.</p>
+<dl class="method">
+<dt id="vampire.processing.GFSTasksImpl.GFSAccumulateTask.accumulate_data">
+<code class="descname">accumulate_data</code><span class="sig-paren">(</span><em>data_dir=None</em>, <em>data_pattern=None</em>, <em>output_dir=None</em>, <em>output_pattern=None</em>, <em>num_days=None</em>, <em>dates=None</em>, <em>overwrite=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/GFSTasksImpl.html#GFSAccumulateTask.accumulate_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.GFSTasksImpl.GFSAccumulateTask.accumulate_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accumulate GFS precipitation data for given interval and accumulate to given number of days if specified</p>
+<p>Download GFS precipitation data for given interval. Will download all available data unless start
+and/or end dates are provided.</p>
+<dl class="docutils">
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of raster file</dd>
+<dt>interval <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of vector file</dd>
+<dt>dates <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Name of field labelling the zones within vector file</dd>
+<dt>start_date <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of output table (.dbf or .csv)</dd>
+<dt>end_date <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>F</dd>
+</dl>
+<p>overwrite : boolean</p>
+<dl class="docutils">
+<dt>None</dt>
+<dd>Returns None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.processing.GFSTasksImpl.GFSAccumulateTask.process">
+<code class="descname">process</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/GFSTasksImpl.html#GFSAccumulateTask.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.GFSTasksImpl.GFSAccumulateTask.process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.processing.GFSTasksImpl.GFSDownloadTask">
+<em class="property">class </em><code class="descclassname">vampire.processing.GFSTasksImpl.</code><code class="descname">GFSDownloadTask</code><span class="sig-paren">(</span><em>params</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/GFSTasksImpl.html#GFSDownloadTask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.GFSTasksImpl.GFSDownloadTask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Initialise MODISDownloadTask object.</p>
+<p>Implementation class for downloading MODIS products.</p>
+<dl class="method">
+<dt id="vampire.processing.GFSTasksImpl.GFSDownloadTask.download_data">
+<code class="descname">download_data</code><span class="sig-paren">(</span><em>output_dir</em>, <em>variable=None</em>, <em>level=None</em>, <em>forecast_hr=None</em>, <em>dates=None</em>, <em>start_date=None</em>, <em>end_date=None</em>, <em>overwrite=False</em>, <em>accumulate_days=None</em>, <em>max_days=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/GFSTasksImpl.html#GFSDownloadTask.download_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.GFSTasksImpl.GFSDownloadTask.download_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download GFS precipitation data for given interval and accumulate to given number of days if specified</p>
+<p>Download GFS precipitation data for given interval. Will download all available data unless start
+and/or end dates are provided.</p>
+<dl class="docutils">
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of raster file</dd>
+<dt>interval <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of vector file</dd>
+<dt>dates <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Name of field labelling the zones within vector file</dd>
+<dt>start_date <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>Filename of output table (.dbf or .csv)</dd>
+<dt>end_date <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd>F</dd>
+</dl>
+<p>overwrite : boolean</p>
+<dl class="docutils">
+<dt>None</dt>
+<dd>Returns None</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="vampire.processing.GFSTasksImpl.GFSDownloadTask.process">
+<code class="descname">process</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/GFSTasksImpl.html#GFSDownloadTask.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.GFSTasksImpl.GFSDownloadTask.process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.processing.GFSTasksImpl.GFSTasksImpl">
+<em class="property">class </em><code class="descclassname">vampire.processing.GFSTasksImpl.</code><code class="descname">GFSTasksImpl</code><a class="reference internal" href="_modules/vampire/processing/GFSTasksImpl.html#GFSTasksImpl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.GFSTasksImpl.GFSTasksImpl" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="classmethod">
+<dt id="vampire.processing.GFSTasksImpl.GFSTasksImpl.create">
+<em class="property">classmethod </em><code class="descname">create</code><span class="sig-paren">(</span><em>process_type</em>, <em>params</em>, <em>vampire_defaults=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/GFSTasksImpl.html#GFSTasksImpl.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.GFSTasksImpl.GFSTasksImpl.create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="vampire.processing.GFSTasksImpl.GFSTasksImpl.register_subclass">
+<em class="property">classmethod </em><code class="descname">register_subclass</code><span class="sig-paren">(</span><em>product_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/GFSTasksImpl.html#GFSTasksImpl.register_subclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.GFSTasksImpl.GFSTasksImpl.register_subclass" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.processing.GFSTasksImpl.GFSTasksImpl.subclasses">
+<code class="descname">subclasses</code><em class="property"> = {'accumulate': &lt;class 'vampire.processing.GFSTasksImpl.GFSAccumulateTask'&gt;, 'download': &lt;class 'vampire.processing.GFSTasksImpl.GFSDownloadTask'&gt;}</em><a class="headerlink" href="#vampire.processing.GFSTasksImpl.GFSTasksImpl.subclasses" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/vampire.processing.GFSTasksImpl.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

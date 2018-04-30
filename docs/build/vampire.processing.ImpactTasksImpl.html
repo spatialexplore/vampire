@@ -1,0 +1,147 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.ImpactTasksImpl module &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vampire.processing.ImpactTasksImpl">
+<span id="vampire-processing-impacttasksimpl-module"></span><h1>vampire.processing.ImpactTasksImpl module<a class="headerlink" href="#module-vampire.processing.ImpactTasksImpl" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="vampire.processing.ImpactTasksImpl.AreaImpactTask">
+<em class="property">class </em><code class="descclassname">vampire.processing.ImpactTasksImpl.</code><code class="descname">AreaImpactTask</code><span class="sig-paren">(</span><em>params</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/ImpactTasksImpl.html#AreaImpactTask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.ImpactTasksImpl.AreaImpactTask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Initialise MODISDownloadTask object.</p>
+<p>Implementation class for downloading MODIS products.</p>
+<dl class="method">
+<dt id="vampire.processing.ImpactTasksImpl.AreaImpactTask.process">
+<code class="descname">process</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/ImpactTasksImpl.html#AreaImpactTask.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.ImpactTasksImpl.AreaImpactTask.process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.processing.ImpactTasksImpl.ImpactTasksImpl">
+<em class="property">class </em><code class="descclassname">vampire.processing.ImpactTasksImpl.</code><code class="descname">ImpactTasksImpl</code><a class="reference internal" href="_modules/vampire/processing/ImpactTasksImpl.html#ImpactTasksImpl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.ImpactTasksImpl.ImpactTasksImpl" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="classmethod">
+<dt id="vampire.processing.ImpactTasksImpl.ImpactTasksImpl.create">
+<em class="property">classmethod </em><code class="descname">create</code><span class="sig-paren">(</span><em>process_type</em>, <em>params</em>, <em>vampire_defaults=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/ImpactTasksImpl.html#ImpactTasksImpl.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.ImpactTasksImpl.ImpactTasksImpl.create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="vampire.processing.ImpactTasksImpl.ImpactTasksImpl.register_subclass">
+<em class="property">classmethod </em><code class="descname">register_subclass</code><span class="sig-paren">(</span><em>product_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/ImpactTasksImpl.html#ImpactTasksImpl.register_subclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.ImpactTasksImpl.ImpactTasksImpl.register_subclass" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="vampire.processing.ImpactTasksImpl.ImpactTasksImpl.subclasses">
+<code class="descname">subclasses</code><em class="property"> = {'area': &lt;class 'vampire.processing.ImpactTasksImpl.AreaImpactTask'&gt;, 'population': &lt;class 'vampire.processing.ImpactTasksImpl.PopulationImpactTask'&gt;, 'poverty': &lt;class 'vampire.processing.ImpactTasksImpl.PovertyImpactTask'&gt;}</em><a class="headerlink" href="#vampire.processing.ImpactTasksImpl.ImpactTasksImpl.subclasses" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.processing.ImpactTasksImpl.PopulationImpactTask">
+<em class="property">class </em><code class="descclassname">vampire.processing.ImpactTasksImpl.</code><code class="descname">PopulationImpactTask</code><span class="sig-paren">(</span><em>params</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/ImpactTasksImpl.html#PopulationImpactTask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.ImpactTasksImpl.PopulationImpactTask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Initialise MODISDownloadTask object.</p>
+<p>Implementation class for downloading MODIS products.</p>
+<dl class="method">
+<dt id="vampire.processing.ImpactTasksImpl.PopulationImpactTask.process">
+<code class="descname">process</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/ImpactTasksImpl.html#PopulationImpactTask.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.ImpactTasksImpl.PopulationImpactTask.process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="vampire.processing.ImpactTasksImpl.PovertyImpactTask">
+<em class="property">class </em><code class="descclassname">vampire.processing.ImpactTasksImpl.</code><code class="descname">PovertyImpactTask</code><span class="sig-paren">(</span><em>params</em>, <em>vampire_defaults</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/ImpactTasksImpl.html#PovertyImpactTask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.ImpactTasksImpl.PovertyImpactTask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Initialise MODISDownloadTask object.</p>
+<p>Implementation class for downloading MODIS products.</p>
+<dl class="method">
+<dt id="vampire.processing.ImpactTasksImpl.PovertyImpactTask.process">
+<code class="descname">process</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/ImpactTasksImpl.html#PovertyImpactTask.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.ImpactTasksImpl.PovertyImpactTask.process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/vampire.processing.ImpactTasksImpl.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

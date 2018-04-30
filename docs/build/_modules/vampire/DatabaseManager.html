@@ -1,0 +1,168 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.DatabaseManager &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.DatabaseManager</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">VampireDefaults</span>
+<span class="kn">import</span> <span class="nn">database_utils</span>
+<span class="kn">import</span> <span class="nn">directory_utils</span>
+
+<div class="viewcode-block" id="DatabaseManager"><a class="viewcode-back" href="../../vampire.DatabaseManager.html#vampire.DatabaseManager.DatabaseManager">[docs]</a><span class="k">class</span> <span class="nc">DatabaseManager</span><span class="p">:</span>
+    <span class="s1">&#39;Base Class for managing uploading of products to database&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># load default values from .ini file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span> <span class="o">=</span> <span class="n">VampireDefaults</span><span class="o">.</span><span class="n">VampireDefaults</span><span class="p">()</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="DatabaseManager.upload_to_database"><a class="viewcode-back" href="../../vampire.DatabaseManager.html#vampire.DatabaseManager.DatabaseManager.upload_to_database">[docs]</a>    <span class="k">def</span> <span class="nf">upload_to_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_upload_impact_to_db</span><span class="p">(</span><span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">impact_type</span><span class="o">=</span><span class="s1">&#39;area&#39;</span><span class="p">,</span> <span class="n">start_date</span><span class="o">=</span><span class="n">start_date</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_upload_impact_to_db</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">impact_type</span><span class="p">,</span> <span class="n">start_date</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">product</span> <span class="o">==</span> <span class="s1">&#39;vhi&#39;</span><span class="p">:</span>
+            <span class="n">_product_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_output_dir&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">impact_type</span> <span class="o">==</span> <span class="s1">&#39;area&#39;</span><span class="p">:</span>
+                <span class="n">_filename_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_area_pattern&#39;</span><span class="p">)</span>
+                <span class="n">_table_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_area_table&#39;</span><span class="p">)</span> <span class="c1">#&#39;vhi_area&#39;</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_area_schema&#39;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_schema&#39;</span><span class="p">)</span>
+    <span class="c1">#        _product_filename = os.path.join(_product_dir,</span>
+    <span class="c1">#                                         &#39;lka_phy_MOD13Q1.%s.250m_16_days_vhi_area_dsd.csv&#39; % start_date.strftime(</span>
+    <span class="c1">#                                             &#39;%Y.%m.%d&#39;))</span>
+            <span class="k">elif</span> <span class="n">impact_type</span> <span class="o">==</span> <span class="s1">&#39;popn&#39;</span><span class="p">:</span>
+                <span class="n">_filename_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_popn_pattern&#39;</span><span class="p">)</span>
+                <span class="n">_table_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_popn_table&#39;</span><span class="p">)</span> <span class="c1">#&#39;vhi_popn&#39;</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_popn_schema&#39;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_schema&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">impact_type</span> <span class="o">==</span> <span class="s1">&#39;crops&#39;</span><span class="p">:</span>
+                <span class="n">_filename_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_crops_pattern&#39;</span><span class="p">)</span>
+                <span class="n">_table_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_crops_table&#39;</span><span class="p">)</span> <span class="c1">#&#39;vhi_crops&#39;</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_crops_schema&#39;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_schema&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">impact_type</span> <span class="o">==</span> <span class="s1">&#39;poverty&#39;</span><span class="p">:</span>
+                <span class="n">_filename_pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;hazard_impact&#39;</span><span class="p">,</span> <span class="s1">&#39;vhi_poverty_pattern&#39;</span><span class="p">)</span>
+                <span class="n">_table_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_poverty_table&#39;</span><span class="p">)</span>  <span class="c1"># &#39;vhi_crops&#39;</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_poverty_schema&#39;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_schema&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid impact type </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">impact_type</span><span class="p">))</span>
+            <span class="n">_filename_pattern</span> <span class="o">=</span> <span class="n">_filename_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;year&gt;\d</span><span class="si">{4}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;year&gt;</span><span class="si">{0}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">start_date</span><span class="o">.</span><span class="n">year</span><span class="p">))</span>
+            <span class="n">_filename_pattern</span> <span class="o">=</span> <span class="n">_filename_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;month&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;month&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">start_date</span><span class="o">.</span><span class="n">month</span><span class="p">))</span>
+            <span class="n">_filename_pattern</span> <span class="o">=</span> <span class="n">_filename_pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;(?P&lt;day&gt;\d</span><span class="si">{2}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="s1">&#39;(?P&lt;day&gt;</span><span class="si">{0:0&gt;2}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">start_date</span><span class="o">.</span><span class="n">day</span><span class="p">))</span>
+            <span class="n">_filenames</span> <span class="o">=</span> <span class="n">vampire</span><span class="o">.</span><span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">_product_dir</span><span class="p">,</span> <span class="n">_filename_pattern</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_filenames</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_product_filename</span> <span class="o">=</span> <span class="n">_filenames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_product_filename</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No product filename found in upload_impact_to_db&quot;</span><span class="p">)</span>
+
+            <span class="n">_database</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_db&#39;</span><span class="p">)</span> <span class="c1">#&#39;prima_impact&#39;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_host</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_host&#39;</span><span class="p">)</span> <span class="c1">#&#39;localhost&#39;</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span><span class="n">e</span><span class="p">:</span>
+                <span class="n">_host</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_host&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_user&#39;</span><span class="p">)</span> <span class="c1">#&#39;localhost&#39;</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span><span class="n">e</span><span class="p">:</span>
+                <span class="n">_user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_user&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_password</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_pw&#39;</span><span class="p">)</span> <span class="c1">#&#39;localhost&#39;</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span><span class="n">e</span><span class="p">:</span>
+                <span class="n">_password</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_pw&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;impact_port&#39;</span><span class="p">)</span> <span class="c1">#&#39;localhost&#39;</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span><span class="n">e</span><span class="p">:</span>
+                <span class="n">_port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vampire</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">,</span> <span class="s1">&#39;default_port&#39;</span><span class="p">)</span>
+            <span class="n">vampire</span><span class="o">.</span><span class="n">database_utils</span><span class="o">.</span><span class="n">insert_csv_to_table</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">_database</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="n">_host</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">_port</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">_user</span><span class="p">,</span>
+                                                       <span class="n">password</span><span class="o">=</span><span class="n">_password</span><span class="p">,</span> <span class="n">table</span><span class="o">=</span><span class="n">_table_name</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">_schema</span><span class="p">,</span>
+                                                       <span class="n">csv_file</span><span class="o">=</span><span class="n">_product_filename</span><span class="p">)</span> <span class="c1">#, overwrite=True)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

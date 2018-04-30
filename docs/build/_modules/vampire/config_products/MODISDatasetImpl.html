@@ -1,0 +1,294 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.config_products.MODISDatasetImpl &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.config_products.MODISDatasetImpl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">RasterDatasetImpl</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">dateutil.rrule</span>
+<span class="kn">import</span> <span class="nn">dateutil.relativedelta</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MODISDatasetImpl"><a class="viewcode-back" href="../../../vampire.config_products.MODISDatasetImpl.html#vampire.config_products.MODISDatasetImpl.MODISDatasetImpl">[docs]</a><span class="k">class</span> <span class="nc">MODISDatasetImpl</span><span class="p">(</span><span class="n">RasterDatasetImpl</span><span class="o">.</span><span class="n">RasterDatasetImpl</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Initialise MODISDatasetImpl object.</span>
+
+<span class="sd">    Implementation class for MODISDataset.</span>
+<span class="sd">    Initialise object parameters and calculate start and end dates for dataset using product_date and interval.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    interval : string</span>
+<span class="sd">        Data interval to retrieve/manage. Can be daily, pentad, dekad, monthly or seasonal</span>
+<span class="sd">    product_date : datetime</span>
+<span class="sd">        Data acquisition date. For pentad/dekad data, the data is actually for the period immediately preceding</span>
+<span class="sd">        the product_date. For monthly data, the data covers the month given in the product date. For seasonal data,</span>
+<span class="sd">        the product_date refers to the start of the season (3 month period).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">product_date</span><span class="p">,</span> <span class="n">vampire_defaults</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initialising MODIS dataset&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MODISDatasetImpl</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">=</span> <span class="n">product_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">product</span> <span class="o">=</span> <span class="n">product</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vp</span> <span class="o">=</span> <span class="n">vampire_defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">region</span> <span class="o">=</span> <span class="n">region</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;daily&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;dekad&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=-</span><span class="mi">10</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="n">product_date</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;8days&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;16days&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="o">-</span><span class="mi">16</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;monthly&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># ensure start date is first day of month</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">+</span> <span class="n">dateutil</span><span class="o">.</span><span class="n">relativedelta</span><span class="o">.</span><span class="n">relativedelta</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">days</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># ensure end_date is last day of month</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;seasonal&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">=</span> <span class="n">product_date</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="o">+</span> <span class="n">dateutil</span><span class="o">.</span><span class="n">relativedelta</span><span class="o">.</span><span class="n">relativedelta</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">days</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># set end_date as last day of third month</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Interval &#39;</span><span class="si">{0}</span><span class="s2">&#39; is not a valid MODIS dataset interval&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="k">return</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__start_date</span>
+    <span class="nd">@start_date</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">start_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__start_date</span> <span class="o">=</span> <span class="n">sd</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__end_date</span>
+    <span class="nd">@end_date</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">end_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ed</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__end_date</span> <span class="o">=</span> <span class="n">ed</span>
+
+    <span class="sd">&quot;&quot;&quot; Generate a config file process for the dataset.</span>
+
+<span class="sd">    Generate VAMPIRE config file process(es) for the dataset including download and crop if specified.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_dir : string</span>
+<span class="sd">        Path for downloaded data. The data will be stored in this path under a directory with the interval name. If the</span>
+<span class="sd">        data_dir is None, the VAMPIRE default download directory will be used.</span>
+<span class="sd">    download : boolean</span>
+<span class="sd">        Flag indicating whether data should be downloaded. Default is True.</span>
+<span class="sd">    crop : boolean</span>
+<span class="sd">        Flag indicating whether data should be cropped to region. Default is True.</span>
+<span class="sd">    crop_dir : string</span>
+<span class="sd">        Path where cropped data will be stored. If None, the region code will be appended to the download data path.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    string</span>
+<span class="sd">        Returns string containing the configuration file process.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># def generate_config(self, data_dir=None, download=True, mosaic_dir=None, tiles=None, crop=True, crop_dir=None):</span>
+    <span class="c1">#     logger.debug(&#39;MODISDataset generate_config&#39;)</span>
+    <span class="c1">#     config = &#39;&#39;</span>
+    <span class="c1">#     if download:</span>
+    <span class="c1">#         # set up download directory</span>
+    <span class="c1">#         if data_dir is None:</span>
+    <span class="c1">#             _download_dir = self.vp.get(&#39;MODIS_PRODUCTS&#39;, &#39;{0}.download_dir&#39;.format(self.product))</span>
+    <span class="c1">#         else:</span>
+    <span class="c1">#             _download_dir = data_dir</span>
+    <span class="c1">#</span>
+    <span class="c1">#         output_dir = _download_dir</span>
+    <span class="c1">#</span>
+    <span class="c1">#         # get mosaic directory if needed</span>
+    <span class="c1">#         if mosaic_dir is None:</span>
+    <span class="c1">#             if self.region.lower() != &#39;global&#39;:</span>
+    <span class="c1">#                 _mosaic_dir = self.vp.get(&#39;MODIS_PRODUCTS&#39;, &#39;{0}.mosaic_dir&#39;.format(self.product))</span>
+    <span class="c1">#                 if _mosaic_dir == &#39;&#39;:</span>
+    <span class="c1">#                     _mosaic_dir = None</span>
+    <span class="c1">#                 output_dir = _mosaic_dir</span>
+    <span class="c1">#             else:</span>
+    <span class="c1">#                 _mosaic_dir = None</span>
+    <span class="c1">#         else:</span>
+    <span class="c1">#             _mosaic_dir = mosaic_dir</span>
+    <span class="c1">#             output_dir = _mosaic_dir</span>
+    <span class="c1">#</span>
+    <span class="c1">#         # set tiles if needed</span>
+    <span class="c1">#         if tiles is not None:</span>
+    <span class="c1">#             _tiles = tiles</span>
+    <span class="c1">#         else:</span>
+    <span class="c1">#             if _mosaic_dir is not None:</span>
+    <span class="c1">#                 # need to mosaic, so must have tiles</span>
+    <span class="c1">#                 _tiles = self.vp.get_country(self.region)[&#39;{0}_tiles&#39;.format(self.product)]</span>
+    <span class="c1">#             else:</span>
+    <span class="c1">#                 _tiles = None</span>
+    <span class="c1">#         config += self._generate_download_section(data_dir, _mosaic_dir, _tiles)</span>
+    <span class="c1">#     return config</span>
+
+<div class="viewcode-block" id="MODISDatasetImpl.generate_download"><a class="viewcode-back" href="../../../vampire.config_products.MODISDatasetImpl.html#vampire.config_products.MODISDatasetImpl.MODISDatasetImpl.generate_download">[docs]</a>    <span class="k">def</span> <span class="nf">generate_download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tiles</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="c1"># set up download directory</span>
+        <span class="k">if</span> <span class="n">data_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_download_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.download_dir&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_download_dir</span> <span class="o">=</span> <span class="n">data_dir</span>
+
+        <span class="n">output_dir</span> <span class="o">=</span> <span class="n">_download_dir</span>
+
+        <span class="c1"># get mosaic directory if needed</span>
+        <span class="k">if</span> <span class="n">mosaic_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s1">&#39;global&#39;</span><span class="p">:</span>
+                <span class="n">_mosaic_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MODIS_PRODUCTS&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">.mosaic_dir&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">_mosaic_dir</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                    <span class="n">_mosaic_dir</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">output_dir</span> <span class="o">=</span> <span class="n">_mosaic_dir</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_mosaic_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_mosaic_dir</span> <span class="o">=</span> <span class="n">mosaic_dir</span>
+            <span class="n">output_dir</span> <span class="o">=</span> <span class="n">_mosaic_dir</span>
+
+        <span class="c1"># set tiles if needed</span>
+        <span class="k">if</span> <span class="n">tiles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_tiles</span> <span class="o">=</span> <span class="n">tiles</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">_mosaic_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># need to mosaic, so must have tiles</span>
+                <span class="n">_tiles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vp</span><span class="o">.</span><span class="n">get_country</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">)[</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">_tiles&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_tiles</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">config</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_download_section</span><span class="p">(</span><span class="n">_download_dir</span><span class="p">,</span> <span class="n">_mosaic_dir</span><span class="p">,</span> <span class="n">_tiles</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">config</span><span class="p">,</span> <span class="n">output_dir</span></div>
+
+    <span class="k">def</span> <span class="nf">_generate_download_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">download_dir</span><span class="p">,</span> <span class="n">mosaic_dir</span><span class="p">,</span> <span class="n">tiles</span><span class="p">):</span>
+        <span class="n">_file_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    # download </span><span class="si">{interval}</span><span class="s2"> MODIS for </span><span class="si">{country_name}</span><span class="s2"> and mosaic if necessary</span>
+<span class="s2">    - process: MODIS</span>
+<span class="s2">      type: download</span>
+<span class="s2">      product: </span><span class="si">{product}</span><span class="s2"></span>
+<span class="s2">      output_dir: </span><span class="si">{data_dir}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span> <span class="n">country_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">,</span> <span class="n">product</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">product</span><span class="p">,</span>
+                                       <span class="n">data_dir</span><span class="o">=</span><span class="n">download_dir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mosaic_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_file_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      mosaic_dir: </span><span class="si">{mosaic_dir}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mosaic_dir</span><span class="o">=</span><span class="n">mosaic_dir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tiles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_file_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      tiles: </span><span class="si">{tiles}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tiles</span><span class="o">=</span><span class="n">tiles</span><span class="p">)</span>
+        <span class="c1"># if start and end dates are specified, only download between these dates</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># use 1st of start_date month to make sure end month is also included</span>
+            <span class="n">_first_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">product_date</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">_dates</span> <span class="o">=</span> <span class="n">dateutil</span><span class="o">.</span><span class="n">rrule</span><span class="o">.</span><span class="n">rrule</span><span class="p">(</span><span class="n">dateutil</span><span class="o">.</span><span class="n">rrule</span><span class="o">.</span><span class="n">MONTHLY</span><span class="p">,</span> <span class="n">dtstart</span><span class="o">=</span><span class="n">_first_date</span><span class="p">)</span><span class="o">.</span><span class="n">between</span><span class="p">(</span>
+                <span class="n">_first_date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span><span class="p">,</span> <span class="n">inc</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">_file_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">      dates: [&quot;&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">_dates</span><span class="p">:</span>
+                <span class="n">_file_string</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="si">{year}</span><span class="s1">-</span><span class="si">{month}</span><span class="s1">,&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y&quot;</span><span class="p">),</span> <span class="n">month</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%m&quot;</span><span class="p">))</span>
+            <span class="n">_file_string</span> <span class="o">=</span> <span class="n">_file_string</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">_file_string</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;]</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">_file_string</span>
+
+<div class="viewcode-block" id="MODISDatasetImpl.generate_extract_section"><a class="viewcode-back" href="../../../vampire.config_products.MODISDatasetImpl.html#vampire.config_products.MODISDatasetImpl.MODISDatasetImpl.generate_extract_section">[docs]</a>    <span class="k">def</span> <span class="nf">generate_extract_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">product</span><span class="p">,</span> <span class="n">layer</span><span class="p">,</span> <span class="n">file_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="p">):</span>
+        <span class="n">file_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    # extract MODIS </span><span class="si">{layer}</span><span class="s2"></span>
+<span class="s2">    - process: MODIS</span>
+<span class="s2">      type: extract</span>
+<span class="s2">      product: </span><span class="si">{product}</span><span class="s2"></span>
+<span class="s2">      layer: </span><span class="si">{layer}</span><span class="s2"></span>
+<span class="s2">      input_dir: </span><span class="si">{input_dir}</span><span class="s2"></span>
+<span class="s2">      output_dir: </span><span class="si">{output_dir}</span><span class="s2"></span>
+<span class="s2">      file_pattern: &#39;</span><span class="si">{file_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">      output_pattern: &#39;</span><span class="si">{output_pattern}</span><span class="s2">&#39;</span>
+<span class="s2">      &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">product</span><span class="o">=</span><span class="n">product</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="n">layer</span><span class="p">,</span> <span class="n">input_dir</span><span class="o">=</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+                 <span class="n">file_pattern</span><span class="o">=</span><span class="n">file_pattern</span><span class="p">,</span> <span class="n">output_pattern</span><span class="o">=</span><span class="n">output_pattern</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">file_string</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,129 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.database_utils module &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="vampire.directory_utils module" href="vampire.directory_utils.html" />
+    <link rel="prev" title="vampire.csv_utils module" href="vampire.csv_utils.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vampire.database_utils">
+<span id="vampire-database-utils-module"></span><h1>vampire.database_utils module<a class="headerlink" href="#module-vampire.database_utils" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="vampire.database_utils.check_table_exists">
+<code class="descclassname">vampire.database_utils.</code><code class="descname">check_table_exists</code><span class="sig-paren">(</span><em>database</em>, <em>host</em>, <em>user</em>, <em>password</em>, <em>table_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/database_utils.html#check_table_exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.database_utils.check_table_exists" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.database_utils.create_table">
+<code class="descclassname">vampire.database_utils.</code><code class="descname">create_table</code><span class="sig-paren">(</span><em>database</em>, <em>table_name</em>, <em>columns</em>, <em>host</em>, <em>user</em>, <em>password</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/database_utils.html#create_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.database_utils.create_table" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.database_utils.get_fieldnames">
+<code class="descclassname">vampire.database_utils.</code><code class="descname">get_fieldnames</code><span class="sig-paren">(</span><em>csvFile</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/database_utils.html#get_fieldnames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.database_utils.get_fieldnames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the first row and store values in a tuple</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="vampire.database_utils.insert_csv_to_table">
+<code class="descclassname">vampire.database_utils.</code><code class="descname">insert_csv_to_table</code><span class="sig-paren">(</span><em>database</em>, <em>host</em>, <em>port</em>, <em>user</em>, <em>password</em>, <em>schema</em>, <em>table</em>, <em>csv_file</em>, <em>overwrite=False</em>, <em>index=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/database_utils.html#insert_csv_to_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.database_utils.insert_csv_to_table" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.database_utils.to_sql_update">
+<code class="descclassname">vampire.database_utils.</code><code class="descname">to_sql_update</code><span class="sig-paren">(</span><em>df</em>, <em>engine</em>, <em>schema</em>, <em>table</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/database_utils.html#to_sql_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.database_utils.to_sql_update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.database_utils.write_cursor">
+<code class="descclassname">vampire.database_utils.</code><code class="descname">write_cursor</code><span class="sig-paren">(</span><em>csvFile</em>, <em>fieldnames</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/database_utils.html#write_cursor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.database_utils.write_cursor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert csv rows into an array of dictionaries
+All data types are automatically checked and converted</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">vampire</a><ul>
+  <li><a href="vampire.html">vampire package</a><ul>
+      <li>Previous: <a href="vampire.csv_utils.html" title="previous chapter">vampire.csv_utils module</a></li>
+      <li>Next: <a href="vampire.directory_utils.html" title="next chapter">vampire.directory_utils module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/vampire.database_utils.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

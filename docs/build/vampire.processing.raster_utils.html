@@ -1,0 +1,169 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.raster_utils module &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vampire.processing.raster_utils">
+<span id="vampire-processing-raster-utils-module"></span><h1>vampire.processing.raster_utils module<a class="headerlink" href="#module-vampire.processing.raster_utils" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="vampire.processing.raster_utils.clip_raster_to_shp">
+<code class="descclassname">vampire.processing.raster_utils.</code><code class="descname">clip_raster_to_shp</code><span class="sig-paren">(</span><em>shpfile</em>, <em>in_raster</em>, <em>out_raster</em>, <em>gdal_path</em>, <em>nodata=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/raster_utils.html#clip_raster_to_shp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.raster_utils.clip_raster_to_shp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.raster_utils.crop_files">
+<code class="descclassname">vampire.processing.raster_utils.</code><code class="descname">crop_files</code><span class="sig-paren">(</span><em>base_path</em>, <em>output_path</em>, <em>bounds</em>, <em>tools_path</em>, <em>patterns=None</em>, <em>overwrite=False</em>, <em>nodata=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/raster_utils.html#crop_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.raster_utils.crop_files" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.raster_utils.mask_by_raster">
+<code class="descclassname">vampire.processing.raster_utils.</code><code class="descname">mask_by_raster</code><span class="sig-paren">(</span><em>raster_file</em>, <em>mask_file</em>, <em>output_file</em>, <em>nodata=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/raster_utils.html#mask_by_raster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.raster_utils.mask_by_raster" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.raster_utils.mask_by_shapefile">
+<code class="descclassname">vampire.processing.raster_utils.</code><code class="descname">mask_by_shapefile</code><span class="sig-paren">(</span><em>raster_file</em>, <em>polygon_file</em>, <em>output_file</em>, <em>gdal_path</em>, <em>nodata=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/raster_utils.html#mask_by_shapefile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.raster_utils.mask_by_shapefile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.raster_utils.mask_by_shapefile_arc">
+<code class="descclassname">vampire.processing.raster_utils.</code><code class="descname">mask_by_shapefile_arc</code><span class="sig-paren">(</span><em>raster_file</em>, <em>polygon_file</em>, <em>output_file</em>, <em>gdal_path</em>, <em>nodata=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/raster_utils.html#mask_by_shapefile_arc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.raster_utils.mask_by_shapefile_arc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.raster_utils.reproject_cut">
+<code class="descclassname">vampire.processing.raster_utils.</code><code class="descname">reproject_cut</code><span class="sig-paren">(</span><em>slave</em>, <em>box=None</em>, <em>t_srs=None</em>, <em>s_srs=None</em>, <em>res=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/raster_utils.html#reproject_cut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.raster_utils.reproject_cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function reprojects an image (<code class="docutils literal"><span class="pre">slave</span></code>) to
+match the extent, resolution and projection of another
+(<code class="docutils literal"><span class="pre">master</span></code>) using GDAL. The newly reprojected image
+is a GDAL VRT file for efficiency. A different spatial
+resolution can be chosen by specifyign the optional
+<code class="docutils literal"><span class="pre">res</span></code> parameter. The function returns the new file’s
+name.
+Parameters
+————-
+master: str</p>
+<blockquote>
+<div>A filename (with full path if required) with the 
+master image (that that will be taken as a reference)</div></blockquote>
+<dl class="docutils">
+<dt>slave: str </dt>
+<dd>A filename (with path if needed) with the image
+that will be reprojected</dd>
+<dt>res: float, optional</dt>
+<dd>The desired output spatial resolution, if different 
+to the one in <code class="docutils literal"><span class="pre">master</span></code>.</dd>
+</dl>
+<p>The reprojected filename
+TODO Have a way of controlling output filename</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="vampire.processing.raster_utils.reproject_image_to_master">
+<code class="descclassname">vampire.processing.raster_utils.</code><code class="descname">reproject_image_to_master</code><span class="sig-paren">(</span><em>master</em>, <em>slave</em>, <em>output</em>, <em>res=None</em>, <em>nodata=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/processing/raster_utils.html#reproject_image_to_master"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.processing.raster_utils.reproject_image_to_master" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function reprojects an image (<code class="docutils literal"><span class="pre">slave</span></code>) to
+match the extent, resolution and projection of another
+(<code class="docutils literal"><span class="pre">master</span></code>) using GDAL. The newly reprojected image
+is a GDAL VRT file for efficiency. A different spatial
+resolution can be chosen by specifyign the optional
+<code class="docutils literal"><span class="pre">res</span></code> parameter. The function returns the new file’s
+name.
+Parameters
+————-
+master: str</p>
+<blockquote>
+<div>A filename (with full path if required) with the 
+master image (that that will be taken as a reference)</div></blockquote>
+<dl class="docutils">
+<dt>slave: str </dt>
+<dd>A filename (with path if needed) with the image
+that will be reprojected</dd>
+<dt>res: float, optional</dt>
+<dd>The desired output spatial resolution, if different 
+to the one in <code class="docutils literal"><span class="pre">master</span></code>.</dd>
+</dl>
+<p>The reprojected filename
+TODO Have a way of controlling output filename</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/vampire.processing.raster_utils.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

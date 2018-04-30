@@ -1,0 +1,141 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.csv_utils module &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="vampire.database_utils module" href="vampire.database_utils.html" />
+    <link rel="prev" title="vampire.config_generator module" href="vampire.config_generator.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vampire.csv_utils">
+<span id="vampire-csv-utils-module"></span><h1>vampire.csv_utils module<a class="headerlink" href="#module-vampire.csv_utils" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="vampire.csv_utils.add_field">
+<code class="descclassname">vampire.csv_utils.</code><code class="descname">add_field</code><span class="sig-paren">(</span><em>table_name</em>, <em>new_field</em>, <em>value</em>, <em>type='DATE'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/csv_utils.html#add_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.csv_utils.add_field" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.csv_utils.aggregate_on_field">
+<code class="descclassname">vampire.csv_utils.</code><code class="descname">aggregate_on_field</code><span class="sig-paren">(</span><em>input</em>, <em>ref_field</em>, <em>output_fields_dict</em>, <em>output</em>, <em>all_fields=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/csv_utils.html#aggregate_on_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.csv_utils.aggregate_on_field" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.csv_utils.calc_field">
+<code class="descclassname">vampire.csv_utils.</code><code class="descname">calc_field</code><span class="sig-paren">(</span><em>table_name</em>, <em>new_field</em>, <em>cal_field</em>, <em>multiplier=1.0</em>, <em>type='DOUBLE'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/csv_utils.html#calc_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.csv_utils.calc_field" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.csv_utils.calc_normalized_field">
+<code class="descclassname">vampire.csv_utils.</code><code class="descname">calc_normalized_field</code><span class="sig-paren">(</span><em>table_name</em>, <em>new_field</em>, <em>area_field</em>, <em>total_field</em>, <em>admin_area</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/csv_utils.html#calc_normalized_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.csv_utils.calc_normalized_field" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.csv_utils.calc_pc_field">
+<code class="descclassname">vampire.csv_utils.</code><code class="descname">calc_pc_field</code><span class="sig-paren">(</span><em>table_name</em>, <em>new_field</em>, <em>numerator_field</em>, <em>denominator_field</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/csv_utils.html#calc_pc_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.csv_utils.calc_pc_field" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.csv_utils.convert_dbf_to_csv">
+<code class="descclassname">vampire.csv_utils.</code><code class="descname">convert_dbf_to_csv</code><span class="sig-paren">(</span><em>input_dbf</em>, <em>output_csv</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/csv_utils.html#convert_dbf_to_csv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.csv_utils.convert_dbf_to_csv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.csv_utils.copy_field">
+<code class="descclassname">vampire.csv_utils.</code><code class="descname">copy_field</code><span class="sig-paren">(</span><em>table_name</em>, <em>new_field</em>, <em>copy_field</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/csv_utils.html#copy_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.csv_utils.copy_field" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.csv_utils.csv_to_choropleth_format">
+<code class="descclassname">vampire.csv_utils.</code><code class="descname">csv_to_choropleth_format</code><span class="sig-paren">(</span><em>input_filename</em>, <em>output_filename</em>, <em>area_field</em>, <em>value_field</em>, <em>start_date_field</em>, <em>end_date_field</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/csv_utils.html#csv_to_choropleth_format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.csv_utils.csv_to_choropleth_format" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vampire.csv_utils.merge_files">
+<code class="descclassname">vampire.csv_utils.</code><code class="descname">merge_files</code><span class="sig-paren">(</span><em>file1</em>, <em>file2</em>, <em>output_file</em>, <em>file1_field</em>, <em>file2_field</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vampire/csv_utils.html#merge_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vampire.csv_utils.merge_files" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">vampire</a><ul>
+  <li><a href="vampire.html">vampire package</a><ul>
+      <li>Previous: <a href="vampire.config_generator.html" title="previous chapter">vampire.config_generator module</a></li>
+      <li>Next: <a href="vampire.database_utils.html" title="next chapter">vampire.database_utils module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/vampire.csv_utils.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

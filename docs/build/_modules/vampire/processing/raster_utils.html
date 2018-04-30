@@ -1,0 +1,359 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>vampire.processing.raster_utils &#8212; Vampire 1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vampire.processing.raster_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+<span class="kn">import</span> <span class="nn">gdal</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">directory_utils</span> <span class="k">as</span> <span class="nn">directory_utils</span>
+<span class="kn">import</span> <span class="nn">filename_utils</span> <span class="k">as</span> <span class="nn">filename_utils</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="clip_raster_to_shp"><a class="viewcode-back" href="../../../vampire.processing.raster_utils.html#vampire.processing.raster_utils.clip_raster_to_shp">[docs]</a><span class="k">def</span> <span class="nf">clip_raster_to_shp</span><span class="p">(</span><span class="n">shpfile</span><span class="p">,</span> <span class="n">in_raster</span><span class="p">,</span> <span class="n">out_raster</span><span class="p">,</span> <span class="n">gdal_path</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="c1"># call gdalwarp to clip to shapefile</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span><span class="n">shpfile</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span><span class="n">in_raster</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span><span class="n">out_raster</span><span class="p">)</span>
+        <span class="n">gdal_exe</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gdal_path</span><span class="p">,</span> <span class="s1">&#39;gdalwarp&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nodata</span><span class="p">:</span>
+            <span class="n">retcode</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">([</span><span class="n">gdal_exe</span><span class="p">,</span> <span class="s1">&#39;-t_srs&#39;</span><span class="p">,</span> <span class="s1">&#39;EPSG:4326&#39;</span><span class="p">,</span> <span class="s1">&#39;-dstnodata&#39;</span><span class="p">,</span> <span class="s1">&#39;-9999&#39;</span><span class="p">,</span> <span class="s1">&#39;--config&#39;</span><span class="p">,</span> <span class="s1">&#39;GDALWARP_IGNORE_BAD_CUTLINE&#39;</span><span class="p">,</span> <span class="s1">&#39;YES&#39;</span><span class="p">,</span> <span class="s1">&#39;-crop_to_cutline&#39;</span><span class="p">,</span> <span class="s1">&#39;-cutline&#39;</span><span class="p">,</span> <span class="n">shpfile</span><span class="p">,</span> <span class="n">in_raster</span><span class="p">,</span> <span class="n">out_raster</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">retcode</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">([</span><span class="n">gdal_exe</span><span class="p">,</span> <span class="s1">&#39;-overwrite&#39;</span><span class="p">,</span> <span class="s1">&#39;-t_srs&#39;</span><span class="p">,</span> <span class="s1">&#39;EPSG:4326&#39;</span><span class="p">,</span> <span class="s1">&#39;--config&#39;</span><span class="p">,</span> <span class="s1">&#39;GDALWARP_IGNORE_BAD_CUTLINE&#39;</span><span class="p">,</span> <span class="s1">&#39;YES&#39;</span><span class="p">,</span> <span class="s1">&#39;-crop_to_cutline&#39;</span><span class="p">,</span> <span class="s1">&#39;-cutline&#39;</span><span class="p">,</span> <span class="n">shpfile</span><span class="p">,</span> <span class="n">in_raster</span><span class="p">,</span> <span class="n">out_raster</span><span class="p">])</span>
+<span class="c1">#            print &quot;gdalwarp -overwrite&#39;, &#39;-t_srs&#39;, &#39;EPSG:4326&#39;, &#39;-crop_to_cutline&#39;, &#39;-cutline&#39; {0}, {1}, {2}&quot;.format(shpfile, in_raster, out_raster)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;gdalwarp return code is </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">retcode</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Error in gdalwarp&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span><span class="n">e</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+<span class="c1">#        raise</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Warning in gdalwarp&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="crop_files"><a class="viewcode-back" href="../../../vampire.processing.raster_utils.html#vampire.processing.raster_utils.crop_files">[docs]</a><span class="k">def</span> <span class="nf">crop_files</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">tools_path</span><span class="p">,</span> <span class="n">patterns</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="c1">#    import re</span>
+    <span class="n">_fileslist</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="c1"># if no pattern, try all files</span>
+        <span class="n">_p</span> <span class="o">=</span> <span class="s1">&#39;*&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_p</span> <span class="o">=</span> <span class="n">patterns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">_all_files</span> <span class="o">=</span> <span class="n">directory_utils</span><span class="o">.</span><span class="n">get_matching_files</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="n">_p</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">ifl</span> <span class="ow">in</span> <span class="n">_all_files</span><span class="p">:</span>
+        <span class="n">_f</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">ifl</span><span class="p">))</span>
+<span class="c1">#        m = re.match(_p, _f)</span>
+        <span class="n">_new_filename</span> <span class="o">=</span> <span class="n">filename_utils</span><span class="o">.</span><span class="n">generate_output_filename</span><span class="p">(</span><span class="n">input_filename</span><span class="o">=</span><span class="n">_f</span><span class="p">,</span> <span class="n">in_pattern</span><span class="o">=</span><span class="n">_p</span><span class="p">,</span>
+                                                                <span class="n">out_pattern</span><span class="o">=</span><span class="n">patterns</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ignore_leap_year</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">_out_raster</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">_new_filename</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_out_raster</span><span class="p">)</span> <span class="ow">or</span> <span class="n">overwrite</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># crop file here</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Cropping file: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span><span class="n">ifl</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">ifl</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;.gz&#39;</span><span class="p">:</span>
+                <span class="c1"># unzip first</span>
+                <span class="n">directory_utils</span><span class="o">.</span><span class="n">unzip_file_list</span><span class="p">([</span><span class="n">ifl</span><span class="p">])</span>
+                <span class="n">ifl</span> <span class="o">=</span> <span class="n">ifl</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="c1"># remove .gz from filename</span>
+            <span class="n">clip_raster_to_shp</span><span class="p">(</span><span class="n">shpfile</span><span class="o">=</span><span class="n">bounds</span><span class="p">,</span> <span class="n">in_raster</span><span class="o">=</span><span class="n">ifl</span><span class="p">,</span> <span class="n">out_raster</span><span class="o">=</span><span class="n">_out_raster</span><span class="p">,</span>
+                               <span class="n">gdal_path</span><span class="o">=</span><span class="n">tools_path</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="n">nodata</span><span class="p">)</span>
+            <span class="n">_fileslist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_new_filename</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_fileslist</span></div>
+
+<div class="viewcode-block" id="reproject_image_to_master"><a class="viewcode-back" href="../../../vampire.processing.raster_utils.html#vampire.processing.raster_utils.reproject_image_to_master">[docs]</a><span class="k">def</span> <span class="nf">reproject_image_to_master</span> <span class="p">(</span> <span class="n">master</span><span class="p">,</span> <span class="n">slave</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">res</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="mf">0.0</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function reprojects an image (``slave``) to</span>
+<span class="sd">    match the extent, resolution and projection of another</span>
+<span class="sd">    (``master``) using GDAL. The newly reprojected image</span>
+<span class="sd">    is a GDAL VRT file for efficiency. A different spatial</span>
+<span class="sd">    resolution can be chosen by specifyign the optional</span>
+<span class="sd">    ``res`` parameter. The function returns the new file&#39;s</span>
+<span class="sd">    name.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    -------------</span>
+<span class="sd">    master: str </span>
+<span class="sd">        A filename (with full path if required) with the </span>
+<span class="sd">        master image (that that will be taken as a reference)</span>
+<span class="sd">    slave: str </span>
+<span class="sd">        A filename (with path if needed) with the image</span>
+<span class="sd">        that will be reprojected</span>
+<span class="sd">    res: float, optional</span>
+<span class="sd">        The desired output spatial resolution, if different </span>
+<span class="sd">        to the one in ``master``.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    ----------</span>
+<span class="sd">    The reprojected filename</span>
+<span class="sd">    TODO Have a way of controlling output filename</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">slave_ds</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span> <span class="n">slave</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">slave_ds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">,</span> <span class="s2">&quot;GDAL could not open slave file </span><span class="si">%s</span><span class="s2"> &quot;</span> \
+            <span class="o">%</span> <span class="n">slave</span>
+    <span class="n">slave_proj</span> <span class="o">=</span> <span class="n">slave_ds</span><span class="o">.</span><span class="n">GetProjection</span><span class="p">()</span>
+    <span class="n">slave_geotrans</span> <span class="o">=</span> <span class="n">slave_ds</span><span class="o">.</span><span class="n">GetGeoTransform</span><span class="p">()</span>
+    <span class="n">data_type</span> <span class="o">=</span> <span class="n">slave_ds</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">DataType</span>
+    <span class="n">n_bands</span> <span class="o">=</span> <span class="n">slave_ds</span><span class="o">.</span><span class="n">RasterCount</span>
+
+    <span class="n">master_ds</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span> <span class="n">master</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">master_ds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">,</span> <span class="s2">&quot;GDAL could not open master file </span><span class="si">%s</span><span class="s2"> &quot;</span> \
+            <span class="o">%</span> <span class="n">master</span>
+    <span class="n">master_proj</span> <span class="o">=</span> <span class="n">master_ds</span><span class="o">.</span><span class="n">GetProjection</span><span class="p">()</span>
+    <span class="n">master_geotrans</span> <span class="o">=</span> <span class="n">master_ds</span><span class="o">.</span><span class="n">GetGeoTransform</span><span class="p">()</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">master_ds</span><span class="o">.</span><span class="n">RasterXSize</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">master_ds</span><span class="o">.</span><span class="n">RasterYSize</span>
+    <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">master_geotrans</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span> <span class="n">res</span> <span class="p">)</span>
+        <span class="n">master_geotrans</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="nb">float</span> <span class="p">(</span> <span class="n">res</span> <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">output</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dst_filename</span> <span class="o">=</span> <span class="n">slave</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span> <span class="s2">&quot;.tif&quot;</span><span class="p">,</span> <span class="s2">&quot;_crop.tif&quot;</span> <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dst_filename</span> <span class="o">=</span> <span class="n">output</span>
+    <span class="n">dst_ds</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GetDriverByName</span><span class="p">(</span><span class="s1">&#39;GTiff&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">dst_filename</span><span class="p">,</span>
+                                                <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">n_bands</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+    <span class="n">dst_ds</span><span class="o">.</span><span class="n">SetGeoTransform</span><span class="p">(</span> <span class="n">master_geotrans</span> <span class="p">)</span>
+    <span class="n">dst_ds</span><span class="o">.</span><span class="n">SetProjection</span><span class="p">(</span> <span class="n">master_proj</span><span class="p">)</span>
+
+    <span class="n">gdal</span><span class="o">.</span><span class="n">ReprojectImage</span><span class="p">(</span> <span class="n">slave_ds</span><span class="p">,</span> <span class="n">dst_ds</span><span class="p">,</span> <span class="n">slave_proj</span><span class="p">,</span>
+                         <span class="n">master_proj</span><span class="p">,</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GRA_NearestNeighbour</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">nodata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">nodata</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">dst_ds</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">SetNoDataValue</span><span class="p">(</span><span class="n">nodata</span><span class="p">)</span> <span class="c1">#slave_ds.GetRasterBand(1).GetNoDataValue())</span>
+    <span class="n">dst_ds</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Flush to disk</span>
+    <span class="c1"># with rasterio.open(dst_filename) as dst_r:</span>
+    <span class="c1">#     profile = dst_r.profile.copy()</span>
+    <span class="c1">#     _dst_a = dst_r.read(1, masked=True)</span>
+    <span class="c1">#     _dst_a.filled(fill_value=-9999)</span>
+    <span class="c1">#     profile.update(nodata=-9999)</span>
+    <span class="c1">#     with rasterio.open(dst_filename, &#39;w&#39;, **profile) as dst:</span>
+    <span class="c1">#         dst.write(_dst_a.astype(rasterio.float32), 1)</span>
+
+    <span class="k">return</span> <span class="n">dst_filename</span></div>
+
+
+<div class="viewcode-block" id="reproject_cut"><a class="viewcode-back" href="../../../vampire.processing.raster_utils.html#vampire.processing.raster_utils.reproject_cut">[docs]</a><span class="k">def</span> <span class="nf">reproject_cut</span> <span class="p">(</span> <span class="n">slave</span><span class="p">,</span> <span class="n">box</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">t_srs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">s_srs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">res</span><span class="o">=</span><span class="kc">None</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function reprojects an image (``slave``) to</span>
+<span class="sd">    match the extent, resolution and projection of another</span>
+<span class="sd">    (``master``) using GDAL. The newly reprojected image</span>
+<span class="sd">    is a GDAL VRT file for efficiency. A different spatial</span>
+<span class="sd">    resolution can be chosen by specifyign the optional</span>
+<span class="sd">    ``res`` parameter. The function returns the new file&#39;s</span>
+<span class="sd">    name.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    -------------</span>
+<span class="sd">    master: str </span>
+<span class="sd">        A filename (with full path if required) with the </span>
+<span class="sd">        master image (that that will be taken as a reference)</span>
+<span class="sd">    slave: str </span>
+<span class="sd">        A filename (with path if needed) with the image</span>
+<span class="sd">        that will be reprojected</span>
+<span class="sd">    res: float, optional</span>
+<span class="sd">        The desired output spatial resolution, if different </span>
+<span class="sd">        to the one in ``master``.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    ----------</span>
+<span class="sd">    The reprojected filename</span>
+<span class="sd">    TODO Have a way of controlling output filename</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">slave_ds</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span> <span class="n">slave</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">slave_ds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">IOError</span><span class="p">,</span> <span class="s2">&quot;GDAL could not open slave file </span><span class="si">%s</span><span class="s2"> &quot;</span> \
+            <span class="o">%</span> <span class="n">slave</span>
+    <span class="k">if</span> <span class="n">s_srs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">proj</span> <span class="o">=</span> <span class="n">slave_ds</span><span class="o">.</span><span class="n">GetProjection</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">proj</span> <span class="o">=</span> <span class="n">s_srs</span>
+
+    <span class="n">slave_geotrans</span> <span class="o">=</span> <span class="n">slave_ds</span><span class="o">.</span><span class="n">GetGeoTransform</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">box</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ulx</span> <span class="o">=</span> <span class="n">slave_geotrans</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">uly</span> <span class="o">=</span> <span class="n">slave_geotrans</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">lrx</span> <span class="o">=</span> <span class="n">slave_geotrans</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">slave_ds</span><span class="o">.</span><span class="n">RasterXSize</span> <span class="o">*</span> <span class="n">slave_geotrans</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">lry</span> <span class="o">=</span> <span class="n">slave_geotrans</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">slave_ds</span><span class="o">.</span><span class="n">RasterySize</span> <span class="o">*</span> <span class="n">slave_geotrans</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ulx</span><span class="p">,</span> <span class="n">uly</span><span class="p">,</span> <span class="n">lrx</span><span class="p">,</span> <span class="n">lry</span> <span class="o">=</span> <span class="n">box</span>
+    <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">slave_geotrans</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">data_type</span> <span class="o">=</span> <span class="n">slave_ds</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">DataType</span>
+    <span class="n">n_bands</span> <span class="o">=</span> <span class="n">slave_ds</span><span class="o">.</span><span class="n">RasterCount</span>
+
+    <span class="k">if</span> <span class="n">t_srs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">master_proj</span> <span class="o">=</span> <span class="n">proj</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">master_proj</span> <span class="o">=</span> <span class="n">t_srs</span>
+
+    <span class="n">master_geotrans</span> <span class="o">=</span> <span class="p">[</span> <span class="n">ulx</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">slave_geotrans</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                        <span class="n">uly</span><span class="p">,</span> <span class="n">slave_geotrans</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="o">-</span><span class="n">res</span> <span class="p">]</span>
+
+    <span class="n">w</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">lrx</span> <span class="o">-</span> <span class="n">ulx</span><span class="p">)</span> <span class="o">/</span> <span class="n">res</span><span class="p">))</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">uly</span> <span class="o">-</span> <span class="n">lry</span><span class="p">)</span> <span class="o">/</span> <span class="n">res</span><span class="p">))</span>
+
+    <span class="n">dst_filename</span> <span class="o">=</span> <span class="n">slave</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span> <span class="s2">&quot;.TIF&quot;</span><span class="p">,</span> <span class="s2">&quot;_crop.tif&quot;</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">dst_filename</span> <span class="o">==</span> <span class="n">slave</span><span class="p">:</span>
+        <span class="n">dst_filename</span> <span class="o">=</span> <span class="n">slave</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span> <span class="s2">&quot;.tif&quot;</span><span class="p">,</span> <span class="s2">&quot;_crop.tif&quot;</span> <span class="p">)</span>
+    <span class="n">dst_ds</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GetDriverByName</span><span class="p">(</span><span class="s1">&#39;GTiff&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="n">dst_filename</span><span class="p">,</span>
+                                                  <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">n_bands</span><span class="p">,</span> <span class="n">data_type</span><span class="p">)</span>
+    <span class="n">dst_ds</span><span class="o">.</span><span class="n">SetGeoTransform</span><span class="p">(</span> <span class="n">master_geotrans</span> <span class="p">)</span>
+    <span class="n">dst_ds</span><span class="o">.</span><span class="n">SetProjection</span><span class="p">(</span> <span class="n">proj</span> <span class="p">)</span>
+
+    <span class="n">gdal</span><span class="o">.</span><span class="n">ReprojectImage</span><span class="p">(</span> <span class="n">slave_ds</span><span class="p">,</span> <span class="n">dst_ds</span><span class="p">,</span> <span class="n">proj</span><span class="p">,</span>
+                         <span class="n">master_proj</span><span class="p">,</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GRA_NearestNeighbour</span><span class="p">)</span>
+    <span class="n">dst_ds</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Flush to disk</span>
+    <span class="k">return</span> <span class="n">dst_filename</span></div>
+
+<div class="viewcode-block" id="mask_by_raster"><a class="viewcode-back" href="../../../vampire.processing.raster_utils.html#vampire.processing.raster_utils.mask_by_raster">[docs]</a><span class="k">def</span> <span class="nf">mask_by_raster</span><span class="p">(</span><span class="n">raster_file</span><span class="p">,</span> <span class="n">mask_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">arcpy</span>
+        <span class="n">_cellsize</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="s2">&quot;MINOF&quot;</span>
+        <span class="n">_raster</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Raster</span><span class="p">(</span><span class="n">raster_file</span><span class="p">)</span>
+        <span class="n">_mask_file</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Raster</span><span class="p">(</span><span class="n">mask_file</span><span class="p">)</span>
+        <span class="n">_output</span> <span class="o">=</span> <span class="n">arcpy</span><span class="o">.</span><span class="n">sa</span><span class="o">.</span><span class="n">Times</span><span class="p">(</span><span class="n">_raster</span><span class="p">,</span> <span class="n">_mask_file</span><span class="p">)</span>
+        <span class="n">_output</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">output_file</span><span class="p">)</span>
+        <span class="n">arcpy</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">cellSize</span> <span class="o">=</span> <span class="n">_cellsize</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Error, mask by raster not implemented yet&quot;</span> <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mask_by_shapefile"><a class="viewcode-back" href="../../../vampire.processing.raster_utils.html#vampire.processing.raster_utils.mask_by_shapefile">[docs]</a><span class="k">def</span> <span class="nf">mask_by_shapefile</span><span class="p">(</span><span class="n">raster_file</span><span class="p">,</span> <span class="n">polygon_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">gdal_path</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">polygon_file</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">raster_file</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
+        <span class="n">gdal_exe</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gdal_path</span><span class="p">,</span> <span class="s1">&#39;gdalwarp&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nodata</span><span class="p">:</span>
+            <span class="n">retcode</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">gdal_exe</span><span class="p">,</span> <span class="s1">&#39;-overwrite&#39;</span><span class="p">,</span> <span class="s1">&#39;-dstnodata&#39;</span><span class="p">,</span> <span class="s1">&#39;-9999&#39;</span><span class="p">,</span> <span class="s1">&#39;--config&#39;</span><span class="p">,</span> <span class="s1">&#39;GDALWARP_IGNORE_BAD_CUTLINE&#39;</span><span class="p">,</span> <span class="s1">&#39;YES&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;-cutline&#39;</span><span class="p">,</span> <span class="n">polygon_file</span><span class="p">,</span> <span class="n">raster_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">retcode</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">gdal_exe</span><span class="p">,</span> <span class="s1">&#39;-overwrite&#39;</span><span class="p">,</span> <span class="s1">&#39;--config&#39;</span><span class="p">,</span> <span class="s1">&#39;GDALWARP_IGNORE_BAD_CUTLINE&#39;</span><span class="p">,</span> <span class="s1">&#39;YES&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;-crop_to_cutline&#39;</span><span class="p">,</span> <span class="s1">&#39;-cutline&#39;</span><span class="p">,</span> <span class="n">polygon_file</span><span class="p">,</span> <span class="n">raster_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">])</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;gdalwarp return code is </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">retcode</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Error in gdalwarp&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+        <span class="c1">#        raise</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Warning in gdalwarp&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">arcpy</span>
+<div class="viewcode-block" id="mask_by_shapefile_arc"><a class="viewcode-back" href="../../../vampire.processing.raster_utils.html#vampire.processing.raster_utils.mask_by_shapefile_arc">[docs]</a>    <span class="k">def</span> <span class="nf">mask_by_shapefile_arc</span><span class="p">(</span><span class="n">raster_file</span><span class="p">,</span> <span class="n">polygon_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">gdal_path</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">return</span></div>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">mask_by_shapefile_os</span><span class="p">(</span><span class="n">raster_file</span><span class="p">,</span> <span class="n">polygon_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">gdal_path</span><span class="p">,</span> <span class="n">nodata</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">polygon_file</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">raster_file</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
+            <span class="n">gdal_exe</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gdal_path</span><span class="p">,</span> <span class="s1">&#39;gdalwarp&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">nodata</span><span class="p">:</span>
+                <span class="n">retcode</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">gdal_exe</span><span class="p">,</span> <span class="s1">&#39;-overwrite&#39;</span><span class="p">,</span> <span class="s1">&#39;-dstnodata&#39;</span><span class="p">,</span> <span class="s1">&#39;-9999&#39;</span><span class="p">,</span> <span class="s1">&#39;--config&#39;</span><span class="p">,</span> <span class="s1">&#39;GDALWARP_IGNORE_BAD_CUTLINE&#39;</span><span class="p">,</span> <span class="s1">&#39;YES&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;-cutline&#39;</span><span class="p">,</span> <span class="n">polygon_file</span><span class="p">,</span> <span class="n">raster_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">retcode</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">gdal_exe</span><span class="p">,</span> <span class="s1">&#39;-overwrite&#39;</span><span class="p">,</span> <span class="s1">&#39;--config&#39;</span><span class="p">,</span> <span class="s1">&#39;GDALWARP_IGNORE_BAD_CUTLINE&#39;</span><span class="p">,</span> <span class="s1">&#39;YES&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;-crop_to_cutline&#39;</span><span class="p">,</span> <span class="s1">&#39;-cutline&#39;</span><span class="p">,</span> <span class="n">polygon_file</span><span class="p">,</span> <span class="n">raster_file</span><span class="p">,</span> <span class="n">output_file</span><span class="p">])</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;gdalwarp return code is </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">retcode</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Error in gdalwarp&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+            <span class="c1">#        raise</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Warning in gdalwarp&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Rochelle O'Hagan, World Food Programme.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
