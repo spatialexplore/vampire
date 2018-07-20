@@ -1,0 +1,30 @@
+config = {
+    'description': 'Configuration for Vampire - ArcGIS Version',
+    'author': "Dio Dinta Dafrista",
+    'url': 'URL to get it at',
+    'download_url': 'Where to download it.',
+    'author_email': 'dio.dafrista@wfp.org',
+    'version': '0.1',
+    'install_requires': [],
+    'packages': [],
+    'scripts': [],
+    'name': 'Vampire for ArcGIS',
+    'country': 'IND',
+    'storingConfig': 'file', #file for file gedatabase, ent for enterprise geodatabase
+    'product': ['vegetable_health_index','rainfall_anomaly'],
+    'template': {'vegetable_health_index': 'D:\\SharedFolder\\DIO\\vampire\\rainfall_anomaly_avg.rft.xml',
+                 'rainfall_anomaly': 'D:\\SharedFolder\\DIO\\vampire\\rainfall_anomaly_avg.rft.xml'},
+    'keycode': 'D:/SharedFolder/DIO/vampire/keycodes',
+    'gdbpath': 'D:/SharedFolder/DIO/vampire/data',
+    'sourcedata': 'D:/SharedFolder/DIO/vampire/Data Server',
+    'postgreHost': 'localhost',
+    'dba': 'postgres',
+    'dbapass': 'Indonesia',
+    'sdeuser': 'sde',
+    'sdepass': 'sde_indonesia',
+    'proj': "PROJCS['WGS_1984_UTM_Zone_49S',GEOGCS['GCS_WGS_1984',DATUM['D_WGS_1984',SPHEROID['WGS_1984',6378137.0,298.257223563]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Transverse_Mercator'],PARAMETER['False_Easting',500000.0],PARAMETER['False_Northing',10000000.0],PARAMETER['Central_Meridian',111.0],PARAMETER['Scale_Factor',0.9996],PARAMETER['Latitude_Of_Origin',0.0],UNIT['Meter',1.0]];-5120900 1900 10000;-100000 10000;-100000 10000;0,001;0,001;0,001;IsHighPrecision",
+    'server_url': 'http://localhost:6080/arcgis',
+    'use_arcgis_desktop_staging_folder': 'false',
+    'server_admin': 'dio.dafrista@wfp.org'
+
+}
